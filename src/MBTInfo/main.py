@@ -2,6 +2,7 @@ import os
 from data_to_excel import process_pdf_to_xl
 from data_extractor import extract_and_save_text
 from chart_creator import create_distribution_chart
+from formatting_xl import apply_formatting
 
 
 def process_files(input_directory, output_directory, output_filename):
@@ -32,10 +33,15 @@ def process_files(input_directory, output_directory, output_filename):
         else:
             print(f'Skipped {file} (not a PDF file)')
 
-    print(f"All MBTI results have been saved to {excel_file}")
-    
+    # Apply formatting after processing all files
+    apply_formatting(excel_file)
+    print(f"Formatting applied to {excel_file}")
+
     # Create distribution chart
     create_distribution_chart(excel_file)
+    print(f"Distribution chart added to {excel_file}")
+
+    print(f"All MBTI results have been saved to {excel_file}")
 
 
 def main():
