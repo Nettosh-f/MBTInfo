@@ -4,25 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/MBTInfo.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="first commit">
       <change afterPath="$PROJECT_DIR$/output/MBTI_Results.xlsx" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/output/asaf-solomon-267149-4ae2ac9c-005e-ef11-bdfd-6045bd04b01a_text.xlsx" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/output/nir-bensinai-MBTI_text.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/output/~$MBTI_Results.xlsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MBTInfo/consts.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MBTInfo/data_extractor.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MBTInfo/data_to_excel.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MBTInfo/main.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/MBTInfo/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -182,9 +167,20 @@
       <option name="presentableId" value="Default" />
       <updated>1745135163400</updated>
     </task>
+    <task id="LOCAL-00001" summary="first commit">
+      <option name="closed" value="true" />
+      <created>1745481337018</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1745481337018</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+    <MESSAGE value="first commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="first commit" />
   </component>
 </project>
