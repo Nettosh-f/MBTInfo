@@ -2,20 +2,11 @@ import re
 import os
 from datetime import datetime
 from consts import MBTI_TYPES
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 
 def parse_mbti_scores(line: str) -> dict:
-    """
-    Parse MBTI scores from a given line and return a dictionary.
 
-    Args:
-    line (str): A string containing MBTI scores in the format
-                "EXTRAVERSION | 11 INTUITION | 9 THINKING | 4 PERCEIVING | 11"
-
-    Returns:
-    dict: A dictionary with MBTI dimensions as keys and scores as values.
-    """
     # Use regex to find all pairs of MBTI dimension and score
     pairs = re.findall(r'(\w+)\s+\|\s+(\d+)', line)
 
@@ -24,16 +15,7 @@ def parse_mbti_scores(line: str) -> dict:
 
 
 def find_and_parse_mbti_scores(file_path: str) -> dict:
-    """
-    Search for MBTI scores in a given text file and return the parsed scores.
 
-    Args:
-    file_path (str): Path to the text file to search.
-
-    Returns:
-    dict: A dictionary with MBTI dimensions as keys and scores as values.
-          Returns an empty dictionary if no matching line is found.
-    """
     pattern = r'\b(EXTRAVERSION|INTUITION|THINKING|PERCEIVING)\s+\|\s+\d+'
 
     try:
@@ -62,7 +44,7 @@ def get_name(file_path: str) -> Optional[str]:
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             # Skip the first 9 lines
-            for _ in range(9):
+            for _ in range(8):
                 next(file, None)
             
             # Read the 10th line
@@ -74,19 +56,11 @@ def get_name(file_path: str) -> Optional[str]:
 
 
 def get_date(file_path: str) -> Optional[str]:
-    """
-    Get the date from the 11th line of the given file.
 
-    Args:
-    file_path (str): Path to the text file to read.
-
-    Returns:
-    Optional[str]: The content of the 11th line if it exists and is not empty, None otherwise.
-    """
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             # Skip the first 10 lines
-            for _ in range(10):
+            for _ in range(9):
                 next(file, None)
             
             # Read the 11th line
@@ -170,9 +144,7 @@ def collect_preferred_qualities(file_path: str) -> List[str]:
         words_to_remove = {'and', 'I', '|5', '|6', 'harmony', 'spontaneity', 'pole.', 'to', 'your'}
         filtered_qualities = [quality for quality in preferred_qualities if quality.lower() not in words_to_remove]
         filtered_qualities.pop(0)
-        for quality in preferred_qualities:
-            if quality.lower() in words_to_remove:
-                print("removed:", quality)
+
 
         preferred_qualities = filtered_qualities
 
@@ -203,9 +175,6 @@ def collect_midzone_qualities(file_path: str) -> List[str]:
                            'preference', 'many'}
         filtered_qualities = [quality for quality in midzone_qualities if quality.lower() not in words_to_remove]
         filtered_qualities.pop(0)
-        for quality in midzone_qualities:
-            if quality.lower() in words_to_remove:
-                print("removed:", quality)
 
         # Split qualities based on "-" and flatten the list
         split_qualities = [item.strip() for quality in filtered_qualities for item in quality.split('–')]
@@ -244,9 +213,6 @@ def collect_out_qualities(file_path: str) -> List[str]:
         words_to_remove = {'and', '|5', '|6', 'use.', 'spontaneity', 'preference'}
         filtered_qualities = [quality for quality in out_qualities if quality.lower() not in words_to_remove]
         filtered_qualities.pop(0)
-        for quality in out_qualities:
-            if quality.lower() in words_to_remove:
-                print("removed:", quality)
 
         # Remove duplicates while preserving order
         out_qualities = list(dict.fromkeys(filtered_qualities))
@@ -258,19 +224,26 @@ def collect_out_qualities(file_path: str) -> List[str]:
     return out_qualities
 
 
+def collect_qualities(file_path: str) -> Tuple[List[str], List[str], List[str]]:
+    preferred_qualities = collect_preferred_qualities(file_path)
+    midzone_qualities = collect_midzone_qualities(file_path)
+    out_qualities = collect_out_qualities(file_path)
+    return preferred_qualities, midzone_qualities, out_qualities
+
+
 if __name__ == "__main__":
-    test_file_path = r"F:\projects\MBTInfo\output\asaf-solomon-267149-4ae2ac9c-005e-ef11-bdfd-6045bd04b01a_text.txt"
-    result = find_and_parse_mbti_scores(test_file_path)
-    if result:
-        print("MBTI scores found:")
-        print(result)
-    else:
-        print("No MBTI scores found in the file.")
-    print(convert_scores_to_mbti_dict(result))
+    test_file_path = r"F:\projects\MBTInfo\output\textfiles\asaf-solomon-267149-4ae2ac9c-005e-ef11-bdfd-6045bd04b01a_text.txt"
+    # result = find_and_parse_mbti_scores(test_file_path)
+    # if result:
+    #     print("MBTI scores found:")
+    #     print(result)
+    # else:
+    #     print("No MBTI scores found in the file.")
+    # print(convert_scores_to_mbti_dict(result))
+    # print(get_all_info(test_file_path))
+    # preferred_qualities, midzone_qualities, out_qualities = collect_qualities(test_file_path)
+    # print("Preferred qualities:" + str(preferred_qualities))
+    # print("Midzone qualities:" + str(midzone_qualities))
+    # print("Out of preference qualities:" + str(out_qualities))
+    directory = r"F:\projects\MBTInfo\output"
     print(get_all_info(test_file_path))
-    preferred_qualities = collect_preferred_qualities(test_file_path)
-    print(preferred_qualities)
-    midzone_qualities = collect_midzone_qualities(test_file_path)
-    print(midzone_qualities)
-    out_of_preference_qualities = collect_out_qualities(test_file_path)
-    print(out_of_preference_qualities)
