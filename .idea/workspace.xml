@@ -4,11 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="added colors, pie chart">
-      <change afterPath="$PROJECT_DIR$/src/MBTInfo/formatting_xl.py" afterDir="false" />
+    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="added more colors">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MBTInfo/data_to_excel.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/data_to_excel.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MBTInfo/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,18 +22,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Nettosh-f"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Nettosh-f&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "git@github.com:Nettosh-f/MBTInfo.git",
-    "accountId": "9f3cb827-1737-4f10-97d3-3b9406adb2b3"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;git@github.com:Nettosh-f/MBTInfo.git&quot;,
+    &quot;accountId&quot;: &quot;9f3cb827-1737-4f10-97d3-3b9406adb2b3&quot;
   }
-}]]></component>
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
@@ -59,7 +56,7 @@
     "Python.utils.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "git-widget-placeholder": "main",
-    "last_opened_file_path": "F:/projects/MBTInfo/input"
+    "last_opened_file_path": "F:/projects/MBTInfo"
   }
 }]]></component>
   <component name="RecentsManager">
@@ -229,13 +226,22 @@
       <option name="project" value="LOCAL" />
       <updated>1745489133548</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="added more colors">
+      <option name="closed" value="true" />
+      <created>1745500774606</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1745500774606</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
     <MESSAGE value="first commit" />
     <MESSAGE value="added colors, pie chart" />
-    <option name="LAST_COMMIT_MESSAGE" value="added colors, pie chart" />
+    <MESSAGE value="added more colors" />
+    <option name="LAST_COMMIT_MESSAGE" value="added more colors" />
   </component>
 </project>
