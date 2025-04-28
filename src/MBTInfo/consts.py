@@ -32,6 +32,16 @@ FACETS = [
     "Methodical", "Emergent"
 ]
 
+MIDZONE_FACETS = [
+    "Initiating–Receiving", "Expressive–Contained", "Gregarious–Intimate",
+    "Active–Reflective", "Enthusiastic–Quiet", "Concrete–Abstract",
+    "Realistic–Imaginative", "Practical–Conceptual", "Experiential–Theoretical",
+    "Traditional–Original", "Logical–Empathetic", "Reasonable–Compassionate",
+    "Questioning–Accommodating", "Critical–Accepting", "Tough–Tender",
+    "Systematic–Casual", "Planful–Open-Ended", "Early Starting–Pressure-Prompted",
+    "Scheduled–Spontaneous", "Methodical–Emergent"
+]
+
 mbti_colors = {
     "ISTJ": "FFB3BA", "ISFJ": "BAFFC9", "INFJ": "BAE1FF", "INTJ": "FFDFBA",
     "ISTP": "FFFFBA", "ISFP": "FFB3FF", "INFP": "B3FFF9", "INTP": "FFB3B3",

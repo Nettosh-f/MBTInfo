@@ -4,8 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="added more colors">
+    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment=".">
+      <change afterPath="$PROJECT_DIR$/src/MBTInfo/create_section_sheets.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/MBTInfo/formatting.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/chart_creator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/chart_creator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/consts.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/consts.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/data_to_excel.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/data_to_excel.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/formatting_xl.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/formatting_xl.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,27 +54,28 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "Python.data_to_excel.executor": "Run",
-    "Python.extract_text.executor": "Run",
-    "Python.formatting_xl.executor": "Run",
-    "Python.gui.executor": "Run",
-    "Python.main.executor": "Run",
-    "Python.utils.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "F:/projects/MBTInfo"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;Python.data_to_excel.executor&quot;: &quot;Run&quot;,
+    &quot;Python.extract_text.executor&quot;: &quot;Run&quot;,
+    &quot;Python.formatting.executor&quot;: &quot;Run&quot;,
+    &quot;Python.formatting_xl.executor&quot;: &quot;Run&quot;,
+    &quot;Python.gui.executor&quot;: &quot;Run&quot;,
+    &quot;Python.main.executor&quot;: &quot;Run&quot;,
+    &quot;Python.utils.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;F:/projects/MBTInfo&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="F:\projects\MBTInfo\input" />
       <recent name="F:\projects\MBTInfo" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.formatting_xl">
+  <component name="RunManager" selected="Python.main">
     <configuration name="data_to_excel" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="MBTInfo" />
       <option name="ENV_FILES" value="" />
@@ -88,6 +98,28 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="formatting" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="MBTInfo" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/MBTInfo" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/MBTInfo/formatting.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
     <configuration name="formatting_xl" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="MBTInfo" />
       <option name="ENV_FILES" value="" />
@@ -102,28 +134,6 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/MBTInfo/formatting_xl.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="gui" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="MBTInfo" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/MBTInfo" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/MBTInfo/gui.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -178,11 +188,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.formatting_xl" />
         <item itemvalue="Python.main" />
-        <item itemvalue="Python.utils" />
-        <item itemvalue="Python.gui" />
+        <item itemvalue="Python.formatting" />
+        <item itemvalue="Python.formatting_xl" />
         <item itemvalue="Python.data_to_excel" />
+        <item itemvalue="Python.utils" />
       </list>
     </recent_temporary>
   </component>
@@ -234,7 +244,15 @@
       <option name="project" value="LOCAL" />
       <updated>1745500774606</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary=".">
+      <option name="closed" value="true" />
+      <created>1745732284264</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1745732284264</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -242,6 +260,7 @@
     <MESSAGE value="first commit" />
     <MESSAGE value="added colors, pie chart" />
     <MESSAGE value="added more colors" />
-    <option name="LAST_COMMIT_MESSAGE" value="added more colors" />
+    <MESSAGE value="." />
+    <option name="LAST_COMMIT_MESSAGE" value="." />
   </component>
 </project>

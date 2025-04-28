@@ -6,12 +6,12 @@ from collections import Counter
 from consts import mbti_colors
 
 
-def create_distribution_chart(workbook_path):
-    # Load the workbook
-    workbook = openpyxl.load_workbook(workbook_path)
-    
-    # Get the main sheet
-    main_sheet = workbook.active
+def create_distribution_chart(workbook):
+    # Get the 'MBTI Results' sheet
+    if 'MBTI Results' in workbook.sheetnames:
+        main_sheet = workbook['MBTI Results']
+    else:
+        main_sheet = workbook.active  # Fallback to the active sheet if 'MBTI Results' doesn't exist
     
     # Count MBTI types
     mbti_counts = Counter(cell.value for cell in main_sheet['C'][1:] if cell.value)
@@ -30,7 +30,7 @@ def create_distribution_chart(workbook_path):
         chart_sheet[f'B{row}'] = count
         if mbti_type in mbti_colors:
             chart_sheet[f'A{row}'].fill = PatternFill(start_color=mbti_colors[mbti_type],
-                                                      end_color=mbti_colors[mbti_type],
+                                                     end_color=mbti_colors[mbti_type],
                                                       fill_type="solid")
     # Create pie chart
     pie = PieChart()
@@ -69,10 +69,12 @@ def create_distribution_chart(workbook_path):
         adjusted_width = (max_length + 2)
         chart_sheet.column_dimensions[column_letter].width = adjusted_width
     
-    # Save the workbook
-    workbook.save(workbook_path)
-    print(f"Distribution chart added to {workbook_path}")
+    # No need to save the workbook here, as it will be saved in the main function
 
 if __name__ == "__main__":
     # For testing purposes
-    create_distribution_chart(r"F:\projects\MBTInfo\output\MBTI_Results.xlsx")
+    import openpyxl
+    workbook_path = r"F:\projects\MBTInfo\output\MBTI_Results.xlsx"
+    workbook = openpyxl.load_workbook(workbook_path)
+    create_distribution_chart(workbook)
+    workbook.save(workbook_path)

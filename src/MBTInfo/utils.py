@@ -1,7 +1,7 @@
 import re
 import os
 from datetime import datetime
-from consts import MBTI_TYPES
+from consts import MBTI_TYPES, FACETS, MIDZONE_FACETS
 from typing import Dict, Optional, List, Tuple
 
 
@@ -231,19 +231,106 @@ def collect_qualities(file_path: str) -> Tuple[List[str], List[str], List[str]]:
     return preferred_qualities, midzone_qualities, out_qualities
 
 
+def check_communication(file_path: str) -> list[str]:
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+            start_marker = "YOUR FACET RESULT COMMUNICATION STYLE ENHANCING YOUR STYLE"
+            end_marker = "|10"
+            communication_facets = []
+            
+            start_index = content.find(start_marker)
+            end_index = content.find(end_marker, start_index)
+            
+            if start_index != -1 and end_index != -1:
+                communication_content = content[start_index + len(start_marker):end_index]
+                lines = communication_content.split('\n')
+                facets_lower = [facet.lower() for facet in FACETS]
+                midzone_lower = [facet.lower() for facet in MIDZONE_FACETS]
+                for line in lines:
+                    words = line.strip().split()
+                    if words and words[0].lower() in (facets_lower + midzone_lower):
+                        communication_facets.append(words[0].lower())
+
+            filtered_facets = []
+            for facet in communication_facets:
+                if not any(facet in other_facet and facet != other_facet for other_facet in communication_facets):
+                    filtered_facets.append(facet)
+            
+            return filtered_facets
+    except Exception as e:
+        print(f"An error occurred while processing {file_path}: {str(e)}")
+        return []
+
+
+def check_managing_conflict(file_path: str) -> list[str]:
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+            start_marker = "YOUR FACET RESULT CONFLICT MANAGEMENT STYLE ENHANCING YOUR STYLE"
+            end_marker = "|13"
+            decision_facets = []
+            
+            start_index = content.find(start_marker)
+            end_index = content.find(end_marker, start_index)
+            
+            if start_index != -1 and end_index != -1:
+                decision_content = content[start_index + len(start_marker):end_index]
+                lines = decision_content.split('\n')
+                facets_lower = [facet.lower() for facet in FACETS]
+                midzone_lower = [facet.lower() for facet in MIDZONE_FACETS]
+                for line in lines:
+                    words = line.strip().split()
+                    if words and words[0].lower() in (facets_lower + midzone_lower):
+                        decision_facets.append(words[0].lower())
+
+            filtered_facets = []
+            for facet in decision_facets:
+                if not any(facet in other_facet and facet != other_facet for other_facet in decision_facets):
+                    filtered_facets.append(facet)
+            
+            return filtered_facets
+    except Exception as e:
+        print(f"An error occurred while processing {file_path}: {str(e)}")
+        return []
+
+
+def check_managing_change(file_path: str) -> list[str]:
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+            start_marker = "YOUR FACET RESULT CHANGE MANAGEMENT STYLE ENHANCING YOUR STYLE"
+            end_marker = "|12"
+            change_facets = []
+            
+            start_index = content.find(start_marker)
+            end_index = content.find(end_marker, start_index)
+            
+            if start_index != -1 and end_index != -1:
+                change_content = content[start_index + len(start_marker):end_index]
+                lines = change_content.split('\n')
+                facets_lower = [facet.lower() for facet in FACETS]
+                midzone_lower = [facet.lower() for facet in MIDZONE_FACETS]
+                for line in lines:
+                    words = line.strip().split()
+                    if words and words[0].lower() in (facets_lower + midzone_lower):
+                        change_facets.append(words[0].lower())
+
+            filtered_facets = []
+            for facet in change_facets:
+                if not any(facet in other_facet and facet != other_facet for other_facet in change_facets):
+                    filtered_facets.append(facet)
+            
+            return filtered_facets
+    except Exception as e:
+        print(f"An error occurred while processing {file_path}: {str(e)}")
+        return []
+
+
 if __name__ == "__main__":
     test_file_path = r"F:\projects\MBTInfo\output\textfiles\asaf-solomon-267149-4ae2ac9c-005e-ef11-bdfd-6045bd04b01a_text.txt"
-    # result = find_and_parse_mbti_scores(test_file_path)
-    # if result:
-    #     print("MBTI scores found:")
-    #     print(result)
-    # else:
-    #     print("No MBTI scores found in the file.")
-    # print(convert_scores_to_mbti_dict(result))
-    # print(get_all_info(test_file_path))
-    # preferred_qualities, midzone_qualities, out_qualities = collect_qualities(test_file_path)
-    # print("Preferred qualities:" + str(preferred_qualities))
-    # print("Midzone qualities:" + str(midzone_qualities))
-    # print("Out of preference qualities:" + str(out_qualities))
     directory = r"F:\projects\MBTInfo\output"
     print(get_all_info(test_file_path))
+    print(check_communication(test_file_path))
+    print(check_managing_change(test_file_path))
+    print(check_managing_conflict(test_file_path))

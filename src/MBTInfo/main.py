@@ -2,22 +2,24 @@ import os
 from data_to_excel import process_pdf_to_xl
 from data_extractor import extract_and_save_text
 from chart_creator import create_distribution_chart
-from formatting_xl import apply_formatting
+from formatting import format_xl
+from create_section_sheets import create_section_sheets
+import openpyxl as xl
 
 
 def process_files(input_directory, output_directory, output_filename):
     os.makedirs(input_directory, exist_ok=True)
     os.makedirs(output_directory, exist_ok=True)
-    
+
     # Create a 'textfiles' subdirectory in the output directory
     textfiles_directory = os.path.join(output_directory, 'textfiles')
     os.makedirs(textfiles_directory, exist_ok=True)
-    
+
     excel_file = os.path.join(output_directory, output_filename)
     if os.path.exists(excel_file):
         os.remove(excel_file)
         print(f"Deleted existing {excel_file}")
-    
+
     for file in os.listdir(input_directory):
         print(file)
         if file.endswith('.pdf'):
@@ -26,7 +28,8 @@ def process_files(input_directory, output_directory, output_filename):
             txt_path = os.path.join(textfiles_directory, txt_filename)
             extract_and_save_text(pdf_path, textfiles_directory)
             if os.path.exists(txt_path):
-                process_pdf_to_xl(txt_path, output_directory)
+                # Add 'MBTI Results' as the sheet name
+                process_pdf_to_xl(txt_path, output_directory, 'MBTI Results', output_filename)
                 print(f'Processed {file}')
             else:
                 print(f'Error: Text file not found for {file}')
@@ -34,14 +37,23 @@ def process_files(input_directory, output_directory, output_filename):
             print(f'Skipped {file} (not a PDF file)')
 
     # Apply formatting after processing all files
-    apply_formatting(excel_file)
+    format_xl(excel_file)
     print(f"Formatting applied to {excel_file}")
 
-    # Create distribution chart
-    create_distribution_chart(excel_file)
-    print(f"Distribution chart added to {excel_file}")
+    # Load the workbook
+    workbook = xl.load_workbook(excel_file)
 
-    print(f"All MBTI results have been saved to {excel_file}")
+    # Create distribution chart
+    create_distribution_chart(workbook)
+    print("Distribution chart added to workbook")
+
+    # Add section sheets to the main workbook
+    create_section_sheets(textfiles_directory, workbook)
+    print("Section sheets added to workbook")
+
+    # Save the workbook with all changes
+    workbook.save(excel_file)
+    print(f"All MBTI results, charts, and section sheets have been saved to {excel_file}")
 
 
 def main():
