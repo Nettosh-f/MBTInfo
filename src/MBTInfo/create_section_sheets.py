@@ -39,10 +39,12 @@ def _setup_sheet(sheet, title):
         cell = sheet.cell(row=3, column=col, value=header)
         cell.font = Font(bold=True)
 
+
 def _add_data_row(sheet, row, info, facets):
     data = [info['name'], info['date'], info['type']] + facets + [''] * (9 - len(facets))
     for col, value in enumerate(data, start=1):
         sheet.cell(row=row, column=col, value=value)
+
 
 def _create_table(sheet, last_row):
     table_ref = f"A3:L{last_row}"  # Updated to include all 12 columns

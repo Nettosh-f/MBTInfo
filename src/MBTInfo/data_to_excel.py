@@ -29,7 +29,6 @@ def process_pdf_to_xl(text_path, output_dir, result_sheet_name, output_filename)
     
     sections = ["Communicating", "Managing Change", "Managing Conflict"]
     headers.extend(sections)  # Add section headers without empty cells
-    print(headers)
     if os.path.exists(output_path):
         workbook = xl.load_workbook(filename=str(output_path))
         if result_sheet_name in workbook.sheetnames:

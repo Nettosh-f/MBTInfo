@@ -6,7 +6,7 @@ MBTI_TYPES = [
 ]
 
 MBTI_LETTERS = {
-    "E": "Extraversion", "I": "Introversion", "S": "Sensing", "N": "Intuition", "T": "Thinking", "F": "Feeling",
+    "E": "Extroversion", "I": "Introversion", "S": "Sensing", "N": "Intuition", "T": "Thinking", "F": "Feeling",
     "J": "Judging", "P": "Perceiving"}
 
 FACETS = [

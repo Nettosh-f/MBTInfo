@@ -1,18 +1,15 @@
 import os
 from data_to_excel import process_pdf_to_xl
 from data_extractor import extract_and_save_text
-from chart_creator import create_distribution_chart
+from chart_creator import create_distribution_charts
 from formatting import format_xl
 from create_section_sheets import create_section_sheets
 import openpyxl as xl
 
 
-def process_files(input_directory, output_directory, output_filename):
+def process_files(input_directory, output_directory, output_filename, textfiles_directory):
     os.makedirs(input_directory, exist_ok=True)
     os.makedirs(output_directory, exist_ok=True)
-
-    # Create a 'textfiles' subdirectory in the output directory
-    textfiles_directory = os.path.join(output_directory, 'textfiles')
     os.makedirs(textfiles_directory, exist_ok=True)
 
     excel_file = os.path.join(output_directory, output_filename)
@@ -43,9 +40,9 @@ def process_files(input_directory, output_directory, output_filename):
     # Load the workbook
     workbook = xl.load_workbook(excel_file)
 
-    # Create distribution chart
-    create_distribution_chart(workbook)
-    print("Distribution chart added to workbook")
+    # Create distribution charts
+    create_distribution_charts(workbook)
+    print("Distribution charts added to workbook")
 
     # Add section sheets to the main workbook
     create_section_sheets(textfiles_directory, workbook)
@@ -62,8 +59,46 @@ def main():
     input_directory = os.path.join(root_directory, 'input')
     output_directory = os.path.join(root_directory, 'output')
     output_filename = 'MBTI_Results.xlsx'
-    process_files(input_directory, output_directory, output_filename)
+    textfiles_directory = os.path.join(output_directory, 'textfiles')
+    process_files(input_directory, output_directory, output_filename, textfiles_directory)
 
+
+def create_pie_chart(chart_sheet, data_range, title):
+    pie = PieChart()
+    sheet_name = chart_sheet.title
+    labels = Reference(chart_sheet, range_string=f"{sheet_name}!{data_range.split(':')[0]}")
+    data = Reference(chart_sheet, range_string=f"{sheet_name}!{data_range}")
+    pie.add_data(data, titles_from_data=True)
+    pie.set_categories(labels)
+    pie.title = title
+    
+    # Add data labels
+    pie.dataLabels = openpyxl.chart.label.DataLabelList()
+    pie.dataLabels.showCatName = True
+    pie.dataLabels.showVal = True
+    pie.dataLabels.showPercent = True
+    
+    return pie
+
+def create_facet_chart(workbook, chart_sheet):
+    # ... (previous code remains the same)
+
+    # Create stacked bar chart
+    chart = BarChart()
+    chart.type = "bar"
+    chart.stacked = True
+    chart.title = "Facet Distribution"
+    chart.y_axis.title = "Facets"
+    chart.x_axis.title = "Count"
+    
+    sheet_name = chart_sheet.title
+    # Add data to chart
+    data = Reference(chart_sheet, min_col=2, min_row=start_row, max_row=start_row+20, max_col=4)
+    cats = Reference(chart_sheet, min_col=1, min_row=start_row+1, max_row=start_row+20)
+    chart.add_data(data, titles_from_data=True)
+    chart.set_categories(cats)
+
+    # ... (rest of the function remains the same)
 
 if __name__ == "__main__":
     main()
