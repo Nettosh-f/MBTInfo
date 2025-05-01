@@ -23,10 +23,7 @@ def create_distribution_charts(workbook):
     
     # Create dichotomy charts
     create_dichotomy_charts(chart_sheet)
-    
-    # Create facet chart
-    # create_facet_chart(workbook, chart_sheet)
-    
+
     # Adjust column widths
     adjust_column_widths(chart_sheet)
 
@@ -102,7 +99,7 @@ def create_dichotomy_charts(chart_sheet):
     pie_height = 6.5
 
     # Create E/I pie chart
-    pie_EI = create_dichotomy_pie_chart(chart_sheet, "Energy source - E/I", 41, 42, pie_width, pie_height)
+    pie_EI = create_dichotomy_pie_chart(chart_sheet, "Energy source - E/I", 42, 43, pie_width, pie_height)
     chart_sheet.add_chart(pie_EI, "J1")
 
     # Create S/N pie chart
@@ -149,54 +146,6 @@ def adjust_column_widths(chart_sheet):
                 pass
         adjusted_width = (max_length + 2)
         chart_sheet.column_dimensions[column_letter].width = adjusted_width
-
-
-# def create_facet_chart(workbook, chart_sheet):
-#     # Start from row 60 to leave space for previous charts
-#     start_row = 60
-#
-#     # Write headers
-#     headers = ["Facet", "In Preference", "Midzone", "Out of Preference"]
-#     for col, header in enumerate(headers, start=1):
-#         chart_sheet.cell(row=start_row, column=col, value=header).font = Font(bold=True)
-#
-#     # List of facets
-#     facets = [f"Facet {i}" for i in range(1, 21)]
-#
-#     # Write facet names and formulas
-#     for row, facet in enumerate(facets, start=start_row+1):
-#         chart_sheet.cell(row=row, column=1, value=facet)
-#         chart_sheet.cell(row=row, column=2, value=f'=COUNTIFS(Table1[{facet}], "In-Preference")')
-#         chart_sheet.cell(row=row, column=3, value=f'=COUNTIFS(Table1[{facet}], "Mid-Zone")')
-#         chart_sheet.cell(row=row, column=4, value=f'=COUNTIFS(Table1[{facet}], "Out-of-Preference")')
-#
-#     # Create stacked bar chart
-#     chart = BarChart()
-#     chart.type = "bar"
-#     chart.stacked = True
-#     chart.title = "Facet Distribution"
-#     chart.y_axis.title = "Facets"
-#     chart.x_axis.title = "Count"
-#
-#     # Add data to chart
-#     data = Reference(chart_sheet, min_col=2, min_row=start_row, max_row=start_row+20, max_col=4)
-#     cats = Reference(chart_sheet, min_col=1, min_row=start_row+1, max_row=start_row+20)
-#     chart.add_data(data, titles_from_data=True)
-#     chart.set_categories(cats)
-#
-#     # Customize series
-#     series_colors = ['00FF00', 'FFFF00', 'FF0000']  # Green, Yellow, Red
-#     for i, series in enumerate(chart.series):
-#         series.graphicalProperties.solidFill = series_colors[i]
-#
-#     # Reverse the y-axis to have Facet 1 at the top
-#     chart.y_axis.scaling.orientation = "maxMin"
-#
-#     # Add the chart to the sheet
-#     chart_sheet.add_chart(chart, "F60")
-#
-#     # Adjust column widths
-#     adjust_column_widths(chart_sheet)
 
 
 if __name__ == "__main__":

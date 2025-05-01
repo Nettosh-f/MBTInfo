@@ -1,0 +1,84 @@
+import openpyxl
+from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.styles import Font, Alignment
+from formatting import adjust_column_widths
+from collections import Counter
+
+
+def create_facet_table(workbook):
+    sheet_name = "Facet Table"
+    
+    # Check if the sheet already exists
+    if sheet_name in workbook.sheetnames:
+        # Remove the existing sheet
+        workbook.remove(workbook[sheet_name])
+    
+    # Create a new sheet
+    sheet = workbook.create_sheet(title=sheet_name)
+
+    # Define headers
+    headers = [
+        "Name", "Date", "Type",
+        "Appearing 3 times(1)", "Appearing 3 times(2)", "Appearing 3 times(3)",
+        "Appearing 2 times(1)", "Appearing 2 times(2)", "Appearing 2 times(3)", "Appearing 2 times(4)", "Appearing 2 times(5)",
+        "Appearing 1 time(1)", "Appearing 1 time(2)", "Appearing 1 time(3)", "Appearing 1 time(4)",
+        "Appearing 1 time(5)", "Appearing 1 time(6)", "Appearing 1 time(7)", "Appearing 1 time(8)", "Appearing 1 time(9)"
+    ]
+
+    # Write headers
+    for col, header in enumerate(headers, start=1):
+        cell = sheet.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True)
+
+    # Get the 'MBTI Results' sheet
+    mbti_results_sheet = workbook['MBTI Results']
+    max_row = mbti_results_sheet.max_row
+
+    # Process each row
+    for row in range(2, max_row + 1):
+        target_row = row  # Start from row 2 in the Facet Table
+
+        # Copy Name, Date, and Type
+        for col in range(1, 4):
+            sheet.cell(row=target_row, column=col, value=mbti_results_sheet.cell(row=row, column=col).value)
+
+        # Get facets from AZ to BZ
+        facets = [cell.value for cell in mbti_results_sheet[row][51:78] if cell.value]  # AZ is column 52
+
+        # Count facet occurrences
+        facet_counts = Counter(facets)
+
+        # Write facets in order: 3 timers, 2 timers, 1 timers
+        col = 4
+        for count in [3, 2, 1]:
+            facets_with_count = [facet for facet, c in facet_counts.items() if c == count]
+            for facet in facets_with_count:
+                sheet.cell(row=target_row, column=col, value=facet)
+                col += 1
+            
+            # Move to the next group of columns
+            if count == 3:
+                col = 7  # Move to "Appearing 2 times" columns
+            elif count == 2:
+                col = 12  # Move to "Appearing 1 time" columns
+
+    # Create table
+    table_ref = f"A1:T{max_row}"
+    table = Table(displayName="FacetTable", ref=table_ref)
+    style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
+                           showLastColumn=False, showRowStripes=True, showColumnStripes=False)
+    table.tableStyleInfo = style
+    sheet.add_table(table)
+
+    # Adjust column widths
+    adjust_column_widths(sheet)
+
+    return workbook
+
+
+if __name__ == "__main__":
+    # For testing purposes
+    workbook_path = r"F:\projects\MBTInfo\output\MBTI_Results.xlsx"
+    workbook = openpyxl.load_workbook(workbook_path)
+    create_facet_table(workbook)
+    workbook.save(workbook_path)

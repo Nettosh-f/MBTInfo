@@ -5,12 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="fixed alot">
+      <change afterPath="$PROJECT_DIR$/src/MBTInfo/create_facet_table.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/MBTInfo/chart_creator.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/chart_creator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MBTInfo/consts.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/consts.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MBTInfo/create_section_sheets.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/create_section_sheets.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MBTInfo/data_to_excel.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/data_to_excel.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/MBTInfo/gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/gui.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/formatting.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/formatting.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/MBTInfo/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -51,29 +49,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
-    &quot;Python.chart_creator.executor&quot;: &quot;Run&quot;,
-    &quot;Python.data_to_excel.executor&quot;: &quot;Run&quot;,
-    &quot;Python.extract_text.executor&quot;: &quot;Run&quot;,
-    &quot;Python.formatting.executor&quot;: &quot;Run&quot;,
-    &quot;Python.formatting_xl.executor&quot;: &quot;Run&quot;,
-    &quot;Python.gui.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.utils.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;F:/projects/MBTInfo&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "Python.chart_creator.executor": "Run",
+    "Python.create_facet_table.executor": "Run",
+    "Python.data_to_excel.executor": "Run",
+    "Python.extract_text.executor": "Run",
+    "Python.formatting.executor": "Run",
+    "Python.formatting_xl.executor": "Run",
+    "Python.gui.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.utils.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "F:/projects/MBTInfo"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="F:\projects\MBTInfo\input" />
       <recent name="F:\projects\MBTInfo" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.gui">
+  <component name="RunManager" selected="Shell Script.run.sh">
     <configuration name="chart_creator" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="MBTInfo" />
       <option name="ENV_FILES" value="" />
@@ -96,7 +95,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="formatting" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="create_facet_table" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="MBTInfo" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -109,29 +108,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/MBTInfo/formatting.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
-    <configuration name="formatting_xl" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="MBTInfo" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/MBTInfo" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/MBTInfo/formatting_xl.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/MBTInfo/create_facet_table.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -184,13 +161,28 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="run.sh" type="ShConfigurationType" temporary="true">
+      <option name="SCRIPT_TEXT" value="" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="$PROJECT_DIR$/run.sh" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="/bin/bash" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="true" />
+      <envs />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Shell Script.run.sh" />
         <item itemvalue="Python.gui" />
+        <item itemvalue="Python.create_facet_table" />
         <item itemvalue="Python.chart_creator" />
         <item itemvalue="Python.main" />
-        <item itemvalue="Python.formatting" />
-        <item itemvalue="Python.formatting_xl" />
       </list>
     </recent_temporary>
   </component>
@@ -266,7 +258,15 @@
       <option name="project" value="LOCAL" />
       <updated>1745834677323</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="fixed alot">
+      <option name="closed" value="true" />
+      <created>1746015860976</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1746015860976</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">

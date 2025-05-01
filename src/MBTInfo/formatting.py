@@ -2,20 +2,24 @@ import openpyxl as xl
 from openpyxl.styles import PatternFill, Color, Font
 from openpyxl.formatting.rule import ColorScaleRule, Rule, FormulaRule
 from openpyxl.styles.differential import DifferentialStyle
+from openpyxl.utils import get_column_letter
 from consts import mbti_colors
 
 
 def adjust_column_widths(sheet):
-    for column in sheet.columns:
+    for col in range(1, sheet.max_column + 1):
         max_length = 0
-        column_letter = column[0].column_letter
-        for cell in column:
+        column_letter = get_column_letter(col)
+        for row in range(1, sheet.max_row + 1):
+            cell = sheet.cell(row=row, column=col)
+            if isinstance(cell, xl.cell.cell.MergedCell):
+                continue
             try:
-                if cell.value is not None and len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
+                if cell.value:
+                    max_length = max(max_length, len(str(cell.value)))
             except:
                 pass
-        adjusted_width = (max_length + 2) if max_length > 0 else 10  # Default width if column is empty
+        adjusted_width = (max_length + 2) * 1.2
         sheet.column_dimensions[column_letter].width = adjusted_width
 
 

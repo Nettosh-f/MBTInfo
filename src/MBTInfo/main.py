@@ -4,6 +4,7 @@ from data_extractor import extract_and_save_text
 from chart_creator import create_distribution_charts
 from formatting import format_xl
 from create_section_sheets import create_section_sheets
+from create_facet_table import create_facet_table  # Add this import
 import openpyxl as xl
 
 
@@ -48,19 +49,54 @@ def process_files(input_directory, output_directory, output_filename, textfiles_
     create_section_sheets(textfiles_directory, workbook)
     print("Section sheets added to workbook")
 
+    # Create a facet table
+    create_facet_table(workbook)  # Remove the assignment
+    print("Facet table added to workbook")
+
+    # Create charts (this seems redundant, as we already created distribution charts)
+    # create_distribution_charts(workbook)  # Comment this out or remove it
+
     # Save the workbook with all changes
     workbook.save(excel_file)
     print(f"All MBTI results, charts, and section sheets have been saved to {excel_file}")
 
+    return workbook  # Return the workbook object
+
 
 def main():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    root_directory = os.path.dirname(os.path.dirname(current_dir))
-    input_directory = os.path.join(root_directory, 'input')
-    output_directory = os.path.join(root_directory, 'output')
-    output_filename = 'MBTI_Results.xlsx'
-    textfiles_directory = os.path.join(output_directory, 'textfiles')
-    process_files(input_directory, output_directory, output_filename, textfiles_directory)
+    input_directory = r"F:\projects\MBTInfo\input"
+    output_directory = r"F:\projects\MBTInfo\output"
+    result_sheet_name = "MBTI Results"
+    output_filename = "MBTI_Results.xlsx"
+    output_path = os.path.join(output_directory, output_filename)
+
+    # Process PDFs and create Excel file
+    for filename in os.listdir(input_directory):
+        if filename.endswith(".pdf"):
+            pdf_path = os.path.join(input_directory, filename)
+            text_path = extract_and_save_text(pdf_path, output_directory)
+            if text_path:
+                process_pdf_to_xl(text_path, output_directory, result_sheet_name, output_filename)
+
+    # Load the workbook
+    workbook = xl.load_workbook(output_path)
+
+    # Create section sheets
+    workbook = create_section_sheets(output_directory, workbook)
+
+    # Create facet table
+    workbook = create_facet_table(workbook)  # Add this line
+
+    # Create charts
+    workbook = create_distribution_charts(workbook)
+
+    # Save the workbook
+    workbook.save(output_path)
+
+    # Apply formatting
+    format_xl(output_path)
+
+    print(f"Processing complete. Results saved to {output_path}")
 
 
 def create_pie_chart(chart_sheet, data_range, title):
