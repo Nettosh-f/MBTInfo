@@ -62,6 +62,26 @@ def create_facet_table(workbook):
             elif count == 2:
                 col = 12  # Move to "Appearing 1 time" columns
 
+    # Check column F and move content from E to F if F is empty
+    for row in range(2, sheet.max_row + 1):
+        if sheet.cell(row=row, column=6).value is None:  # Column F is empty
+            e_value = sheet.cell(row=row, column=5).value
+            if e_value:
+                sheet.cell(row=row, column=6, value=e_value)
+                sheet.cell(row=row, column=5, value="")  # Clear cell E
+
+    # Check column K and move content from J to K if K is empty
+    for row in range(2, sheet.max_row + 1):
+        if sheet.cell(row=row, column=11).value is None:  # Column K is empty
+            j_value = sheet.cell(row=row, column=10).value
+            i_value = sheet.cell(row=row, column=9).value
+            h_value = sheet.cell(row=row, column=8).value
+            if j_value:
+                sheet.cell(row=row, column=11, value=j_value)
+                sheet.cell(row=row, column=10, value=i_value)
+                sheet.cell(row=row, column=9, value=h_value)
+                sheet.cell(row=row, column=8, value="")
+
     # Create table
     table_ref = f"A1:T{max_row}"
     table = Table(displayName="FacetTable", ref=table_ref)

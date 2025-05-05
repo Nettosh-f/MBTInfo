@@ -34,10 +34,6 @@ def process_files(input_directory, output_directory, output_filename, textfiles_
         else:
             print(f'Skipped {file} (not a PDF file)')
 
-    # Apply formatting after processing all files
-    format_xl(excel_file)
-    print(f"Formatting applied to {excel_file}")
-
     # Load the workbook
     workbook = xl.load_workbook(excel_file)
 
@@ -53,13 +49,16 @@ def process_files(input_directory, output_directory, output_filename, textfiles_
     create_facet_table(workbook)  # Remove the assignment
     print("Facet table added to workbook")
 
+
     # Create charts (this seems redundant, as we already created distribution charts)
     # create_distribution_charts(workbook)  # Comment this out or remove it
 
     # Save the workbook with all changes
     workbook.save(excel_file)
     print(f"All MBTI results, charts, and section sheets have been saved to {excel_file}")
-
+    # Apply formatting after processing all files
+    format_xl(excel_file)
+    print(f"Formatting applied to {excel_file}")
     return workbook  # Return the workbook object
 
 
