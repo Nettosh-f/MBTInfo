@@ -659,6 +659,7 @@ def create_external_internal_charts(data_sheet, chart_sheet):
     chart_sheet.add_chart(external_pie, "P29")
 
 
+
 def create_facet_bar_charts(data_sheet, chart_sheet):
     # Create pie charts for facet dichotomies, organized in rows
 
