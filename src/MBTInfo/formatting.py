@@ -3,6 +3,7 @@ from openpyxl.styles import PatternFill, Color, Font
 from openpyxl.formatting.rule import ColorScaleRule, Rule, FormulaRule
 from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.utils import get_column_letter
+from openpyxl.worksheet.cell_range import CellRange
 from consts import mbti_colors, FACETS, MIDZONE_FACETS
 
 
@@ -26,7 +27,7 @@ def adjust_column_widths(sheet):
 def format_xl(file_path):
     workbook = xl.load_workbook(file_path)
     sheet = workbook.active
-    adjust_column_widths(sheet)
+    # adjust_column_widths(sheet)
     format_headers(sheet)
 
     # colors:
@@ -46,9 +47,11 @@ def format_xl(file_path):
                 stopIfTrue=False,
                 dxf=DifferentialStyle(fill=PatternFill(start_color=color, end_color=color, fill_type="solid"))
             )
-            # Apply the rule to the entire sheet
-            mbti_range = sheet.dimensions
-            sheet.conditional_formatting.add(mbti_range, mbti_rule)
+            # Apply the rule to the entire sheet using a valid range
+            try:
+                sheet.conditional_formatting.add("A1:Z1000", mbti_rule)
+            except Exception as e:
+                print(f"Warning: Could not apply MBTI formatting to sheet {sheet.title}: {str(e)}")
         print(f"MBTI rules applied to sheet: {sheet.title}")
 
     # The rest of the formatting applies only to the active sheet
@@ -56,32 +59,60 @@ def format_xl(file_path):
     print(f"Applying additional formatting to active sheet: {sheet.title}")
 
     # handling qualities scores
-    scores_range = f"D2:K{sheet.max_row}"
-    formula = 'OR(D2<1,D2>30)'
-    zero_rule = FormulaRule(formula=[formula], stopIfTrue=True, fill=black_fill)
-    sheet.conditional_formatting.add(scores_range, zero_rule)
-    color_scale_rule = ColorScaleRule(
-        start_type='num', start_value=1, start_color=light_green,
-        mid_type='num', mid_value=15, mid_color=light_yellow,
-        end_type='num', end_value=30, end_color=light_red,
-    )
-    sheet.conditional_formatting.add(scores_range, color_scale_rule)
+    try:
+        max_row = sheet.max_row
+        scores_range = f"D2:K{max_row}"
+        formula = 'OR(D2<1,D2>30)'
+        zero_rule = FormulaRule(formula=[formula], stopIfTrue=True, fill=black_fill)
+        sheet.conditional_formatting.add(scores_range, zero_rule)
+        
+        color_scale_rule = ColorScaleRule(
+            start_type='num', start_value=1, start_color=light_green,
+            mid_type='num', mid_value=15, mid_color=light_yellow,
+            end_type='num', end_value=30, end_color=light_red,
+        )
+        sheet.conditional_formatting.add(scores_range, color_scale_rule)
+    except Exception as e:
+        print(f"Warning: Could not apply score formatting: {str(e)}")
 
     # handling in-preference formatting
     inpref_fill = PatternFill(start_color='FFC0CEE6', end_color='FFC0CEE6', fill_type='solid')
     midzone_fill = PatternFill(start_color='FFD6E1C5', end_color='FFD6E1C5', fill_type='solid')
     outofpref_fill = PatternFill(start_color='FFCC66', end_color='FFCC66', fill_type='solid')
     dash_fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
-    facets_range = f"L2:AY{sheet.max_row}"
-    inpref_rule = FormulaRule(formula=['L2="IN-PREF"'], fill=inpref_fill)
-    midzone_rule = FormulaRule(formula=['L2="MIDZONE"'], fill=midzone_fill)
-    outofpref_rule = FormulaRule(formula=['L2="OUT-OF-PREF"'], fill=outofpref_fill)
-    dash_rule = FormulaRule(formula=['L2="-"'], fill=dash_fill)
-    sheet.conditional_formatting.add(facets_range, inpref_rule)
-    sheet.conditional_formatting.add(facets_range, midzone_rule)
-    sheet.conditional_formatting.add(facets_range, outofpref_rule)
-    sheet.conditional_formatting.add(facets_range, dash_rule)
-    facet_format(sheet, workbook)
+    
+    # Apply formatting to each column individually to avoid MultiCellRange issues
+    for col_idx in range(12, 51):  # Columns L to AY
+        col_letter = get_column_letter(col_idx)
+        facets_range = f"{col_letter}2:{col_letter}{max_row}"
+        try:
+            inpref_rule = FormulaRule(formula=[f'{col_letter}2="IN-PREF"'], fill=inpref_fill)
+            midzone_rule = FormulaRule(formula=[f'{col_letter}2="MIDZONE"'], fill=midzone_fill)
+            outofpref_rule = FormulaRule(formula=[f'{col_letter}2="OUT-OF-PREF"'], fill=outofpref_fill)
+            dash_rule = FormulaRule(formula=[f'{col_letter}2="-"'], fill=dash_fill)
+            
+            sheet.conditional_formatting.add(facets_range, inpref_rule)
+            sheet.conditional_formatting.add(facets_range, midzone_rule)
+            sheet.conditional_formatting.add(facets_range, outofpref_rule)
+            sheet.conditional_formatting.add(facets_range, dash_rule)
+        except Exception as e:
+            print(f"Warning: Could not apply formatting to column {col_letter}: {str(e)}")
+    
+    try:
+        facet_format(sheet, workbook)
+    except Exception as e:
+        print(f"Warning: Could not apply facet formatting: {str(e)}")
+
+    if "Dashboard" in workbook.sheetnames:
+        dashboard_sheet = workbook['Dashboard']
+        column_list = ['B', 'J', 'U', 'AF']
+        row_list = [2, 30, 21, 8, 29]
+        fill_color = black_fill
+        create_dashboard_frame(dashboard_sheet, column_list, row_list, fill_color)
+        print(f"Applying dashboard formatting to sheet: {dashboard_sheet.title}")
+    else:
+        print("Warning: Dashboard sheet not found.")
+    
     workbook.save(file_path)
     print(f"Formatting applied to {file_path} successfully.")
 
@@ -150,6 +181,7 @@ def facet_format(main_sheet, workbook):
             for facet, pref in facet_prefs.items():
                 table_sheet.conditional_formatting.add(table_range, rules[pref][facet])
 
+
 def format_headers(sheet):
     sheet['C1'].fill = PatternFill(start_color='99CCFF', end_color='99CCFF', fill_type='solid')
     for col in range(4, 12):  # Columns D to K
@@ -164,6 +196,30 @@ def format_headers(sheet):
         sheet.cell(row=1, column=col).fill = PatternFill(start_color='FFCC66', end_color='FFCC66', fill_type='solid')
     for col in range(70, 79):  # Columns BR to BZ
         sheet.cell(row=1, column=col).fill = PatternFill(start_color='999999', end_color='999999', fill_type='solid')
+
+
+def create_dashboard_frame(chart_sheet, border_columns, border_rows, fill_color):
+    """
+    Create a frame for the dashboard by adjusting specific rows and columns
+    to create visual separation between chart sections.
+    """
+    # Set up border columns (create thin columns as visual separators)
+    for col in border_columns:
+        chart_sheet.column_dimensions[col].width = 1
+        print(f"Adjusting width of column {col} to 1")
+
+    for row in border_rows:
+        chart_sheet.row_dimensions[row].height = 10
+        print(f"Adjusting height of row {row} to 10")
+
+    # Set background color for border elements to create a visual frame
+    light_gray_fill = PatternFill(start_color='EEEEEE', end_color='EEEEEE', fill_type='solid')
+
+    # Apply fill to border columns
+    for col in border_columns:
+        for row in range(2, 31):  # Adjust range as needed based on your dashboard size
+            cell = chart_sheet[f"{col}{row}"]
+            cell.fill = fill_color
 
 
 if __name__ == "__main__":

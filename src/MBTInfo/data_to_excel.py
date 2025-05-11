@@ -29,20 +29,22 @@ def process_pdf_to_xl(text_path, output_dir, result_sheet_name, output_filename)
     
     sections = ["Communicating", "Managing Change", "Managing Conflict"]
     headers.extend(sections)  # Add section headers without empty cells
+    
+    # Calculate the actual number of columns needed
+    actual_columns = len(headers)
+    # Add extra columns for the section data (8 empty cells after each section header)
+    actual_columns += 8 * len(sections)
+    
     if os.path.exists(output_path):
         workbook = xl.load_workbook(filename=str(output_path))
         if result_sheet_name in workbook.sheetnames:
             sheet = workbook[result_sheet_name]
-            if 'Table1' in sheet.tables:
-                # Table exists, find the last empty row
-                last_row = sheet.max_row
-                while last_row > 1 and all(cell.value is None for cell in sheet[last_row]):
-                    last_row -= 1
-                last_row += 1  # Move to the next empty row
-            else:
-                # Table doesn't exist, set up headers
-                _setup_headers(sheet, headers, sections)
-                last_row = 2  # Start data from the second row
+            
+            # Find the last non-empty row
+            last_row = sheet.max_row
+            while last_row > 1 and all(cell.value is None for cell in sheet[last_row]):
+                last_row -= 1
+            last_row += 1  # Move to the next empty row
         else:
             sheet = workbook.create_sheet(result_sheet_name)
             _setup_headers(sheet, headers, sections)
@@ -77,18 +79,31 @@ def process_pdf_to_xl(text_path, output_dir, result_sheet_name, output_filename)
     for col, value in enumerate(data, start=1):
         sheet.cell(row=last_row, column=col, value=value if value else '')
 
-    # Update the table range to include all columns up to the last column
-    last_column = xl.utils.get_column_letter(sheet.max_column)
-    table_range = f"A1:{last_column}{sheet.max_row}"  # Start from first row
+    # Update or create the table
+    last_column = xl.utils.get_column_letter(actual_columns)
+    table_range = f"A1:{last_column}{sheet.max_row}"
+    
+    # If table exists, update its reference; otherwise create a new one
     if 'Table1' in sheet.tables:
-        sheet.tables['Table1'].ref = table_range
+        # Store the table style before removing
+        old_table = sheet.tables['Table1']
+        style_info = old_table.tableStyleInfo
+        
+        # Remove the old table
+        del sheet.tables['Table1']
+        
+        # Create a new table with the updated range but same style
+        tab = Table(displayName="Table1", ref=table_range)
+        tab.tableStyleInfo = style_info
+        sheet.add_table(tab)
     else:
+        # Create a new table
         tab = Table(displayName="Table1", ref=table_range)
         style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
                                showLastColumn=False, showRowStripes=True, showColumnStripes=True)
         tab.tableStyleInfo = style
         sheet.add_table(tab)
-
+    
     workbook.save(filename=str(output_path))
     return output_path
 

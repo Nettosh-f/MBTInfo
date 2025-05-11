@@ -327,8 +327,33 @@ def check_managing_change(file_path: str) -> list[str]:
         return []
 
 
+def reorder_sheets(workbook):
+    """Reorder sheets to put Dashboard first, followed by main data sheet"""
+    # Get the current sheet names
+    sheet_names = workbook.sheetnames
+
+    # Define the desired order - Dashboard first, then Data, then others
+    desired_order = []
+
+    # Add Dashboard if it exists
+    if 'Dashboard' in sheet_names:
+        desired_order.append('Dashboard')
+
+    # Add Data if it exists
+    if 'Data' in sheet_names:
+        desired_order.append('Data')
+
+    # Add any other sheets in their original order
+    for sheet_name in sheet_names:
+        if sheet_name not in desired_order:
+            desired_order.append(sheet_name)
+
+    # Reorder the sheets
+    workbook._sheets = [workbook[sheet_name] for sheet_name in desired_order]
+
+
 if __name__ == "__main__":
-    test_file_path = r"F:\projects\MBTInfo\output\textfiles\asaf-solomon-267149-4ae2ac9c-005e-ef11-bdfd-6045bd04b01a_text.txt"
+    test_file_path = r"F:\projects\MBTInfo\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
     directory = r"F:\projects\MBTInfo\output"
     print(get_all_info(test_file_path))
     print(check_communication(test_file_path))

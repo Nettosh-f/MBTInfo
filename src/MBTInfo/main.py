@@ -6,6 +6,7 @@ from formatting import format_xl
 from create_section_sheets import create_section_sheets
 from create_facet_table import create_facet_table  # Add this import
 import openpyxl as xl
+from utils import reorder_sheets
 
 
 def process_files(input_directory, output_directory, output_filename, textfiles_directory):
@@ -49,15 +50,12 @@ def process_files(input_directory, output_directory, output_filename, textfiles_
     create_facet_table(workbook)  # Remove the assignment
     print("Facet table added to workbook")
 
-
-    # Create charts (this seems redundant, as we already created distribution charts)
-    # create_distribution_charts(workbook)  # Comment this out or remove it
-
     # Save the workbook with all changes
     workbook.save(excel_file)
     print(f"All MBTI results, charts, and section sheets have been saved to {excel_file}")
     # Apply formatting after processing all files
     format_xl(excel_file)
+
     print(f"Formatting applied to {excel_file}")
     return workbook  # Return the workbook object
 
@@ -95,6 +93,7 @@ def main():
     # Apply formatting
     format_xl(output_path)
 
+    reorder_sheets(output_path)
     print(f"Processing complete. Results saved to {output_path}")
 
 
