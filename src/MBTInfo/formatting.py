@@ -27,7 +27,8 @@ def adjust_column_widths(sheet):
 def format_xl(file_path):
     workbook = xl.load_workbook(file_path)
     sheet = workbook.active
-    # adjust_column_widths(sheet)
+    if sheet.title == 'MBTI Results':
+        adjust_column_widths(sheet)
     format_headers(sheet)
 
     # colors:
@@ -106,7 +107,7 @@ def format_xl(file_path):
     if "Dashboard" in workbook.sheetnames:
         dashboard_sheet = workbook['Dashboard']
         column_list = ['B', 'J', 'U', 'AF']
-        row_list = [2, 30, 21, 8, 29]
+        row_list = [2, 21, 8, 28, 29, 45]
         fill_color = black_fill
         create_dashboard_frame(dashboard_sheet, column_list, row_list, fill_color)
         print(f"Applying dashboard formatting to sheet: {dashboard_sheet.title}")
@@ -212,14 +213,25 @@ def create_dashboard_frame(chart_sheet, border_columns, border_rows, fill_color)
         chart_sheet.row_dimensions[row].height = 10
         print(f"Adjusting height of row {row} to 10")
 
-    # Set background color for border elements to create a visual frame
-    light_gray_fill = PatternFill(start_color='EEEEEE', end_color='EEEEEE', fill_type='solid')
+    range_frame = f"B2:AF45"
+    start_col, start_row, end_col, end_row = xl.utils.range_boundaries(range_frame)
+    print(f"Applying fill to range {range_frame}")
 
-    # Apply fill to border columns
-    for col in border_columns:
-        for row in range(2, 31):  # Adjust range as needed based on your dashboard size
-            cell = chart_sheet[f"{col}{row}"]
+    for row in range(start_row, end_row + 1):
+        for col_idx in range(start_col, end_col + 1):
+            col_letter = get_column_letter(col_idx)
+            cell = chart_sheet[f"{col_letter}{row}"]
             cell.fill = fill_color
+
+    # white_font = Font(color="FFFFFF")
+    # diff_style = DifferentialStyle(font=white_font)
+    # white_font_rule = FormulaRule(formula=["TRUE"], stopIfTrue=False, dxf=diff_style)
+    # chart_sheet.conditional_formatting.add('V30:AE44', white_font_rule)
+    # chart_sheet['V31'].fill = PatternFill(patternType="solid", fgColor="#4F81BD")
+    # chart_sheet['V32'].fill = PatternFill(patternType="solid", fgColor="#C0504D")
+    # chart_sheet['V33'].fill = PatternFill(patternType="solid", fgColor="#9BBB59")
+    # chart_sheet['V34'].fill = PatternFill(patternType="solid", fgColor="#8064A2")
+    # chart_sheet['V35'].fill = PatternFill(patternType="solid", fgColor="#4BACC6")
 
 
 if __name__ == "__main__":

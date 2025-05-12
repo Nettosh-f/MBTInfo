@@ -4,8 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="9.5.2025">
+    <list default="true" id="e5c909f3-e762-4378-847d-ccb24f40157e" name="Changes" comment="12.5.2025">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/formatting.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/formatting.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/MBTInfo/gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/MBTInfo/gui.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -309,7 +311,31 @@
       <option name="project" value="LOCAL" />
       <updated>1746972152097</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="11.5.2025">
+      <option name="closed" value="true" />
+      <created>1746973883968</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1746973883968</updated>
+    </task>
+    <task id="LOCAL-00014" summary="11.5.2025">
+      <option name="closed" value="true" />
+      <created>1746973894167</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1746973894167</updated>
+    </task>
+    <task id="LOCAL-00015" summary="12.5.2025">
+      <option name="closed" value="true" />
+      <created>1747075262223</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1747075262223</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -322,6 +348,8 @@
     <MESSAGE value="added facet. .sh activation script." />
     <MESSAGE value="added ext/int tables, formatting for all sheets." />
     <MESSAGE value="9.5.2025" />
-    <option name="LAST_COMMIT_MESSAGE" value="9.5.2025" />
+    <MESSAGE value="11.5.2025" />
+    <MESSAGE value="12.5.2025" />
+    <option name="LAST_COMMIT_MESSAGE" value="12.5.2025" />
   </component>
 </project>

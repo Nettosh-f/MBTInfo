@@ -3,8 +3,10 @@ from tkinter import ttk, filedialog, messagebox
 import os
 import subprocess
 import sys
+import threading
 from main import process_files
 from personal_report import generate_personal_report
+
 
 class MBTIGUI:
     def __init__(self, master):
@@ -20,7 +22,7 @@ class MBTIGUI:
         self.input_dir = None
         self.master = master
         master.title("MBTI Processor")
-        master.geometry("600x300")  # Increased height to accommodate tabs
+        master.geometry("650x300")  # Increased height to accommodate tabs
         master.configure(bg='#f0f0f0')  # Set background color
 
         # Set the theme
@@ -252,50 +254,76 @@ class MBTIGUI:
                     counter += 1
                 output_filename = os.path.basename(output_path)
 
-        try:
-            workbook = process_files(input_dir, output_dir, output_filename, textfiles_dir)
-            
-            # Ensure proper sheet ordering
-            try:
-                from chart_creator import reorder_sheets
-                import openpyxl as xl
-                workbook = xl.load_workbook(output_path)
-                reorder_sheets(workbook)
-                workbook.save(output_path)
-            except Exception as sheet_error:
-                # Log the specific error but continue execution
-                print(f"Warning: Could not reorder sheets: {str(sheet_error)}")
-                
-            messagebox.showinfo("Success", f"Processing complete. Results saved to {output_path}")
+        # Show loading animation
+        loading_window, progress_bar = self.show_loading_animation(
+            title="Processing Files",
+            message="Processing MBTI files. This may take a few moments..."
+        )
 
-            # Ask if the user wants to open the file
-            if messagebox.askyesno("Open File", "Would you like to open the file?"):
+        # Define the processing function
+        def process_thread():
+            try:
+                workbook = process_files(input_dir, output_dir, output_filename, textfiles_dir)
+
+                # Ensure proper sheet ordering
                 try:
-                    os.startfile(output_path)  # For Windows
-                except AttributeError:
-                    # For non-Windows systems
-                    opener = "open" if sys.platform == "darwin" else "xdg-open"
-                    subprocess.call([opener, output_path])
-        except Exception as e:
-            # Add more detailed error information
-            import traceback
-            error_details = traceback.format_exc()
-            print(f"Error details: {error_details}")
-            
-            # Check if the file was created despite the error
-            if os.path.exists(output_path):
-                if messagebox.askyesno("Partial Success", 
-                                      f"The file was created but there were some formatting errors.\n\n"
-                                      f"Would you like to open the file anyway?"):
-                    try:
-                        os.startfile(output_path)  # For Windows
-                    except AttributeError:
-                        # For non-Windows systems
-                        opener = "open" if sys.platform == "darwin" else "xdg-open"
-                        subprocess.call([opener, output_path])
-            else:
-                messagebox.showerror("Error", f"An error occurred: {str(e)}\n\nPlease check the console for more details.")
-            messagebox.showerror("Error", f"An error occurred: {str(e)}\n\nPlease check the console for more details.")
+                    from chart_creator import reorder_sheets
+                    import openpyxl as xl
+                    workbook = xl.load_workbook(output_path)
+                    reorder_sheets(workbook)
+                    workbook.save(output_path)
+                except Exception as sheet_error:
+                    # Log the specific error but continue execution
+                    print(f"Warning: Could not reorder sheets: {str(sheet_error)}")
+
+                # Close the loading window
+                self.master.after(0, loading_window.destroy)
+
+                # Show success message
+                self.master.after(100, lambda: messagebox.showinfo("Success",
+                                                                   f"Processing complete. Results saved to {output_path}"))
+
+                # Ask if the user wants to open the file
+                def ask_open_file():
+                    if messagebox.askyesno("Open File", "Would you like to open the file?"):
+                        try:
+                            os.startfile(output_path)  # For Windows
+                        except AttributeError:
+                            # For non-Windows systems
+                            opener = "open" if sys.platform == "darwin" else "xdg-open"
+                            subprocess.call([opener, output_path])
+
+                self.master.after(200, ask_open_file)
+
+            except Exception as e:
+                # Close the loading window
+                self.master.after(0, loading_window.destroy)
+
+                # Add more detailed error information
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"Error details: {error_details}")
+
+                # Check if the file was created despite the error
+                if os.path.exists(output_path):
+                    def show_partial_success():
+                        if messagebox.askyesno("Partial Success",
+                                               f"The file was created but there were some formatting errors.\n\n"
+                                               f"Would you like to open the file anyway?"):
+                            try:
+                                os.startfile(output_path)  # For Windows
+                            except AttributeError:
+                                # For non-Windows systems
+                                opener = "open" if sys.platform == "darwin" else "xdg-open"
+                                subprocess.call([opener, output_path])
+
+                    self.master.after(100, show_partial_success)
+                else:
+                    self.master.after(100, lambda: messagebox.showerror("Error",
+                                                                        f"An error occurred: {str(e)}\n\nPlease check the console for more details."))
+
+        # Start the processing thread
+        threading.Thread(target=process_thread, daemon=True).start()
 
     def process_personal(self):
         input_file = self.personal_input_file.get()
@@ -330,27 +358,54 @@ class MBTIGUI:
                     counter += 1
                 output_filename = os.path.basename(output_path)
 
-        try:
-            # Create textfiles directory if it doesn't exist
-            textfiles_dir = os.path.join(self.project_root, 'output', 'textfiles')
-            os.makedirs(textfiles_dir, exist_ok=True)
+        # Show loading animation
+        loading_window, progress_bar = self.show_loading_animation(
+            title="Processing Personal Report",
+            message="Generating personal MBTI report. Please wait..."
+        )
 
-            # Import the personal_report module
-            from personal_report import generate_personal_report
+        def process_thread():
+            try:
+                # Create textfiles directory if it doesn't exist
+                textfiles_dir = os.path.join(self.project_root, 'output', 'textfiles')
+                os.makedirs(textfiles_dir, exist_ok=True)
 
-            # Generate the personal report
-            output_path = generate_personal_report(input_file, output_dir, output_filename)
+                # Generate the personal report
+                final_output_path = generate_personal_report(input_file, output_dir, output_filename)
 
-            # Show success message
-            messagebox.showinfo("Success", f"Personal MBTI report generated successfully!\n\nSaved to: {output_path}")
+                # Close the loading window
+                self.master.after(0, loading_window.destroy)
 
-            # Open the generated file
-            if os.path.exists(output_path):
-                import subprocess
-                os.startfile(output_path) if os.name == 'nt' else subprocess.call(('open', output_path))
+                # Show success message
+                self.master.after(100, lambda: messagebox.showinfo("Success",
+                                                                   f"Personal MBTI report generated successfully!\n\nSaved to: {final_output_path}"))
 
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+                # Open the generated file
+                def open_file():
+                    if os.path.exists(final_output_path):
+                        try:
+                            os.startfile(final_output_path)  # For Windows
+                        except AttributeError:
+                            # For non-Windows systems
+                            opener = "open" if sys.platform == "darwin" else "xdg-open"
+                            subprocess.call([opener, final_output_path])
+
+                self.master.after(200, open_file)
+
+            except Exception as e:
+                # Close the loading window
+                self.master.after(0, loading_window.destroy)
+
+                # Add more detailed error information
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"Error details: {error_details}")
+
+                self.master.after(100, lambda: messagebox.showerror("Error",
+                                                                    f"An error occurred: {str(e)}\n\nPlease check the console for more details."))
+
+        # Start the processing thread
+        threading.Thread(target=process_thread, daemon=True).start()
 
     def process_dual(self):
         first_input_file = self.dual_first_input_file.get()
@@ -394,24 +449,90 @@ class MBTIGUI:
                     counter += 1
                 output_filename = os.path.basename(output_path)
 
-        try:
-            # Create textfiles directory if it doesn't exist
-            textfiles_dir = os.path.join(self.project_root, 'output', 'textfiles')
-            os.makedirs(textfiles_dir, exist_ok=True)
+        # Show loading animation
+        loading_window, progress_bar = self.show_loading_animation(
+            title="Processing Dual Report",
+            message="Generating dual MBTI comparison report. Please wait..."
+        )
 
-            # TODO: Implement dual report generation
-            # For now, just show a message
-            first_name = os.path.basename(first_input_file)
-            second_name = os.path.basename(second_input_file)
-            messagebox.showinfo("Not Implemented",
-                                f"Dual report generation for {first_name} and {second_name} is not yet implemented.")
+        def process_thread():
+            try:
+                # Create textfiles directory if it doesn't exist
+                textfiles_dir = os.path.join(self.project_root, 'output', 'textfiles')
+                os.makedirs(textfiles_dir, exist_ok=True)
 
-            # When implemented, it would be something like:
-            # process_dual_report(first_input_file, second_input_file, output_dir, output_filename)
+                # TODO: Implement dual report generation
+                # For now, just simulate processing time
+                import time
+                time.sleep(2)  # Simulate processing time
 
-        except Exception as e:
-            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+                # Close the loading window
+                self.master.after(0, loading_window.destroy)
 
+                # Show not implemented message
+                first_name = os.path.basename(first_input_file)
+                second_name = os.path.basename(second_input_file)
+                self.master.after(100, lambda: messagebox.showinfo("Not Implemented",
+                                                                   f"Dual report generation for {first_name} and {second_name} is not yet implemented."))
+
+            except Exception as e:
+                # Close the loading window
+                self.master.after(0, loading_window.destroy)
+
+                # Add more detailed error information
+                import traceback
+                error_details = traceback.format_exc()
+                print(f"Error details: {error_details}")
+
+                self.master.after(100, lambda: messagebox.showerror("Error",
+                                                                    f"An error occurred: {str(e)}\n\nPlease check the console for more details."))
+
+        # Start the processing thread
+        threading.Thread(target=process_thread, daemon=True).start()
+
+    def show_loading_animation(self, title="Processing", message="Please wait..."):
+        """
+        Shows a loading window with a progress bar
+        Returns the loading window and progress bar objects
+        """
+        # Create a new toplevel window
+        loading_window = tk.Toplevel(self.master)
+        loading_window.title(title)
+        loading_window.geometry("300x180")
+        loading_window.resizable(False, False)
+        loading_window.grab_set()  # Make it modal
+
+        # Remove window decorations for cleaner look
+        loading_window.overrideredirect(True)
+
+        # Center the window
+        loading_window.update_idletasks()
+        width = loading_window.winfo_width()
+        height = loading_window.winfo_height()
+        x = (loading_window.winfo_screenwidth() // 2) - (width // 2)
+        y = (loading_window.winfo_screenheight() // 2) - (height // 2)
+        loading_window.geometry(f'{width}x{height}+{x}+{y}')
+
+        # Add a frame with border
+        frame = ttk.Frame(loading_window, padding=10)
+        frame.pack(fill='both', expand=True)
+
+        # Add message
+        ttk.Label(frame, text=message, wraplength=250).pack(pady=10)
+
+        # Add progress bar
+        progress = ttk.Progressbar(frame, mode='indeterminate', length=250)
+        progress.pack(pady=10)
+        progress.start(10)  # Start the animation
+
+        # Add a cancel button
+        cancel_button = ttk.Button(frame, text="Cancel", command=loading_window.destroy)
+        cancel_button.pack(pady=5)
+
+        # Force update the window to show immediately
+        loading_window.update()
+
+        return loading_window, progress
 
 def run_gui():
     root = tk.Tk()
