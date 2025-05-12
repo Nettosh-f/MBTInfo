@@ -9,9 +9,11 @@ from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.styles import Font, PatternFill
 from openpyxl.drawing.line import LineProperties
 from collections import Counter
-from consts import mbti_colors, MBTI_TYPES, MBTI_LETTERS
 from openpyxl.chart.text import RichText
 from openpyxl.chart.layout import Layout, ManualLayout
+from openpyxl.formatting.rule import FormulaRule
+from openpyxl.styles.differential import DifferentialStyle
+from consts import mbti_colors, MBTI_TYPES, MBTI_LETTERS
 
 
 def create_distribution_charts(workbook):
@@ -30,9 +32,6 @@ def create_distribution_charts(workbook):
     # Clear any existing charts
     chart_sheet._charts = []
 
-    # Create the dashboard frame first
-
-
     # Add a title to the dashboard
     chart_sheet['K1'] = "MBTI Distribution Dashboard"
     chart_sheet['K1'].font = Font(bold=True, size=16)
@@ -41,12 +40,14 @@ def create_distribution_charts(workbook):
     prepare_main_distribution_data(data_sheet)
     prepare_dichotomy_data(data_sheet)
     prepare_external_internal_data(data_sheet)
+    prepare_dominant_function_data(data_sheet)
 
     # Create charts in the dashboard sheet
     create_main_distribution_chart(data_sheet, chart_sheet)
     create_dichotomy_charts(data_sheet, chart_sheet)
     create_external_internal_charts(data_sheet, chart_sheet)
     create_facet_bar_charts(data_sheet, chart_sheet)
+    create_dominant_chart(data_sheet, chart_sheet)
 
     # Adjust column widths for data sheet
     adjust_column_widths(data_sheet)
@@ -467,6 +468,21 @@ def prepare_dichotomy_data(data_sheet):
     data_sheet['E177'] = '=COUNTIF(Table1[Emergent],"=MIDZONE")'
 
 
+def prepare_facet_legend(chat_sheet):
+    # add white text rule to the black background for text readability
+
+    # add text
+    chart_sheet['V30'] = "Facets Legend"
+    chart_sheet['V30'].font = Font(bold=True)
+
+    chart_sheet['X31'] = "1ST facet - In-Preference"
+    chart_sheet['X32'] = "2ND facet - In-Preference"
+    chart_sheet['X33'] = "1ST facet - Out-of-Preference"
+    chart_sheet['X34'] = "2ND facet - Out-of-Preference"
+    chart_sheet['X35'] = "MIDZONE"
+
+
+
 def prepare_external_internal_data(data_sheet):
     Internal_list = ["ST", "SF", "NF", "NT"]
     External_list = ["IJ", "IP", "EJ", "EP"]
@@ -497,6 +513,40 @@ def prepare_external_internal_data(data_sheet):
         data_sheet[f'J{3 + i}'] = external_type
 
 
+def prepare_dominant_function_data(data_sheet):
+    dominant_functions = {
+        "Te": ["ENTJ", "ESTJ"],
+        "Ti": ["INTP", "ISTP"],
+        "Ne": ["ENFP", "ENTP"],
+        "Ni": ["INFJ", "INTJ"],
+        "Fe": ["ENFJ", "ESFJ"],
+        "Fi": ["INFP", "ISFP"],
+        "Se": ["ESFP", "ESTP"],
+        "Si": ["ISFJ", "ISTJ"],
+    }
+
+    data_sheet['G9'] = "Dominant Function Data"
+    data_sheet['G9'].font = Font(bold=True)
+    data_sheet['G10'] = "Dominant Function"
+    data_sheet['H10'] = "Count"
+    data_sheet['G11'] = "Te"
+    data_sheet['H11'] = '=SUM(B17,B14)'
+    data_sheet['G12'] = "Ti"
+    data_sheet['H12'] = '=SUM(B9,B6)'
+    data_sheet['G13'] = "Ne"
+    data_sheet['H13'] = '=SUM(B12,B13)'
+    data_sheet['G14'] = "Ni"
+    data_sheet['H14'] = '=SUM(B4,B5)'
+    data_sheet['G15'] = "Fe"
+    data_sheet['H15'] = '=SUM(B16,B15)'
+    data_sheet['G16'] = "Fi"
+    data_sheet['H16'] = '=SUM(B8,B7)'
+    data_sheet['G17'] = "Se"
+    data_sheet['H17'] = '=SUM(B11,B10)'
+    data_sheet['G18'] = "Si"
+    data_sheet['H18'] = '=SUM(B3,B2)'
+
+
 def create_main_distribution_chart(data_sheet, chart_sheet):
     # Create pie chart
     main_chart = PieChart()
@@ -511,8 +561,8 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
     main_chart.set_categories(labels)
 
     # Chart size
-    main_chart.width = 11.8618 # 7 columns
-    main_chart.height = 14.478  # 27 rows
+    main_chart.width = 11.8618
+    main_chart.height = 13.1826
 
     # Data labels
     main_chart.dataLabels = DataLabelList()
@@ -655,9 +705,28 @@ def create_external_internal_charts(data_sheet, chart_sheet):
         pie.dataLabels.showSerName = False
 
     # Add the charts to the sheet
-    chart_sheet.add_chart(internal_pie, "K29")
-    chart_sheet.add_chart(external_pie, "P29")
+    chart_sheet.add_chart(internal_pie, "K30")
+    chart_sheet.add_chart(external_pie, "P30")
 
+
+def create_dominant_chart(data_sheet, chart_sheet):
+    dominant_pie = PieChart()
+    dominant_pie.title = "Dominant Function"
+    labels = Reference(data_sheet, min_col=7, min_row=11, max_row=18)
+    data = Reference(data_sheet, min_col=8, min_row=11, max_row=18)
+    dominant_pie.add_data(data, titles_from_data=False)
+    dominant_pie.set_categories(labels)
+    dominant_pie.width = 11.8618
+    dominant_pie.height = 8.128
+    # Configure data labels for dominant function chart
+    dominant_pie.dataLabels = DataLabelList()
+    dominant_pie.dataLabels.showCatName = True
+    dominant_pie.dataLabels.showVal = False
+    dominant_pie.dataLabels.showPercent = True
+    dominant_pie.dataLabels.showSerName = False
+
+    # Add the chart to the sheet
+    chart_sheet.add_chart(dominant_pie, "C30")
 
 
 def create_facet_bar_charts(data_sheet, chart_sheet):
@@ -690,19 +759,6 @@ def create_facet_bar_charts(data_sheet, chart_sheet):
     create_facet_pie_chart(data_sheet, chart_sheet, "D156", "D157:D161", "E157:E161", "Z22")  # Early Starting-Pressure-Prompted
     create_facet_pie_chart(data_sheet, chart_sheet, "D164", "D165:D169", "E165:E169", "AB22")  # Scheduled-Spontaneous
     create_facet_pie_chart(data_sheet, chart_sheet, "D172", "D173:D177", "E173:E177", "AD22")  # Methodical-Emergent
-
-    # # Add section headers for facet groups
-    # chart_sheet['B22'].offset(row=-1, column=0).value = "E/I Facets"
-    # chart_sheet['B22'].offset(row=-1, column=0).font = Font(bold=True)
-    #
-    # chart_sheet['F29'].offset(row=-1, column=0).value = "S/N Facets"
-    # chart_sheet['F29'].offset(row=-1, column=0).font = Font(bold=True)
-    #
-    # chart_sheet['B57'].offset(row=-1, column=0).value = "T/F Facets"
-    # chart_sheet['B57'].offset(row=-1, column=0).font = Font(bold=True)
-    #
-    # chart_sheet['F71'].offset(row=-1, column=0).value = "J/P Facets"
-    # chart_sheet['F71'].offset(row=-1, column=0).font = Font(bold=True)
 
 
 def create_facet_pie_chart(data_sheet, chart_sheet, title_cell, labels_range, data_range, position):
@@ -769,6 +825,49 @@ def adjust_column_widths(sheet):
         adjusted_width = (max_length + 2)
         sheet.column_dimensions[column_letter].width = adjusted_width
 
+
+def reorder_sheets(workbook):
+    """
+    Reorders the sheets in the workbook to a logical order:
+    1. Main data sheet (MBTI Results)
+    2. Charts/Dashboard
+    3. Section sheets
+    4. Any other sheets
+    """
+    # Define the preferred order
+    preferred_order = ["Dashboard", "MBTI Results", "Charts"]
+
+    # Get current sheet names
+    current_sheets = workbook.sheetnames
+
+    # Create a new order list
+    new_order = []
+
+    # First add sheets from preferred order if they exist
+    for sheet_name in preferred_order:
+        if sheet_name in current_sheets:
+            new_order.append(sheet_name)
+            current_sheets.remove(sheet_name)
+
+    # Then add any section sheets (they typically start with "Section")
+    section_sheets = [name for name in current_sheets if name.startswith("Section")]
+    section_sheets.sort()  # Sort section sheets numerically if possible
+    new_order.extend(section_sheets)
+    for name in section_sheets:
+        current_sheets.remove(name)
+
+    # Add any remaining sheets
+    new_order.extend(current_sheets)
+
+    # Reorder the sheets
+    for i, sheet_name in enumerate(new_order):
+        sheet = workbook[sheet_name]
+        workbook.move_sheet(sheet, i)
+
+    print(f"Sheets reordered to: {new_order}")
+    return workbook
+
+
 def reset_column_widths(chart_sheet):
     """Reset all column widths to default before applying specific widths"""
     # Standard default column width in Excel
@@ -778,31 +877,6 @@ def reset_column_widths(chart_sheet):
     for col_idx in range(1, 100):  # Adjust range as needed based on your dashboard width
         col_letter = openpyxl.utils.get_column_letter(col_idx)
         chart_sheet.column_dimensions[col_letter].width = default_width
-
-
-def create_dashboard_frame(chart_sheet):
-    """
-    Create a frame for the dashboard by adjusting specific rows and columns
-    to create visual separation between chart sections.
-    """
-    # Set up border columns (create thin columns as visual separators)
-    border_columns = ['B', 'J', 'U', 'AF']
-    for col in border_columns:
-        chart_sheet.column_dimensions[col].width = 1
-
-    # Set up border rows (create thin rows as visual separators)
-    border_rows = [2, 9, 16, 30]
-    for row in border_rows:
-        chart_sheet.row_dimensions[row].height = 10
-
-    # Set background color for border elements to create a visual frame
-    light_gray_fill = PatternFill(start_color='EEEEEE', end_color='EEEEEE', fill_type='solid')
-
-    # Apply fill to border columns
-    for col in border_columns:
-        for row in range(2, 31):  # Adjust range as needed based on your dashboard size
-            cell = chart_sheet[f"{col}{row}"]
-            cell.fill = light_gray_fill
 
 
 if __name__ == "__main__":
