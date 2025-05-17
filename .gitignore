@@ -1,20 +1,38 @@
-*.pdf
-*.txt
-*.html
-*.xlsx
+# Environment variables
 .env
-!requirements.txt
-.venv/
-venv/
 ENV/
 env/
+
+# Virtual environment
+.venv/
+venv/
+
+# Distribution files
 dist/
 build/
+
+# Python files
 *.egg-info/
 *.egg
+
+# Node.js files
+node_modules/
+
+# IDE files
 .idea/
 .vscode/
+
+# Swap files
 *.swp
 *.swo
+
+# macOS files
 .DS_Store
+
+# Jupyter notebook files
 .ipynb_checkpoints
+__pycache__/
+
+# Output & input files
+output/
+input/
