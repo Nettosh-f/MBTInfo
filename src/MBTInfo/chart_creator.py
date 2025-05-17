@@ -514,16 +514,7 @@ def prepare_external_internal_data(data_sheet):
 
 
 def prepare_dominant_function_data(data_sheet):
-    dominant_functions = {
-        "Te": ["ENTJ", "ESTJ"],
-        "Ti": ["INTP", "ISTP"],
-        "Ne": ["ENFP", "ENTP"],
-        "Ni": ["INFJ", "INTJ"],
-        "Fe": ["ENFJ", "ESFJ"],
-        "Fi": ["INFP", "ISFP"],
-        "Se": ["ESFP", "ESTP"],
-        "Si": ["ISFJ", "ISTJ"],
-    }
+
 
     data_sheet['G9'] = "Dominant Function Data"
     data_sheet['G9'].font = Font(bold=True)
@@ -559,6 +550,7 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
     # Add data to chart
     main_chart.add_data(data)
     main_chart.set_categories(labels)
+    chart.legend = None
 
     # Chart size
     main_chart.width = 11.8618
@@ -699,7 +691,7 @@ def create_external_internal_charts(data_sheet, chart_sheet):
     # Configure data labels for both charts
     for pie in [internal_pie, external_pie]:
         pie.dataLabels = DataLabelList()
-        pie.dataLabels.showCatName = True
+        pie.dataLabels.showCatName = False
         pie.dataLabels.showVal = False
         pie.dataLabels.showPercent = True
         pie.dataLabels.showSerName = False

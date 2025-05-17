@@ -1,6 +1,6 @@
 import openpyxl
 from openpyxl.worksheet.table import Table, TableStyleInfo
-from openpyxl.styles import Font, Alignment
+from openpyxl.styles import Font, Alignment, PatternFill
 from formatting import adjust_column_widths
 from collections import Counter
 
@@ -25,10 +25,23 @@ def create_facet_table(workbook):
         "Appearing 1 time(5)", "Appearing 1 time(6)", "Appearing 1 time(7)", "Appearing 1 time(8)", "Appearing 1 time(9)"
     ]
 
+    # Define column colors
+    three_times_color = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")  # Light green
+    two_times_color = PatternFill(start_color="FFEB9C", end_color="FFEB9C", fill_type="solid")    # Light yellow
+    one_time_color = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")     # Light red
+
     # Write headers
     for col, header in enumerate(headers, start=1):
         cell = sheet.cell(row=1, column=col, value=header)
         cell.font = Font(bold=True)
+        
+        # Apply colors to header cells based on column groups
+        if 4 <= col <= 6:  # Columns D, E, F (3 times)
+            cell.fill = three_times_color
+        elif 7 <= col <= 11:  # Columns G, H, I, J, K (2 times)
+            cell.fill = two_times_color
+        elif 12 <= col <= 20:  # Columns L through T (1 time)
+            cell.fill = one_time_color
 
     # Get the 'MBTI Results' sheet
     mbti_results_sheet = workbook['MBTI Results']

@@ -514,7 +514,7 @@ class MBTIGUI:
         loading_window.geometry(f'{width}x{height}+{x}+{y}')
 
         # Add a frame with border
-        frame = ttk.Frame(loading_window, padding=10)
+        frame = ttk.Frame(loading_window, padding=5)
         frame.pack(fill='both', expand=True)
 
         # Add message

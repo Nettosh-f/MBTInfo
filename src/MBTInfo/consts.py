@@ -41,6 +41,7 @@ MIDZONE_FACETS = [
     "Systematic–Casual", "Planful–Open-Ended", "Early Starting–Pressure-Prompted",
     "Scheduled–Spontaneous", "Methodical–Emergent"
 ]
+All_Facets = FACETS + MIDZONE_FACETS
 
 mbti_colors = {
     "ISTJ": "FFB3BA", "ISFJ": "BAFFC9", "INFJ": "BAE1FF", "INTJ": "FFDFBA",
@@ -154,4 +155,43 @@ career_insights = {
     'ESFJ': "You thrive in roles focused on supporting others' wellbeing. Consider careers in healthcare, education, customer service, or community services.",
     'ENFJ': "You're drawn to roles where you can inspire and develop others. Consider careers in teaching, counseling, human resources, or non-profit leadership.",
     'ENTJ': "You excel in strategic leadership and organizational development. Consider careers in executive leadership, consulting, law, or business development."
+}
+
+dominant_functions = {
+    "ENTJ": "Te",
+    "ESTJ": "Te",
+    "INTP": "Ti",
+    "ISTP": "Ti",
+    "ENFP": "Ne",
+    "ENTP": "Ne",
+    "INFJ": "Ni",
+    "INTJ": "Ni",
+    "ENFJ": "Te",
+    "ESFJ": "Te",
+    "INFP": "Fi",
+    "ISFP": "Fi",
+    "ESFP": "Se",
+    "ESTP": "Se",
+    "ISFJ": "Si",
+    "ISTJ": "Si",
+}
+
+mbti_pair_explanations = {
+    # External qualities (how we interact with the world)
+    "EJ": "Decisive and structured in dealing with the external world, naturally taking charge of situations and implementing clear plans.",
+    "EP": "Adaptable and spontaneous with the external world, preferring to keep options open and respond flexibly to new information.",
+    "IJ": "Reflective and cautious about the external world, preferring to observe thoroughly before committing to definitive action.",
+    "IP": "Independent and contemplative in approach, needing personal space to process information before engaging with the external environment.",
+
+    # Internal qualities (how we process information)
+    "ST": "Practical and factual in decision making, analyzing concrete data and applying logical reasoning to reach objective conclusions.",
+    "SF": "Detail-oriented and empathetic, making decisions by considering practical needs while remaining sensitive to how choices affect people.",
+    "NT": "Analytical and theoretical in thinking, focusing on systems, concepts, and logical frameworks rather than immediate practical applications.",
+    "NF": "Idealistic and insight-driven, processing information through the lens of values, possibilities, and human potential.",
+
+    # Additional combinations
+    "TJ": "Structured and logical in approach, creating systems and frameworks to efficiently accomplish goals through objective reasoning.",
+    "TP": "Analytical but flexible thinkers who examine problems from multiple angles while maintaining logical detachment.",
+    "FJ": "Organized and people-focused, creating harmony through structured approaches to relationships and community needs.",
+    "FP": "Compassionate and adaptable, valuing authentic expression and remaining open to the emotional needs of each unique situation."
 }

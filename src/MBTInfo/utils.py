@@ -1,7 +1,7 @@
 import re
 import os
 from datetime import datetime
-from consts import MBTI_TYPES, FACETS, MIDZONE_FACETS
+from consts import MBTI_TYPES, FACETS, MIDZONE_FACETS, dominant_functions, All_Facets
 from typing import Dict, Optional, List, Tuple
 
 
@@ -62,7 +62,7 @@ def get_date(file_path: str) -> Optional[str]:
             # Skip the first 10 lines
             for _ in range(9):
                 next(file, None)
-            
+
             # Read the 11th line
             eleventh_line = next(file, '').strip()
             return eleventh_line if eleventh_line else None
@@ -71,11 +71,19 @@ def get_date(file_path: str) -> Optional[str]:
         return None
 
 
+def get_dominant(file_path: str) -> Optional[str]:
+    mbti_type = find_type(file_path)
+    if mbti_type and mbti_type in dominant_functions:
+        return dominant_functions[mbti_type]
+    return None
+
+
 def get_all_info(file_path: str) -> Dict[str, Optional[str]]:
     info = {
         'name': get_name(file_path),
         'date': get_date(file_path),
-        'type': find_type(file_path)
+        'type': find_type(file_path),
+        'dominant': get_dominant(file_path)
     }
     return info
 
@@ -352,10 +360,116 @@ def reorder_sheets(workbook):
     workbook._sheets = [workbook[sheet_name] for sheet_name in desired_order]
 
 
+def count_first_words_on_page(file_path: str, word_list: List[str], page_number: int) -> Dict[str, int]:
+    """
+    Count occurrences of words from a list when they appear as the first word in a line
+    on a specific page of a text file.
+
+    Args:
+        file_path (str): Path to the text file
+        word_list (List[str]): List of words to search for
+        page_number (int): The page number to search in
+
+    Returns:
+        Dict[str, int]: Dictionary with words as keys and their occurrence counts as values
+    """
+    word_counts = {word.lower(): 0 for word in word_list}
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content = file.read()
+
+            # Find the page content using page markers
+            current_page_marker = f"|{page_number}"
+            next_page_marker = f"|{page_number + 1}"
+
+            start_index = content.find(current_page_marker)
+            if start_index == -1:
+                print(f"Page {page_number} not found in {file_path}")
+                return word_counts
+
+            # Move past the page marker
+            start_index += len(current_page_marker)
+
+            # Find the end of the page
+            end_index = content.find(next_page_marker, start_index)
+            if end_index == -1:
+                # If next page marker not found, read until the end of the file
+                end_index = len(content)
+
+            # Extract the page content
+            page_content = content[start_index:end_index]
+
+            # Split into lines and check first word of each line
+            lines = page_content.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line:
+                    # Get the first word of the line
+                    first_word = line.split()[0].lower() if line.split() else ""
+
+                    # Check if the first word is in our word list
+                    for word in word_list:
+                        if first_word == word.lower():
+                            word_counts[word.lower()] += 1
+                            break
+
+        return word_counts
+
+    except Exception as e:
+        print(f"Error processing {file_path}: {str(e)}")
+        return word_counts
+
+
+def count_first_words_across_pages(file_path: str, word_list: List[str], page_numbers: List[int], 
+                                  only_non_zero: bool = False) -> Dict[str, int]:
+    """
+    Count occurrences of words from a list when they appear as the first word in a line
+    across multiple pages of a text file.
+
+    Args:
+        file_path (str): Path to the text file
+        word_list (List[str]): List of words to search for
+        page_numbers (List[int]): List of page numbers to search in
+        only_non_zero (bool, optional): If True, returns only words with counts > 0. Defaults to False.
+
+    Returns:
+        Dict[str, int]: Dictionary with words as keys and their combined occurrence counts as values
+    """
+    # Initialize counts dictionary
+    combined_counts = {word.lower(): 0 for word in word_list}
+
+    # Process each page and combine the counts
+    for page_number in page_numbers:
+        page_counts = count_first_words_on_page(file_path, word_list, page_number)
+        for word, count in page_counts.items():
+            combined_counts[word] += count
+
+    # Filter out zero counts if requested
+    if only_non_zero:
+        combined_counts = {word: count for word, count in combined_counts.items() if count > 0}
+
+    return combined_counts
+    return combined_counts
+
 if __name__ == "__main__":
-    test_file_path = r"F:\projects\MBTInfo\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
+    test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
     directory = r"F:\projects\MBTInfo\output"
     print(get_all_info(test_file_path))
     print(check_communication(test_file_path))
     print(check_managing_change(test_file_path))
     print(check_managing_conflict(test_file_path))
+    print(get_dominant(test_file_path))
+
+    page_list = [9, 11, 12]  # Pages to analyze
+    
+    # Get all counts (including zeros)
+    print(f"\nAll counts across pages {page_list[0]}-{page_list[-1]}:")
+    all_counts = count_first_words_across_pages(test_file_path, All_Facets, page_list)
+    print(all_counts)
+    
+    # Get only non-zero counts
+    print(f"\nNon-zero counts across pages {page_list[0]}-{page_list[-1]}:")
+    non_zero_counts = count_first_words_across_pages(test_file_path, All_Facets, page_list, only_non_zero=True)
+    print(non_zero_counts)
+    print(non_zero_counts)
