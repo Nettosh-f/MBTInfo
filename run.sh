@@ -10,11 +10,11 @@ source "$PROJECT_ROOT/venv/bin/activate"
 
 # Install required packages
 echo "Installing required packages..."
-pip install -r "$PROJECT_ROOT/requirements.txt"
+pip install -r "$PROJECT_ROOT/backend/requirements.txt"
 
 # Run the GUI application
 echo "Starting the MBTI application..."
-python "$PROJECT_ROOT/src/MBTInfo/gui.py"
+python "$PROJECT_ROOT/backend/src/MBTInfo/gui.py"
 
 # Deactivate the virtual environment
 deactivate

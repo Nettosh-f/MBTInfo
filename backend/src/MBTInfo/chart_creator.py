@@ -1,19 +1,13 @@
 import openpyxl
-import os
 from openpyxl.chart import PieChart, Reference, BarChart
-from openpyxl.chart.series import DataPoint, SeriesLabel
+from openpyxl.chart.series import SeriesLabel
 from openpyxl.chart.label import DataLabelList
-from openpyxl.chart.axis import ChartLines
 import openpyxl.chart.text
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.styles import Font, PatternFill
 from openpyxl.drawing.line import LineProperties
-from collections import Counter
-from openpyxl.chart.text import RichText
 from openpyxl.chart.layout import Layout, ManualLayout
-from openpyxl.formatting.rule import FormulaRule
-from openpyxl.styles.differential import DifferentialStyle
-from consts import mbti_colors, MBTI_TYPES, MBTI_LETTERS
+from consts import mbti_colors, MBTI_TYPES
 
 
 def create_distribution_charts(workbook):
@@ -468,7 +462,7 @@ def prepare_dichotomy_data(data_sheet):
     data_sheet['E177'] = '=COUNTIF(Table1[Emergent],"=MIDZONE")'
 
 
-def prepare_facet_legend(chat_sheet):
+def prepare_facet_legend(chart_sheet):
     # add white text rule to the black background for text readability
 
     # add text
@@ -550,7 +544,7 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
     # Add data to chart
     main_chart.add_data(data)
     main_chart.set_categories(labels)
-    chart.legend = None
+    main_chart.legend = None
 
     # Chart size
     main_chart.width = 11.8618

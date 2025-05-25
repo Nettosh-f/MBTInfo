@@ -1,6 +1,5 @@
 import fitz  # PyMuPDF
 import os
-import time
 
 
 def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2):

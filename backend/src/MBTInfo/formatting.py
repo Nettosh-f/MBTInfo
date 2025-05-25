@@ -1,9 +1,8 @@
 import openpyxl as xl
-from openpyxl.styles import PatternFill, Color, Font
+from openpyxl.styles import PatternFill
 from openpyxl.formatting.rule import ColorScaleRule, Rule, FormulaRule
 from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.utils import get_column_letter
-from openpyxl.worksheet.cell_range import CellRange
 from consts import mbti_colors, FACETS, MIDZONE_FACETS
 
 

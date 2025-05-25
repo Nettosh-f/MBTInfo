@@ -1,9 +1,5 @@
 import PyPDF2
 import os
-import glob
-import time
-import re
-from typing import Dict, Union, List
 
 
 def extract_and_save_text(filepath: str, output_folder: str) -> str:
