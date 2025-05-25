@@ -1,19 +1,13 @@
 import openpyxl
-import os
 from openpyxl.chart import PieChart, Reference, BarChart
-from openpyxl.chart.series import DataPoint, SeriesLabel
+from openpyxl.chart.series import SeriesLabel
 from openpyxl.chart.label import DataLabelList
-from openpyxl.chart.axis import ChartLines
 import openpyxl.chart.text
 from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.styles import Font, PatternFill
 from openpyxl.drawing.line import LineProperties
-from collections import Counter
-from openpyxl.chart.text import RichText
 from openpyxl.chart.layout import Layout, ManualLayout
-from openpyxl.formatting.rule import FormulaRule
-from openpyxl.styles.differential import DifferentialStyle
-from consts import mbti_colors, MBTI_TYPES, MBTI_LETTERS
+from consts import mbti_colors, MBTI_TYPES
 
 
 def create_distribution_charts(workbook):

@@ -1,6 +1,6 @@
 import openpyxl
 from openpyxl.worksheet.table import Table, TableStyleInfo
-from openpyxl.styles import Font, Alignment, PatternFill
+from openpyxl.styles import Font, PatternFill
 from formatting import adjust_column_widths
 from collections import Counter
 

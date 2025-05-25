@@ -1,10 +1,7 @@
 import os
 import webbrowser
-import tempfile
-from PIL import Image as PILImage
 from data_extractor import extract_and_save_text
-from utils import get_all_info, find_and_parse_mbti_scores, convert_scores_to_mbti_dict, collect_qualities, get_dominant
-from consts import FACETS, type_descriptions, career_insights, dominant_functions
+from utils import get_all_info, find_and_parse_mbti_scores, convert_scores_to_mbti_dict, collect_qualities
 
 
 def generate_personal_report(input_pdf_path, output_dir, output_filename):

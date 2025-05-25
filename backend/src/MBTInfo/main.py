@@ -4,7 +4,7 @@ from data_extractor import extract_and_save_text
 from chart_creator import create_distribution_charts
 from formatting import format_xl
 from create_section_sheets import create_section_sheets
-from create_facet_table import create_facet_table  # Add this import
+from create_facet_table import create_facet_table
 import openpyxl as xl
 from utils import reorder_sheets
 
