@@ -97,43 +97,6 @@ def main():
     print(f"Processing complete. Results saved to {output_path}")
 
 
-def create_pie_chart(chart_sheet, data_range, title):
-    pie = PieChart()
-    sheet_name = chart_sheet.title
-    labels = Reference(chart_sheet, range_string=f"{sheet_name}!{data_range.split(':')[0]}")
-    data = Reference(chart_sheet, range_string=f"{sheet_name}!{data_range}")
-    pie.add_data(data, titles_from_data=True)
-    pie.set_categories(labels)
-    pie.title = title
-    
-    # Add data labels
-    pie.dataLabels = openpyxl.chart.label.DataLabelList()
-    pie.dataLabels.showCatName = True
-    pie.dataLabels.showVal = True
-    pie.dataLabels.showPercent = True
-    
-    return pie
-
-def create_facet_chart(workbook, chart_sheet):
-    # ... (previous code remains the same)
-
-    # Create stacked bar chart
-    chart = BarChart()
-    chart.type = "bar"
-    chart.stacked = True
-    chart.title = "Facet Distribution"
-    chart.y_axis.title = "Facets"
-    chart.x_axis.title = "Count"
-    
-    sheet_name = chart_sheet.title
-    # Add data to chart
-    data = Reference(chart_sheet, min_col=2, min_row=start_row, max_row=start_row+20, max_col=4)
-    cats = Reference(chart_sheet, min_col=1, min_row=start_row+1, max_row=start_row+20)
-    chart.add_data(data, titles_from_data=True)
-    chart.set_categories(cats)
-
-    # ... (rest of the function remains the same)
-
 if __name__ == "__main__":
     main()
     print("Processing complete.")

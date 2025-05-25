@@ -462,7 +462,7 @@ def prepare_dichotomy_data(data_sheet):
     data_sheet['E177'] = '=COUNTIF(Table1[Emergent],"=MIDZONE")'
 
 
-def prepare_facet_legend(chat_sheet):
+def prepare_facet_legend(chart_sheet):
     # add white text rule to the black background for text readability
 
     # add text
@@ -544,7 +544,7 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
     # Add data to chart
     main_chart.add_data(data)
     main_chart.set_categories(labels)
-    chart.legend = None
+    main_chart.legend = None
 
     # Chart size
     main_chart.width = 11.8618
