@@ -6,6 +6,7 @@ import sys
 import threading
 from main import process_files
 from personal_report import generate_personal_report
+from extract_image import extract_multiple_graphs_from_pdf
 
 
 class MBTIGUI:
@@ -105,7 +106,7 @@ class MBTIGUI:
 
         # Output File Name
         ttk.Label(self.personal_tab, text="Select Output File Name:").grid(row=2, column=0, sticky="w", padx=10, pady=5)
-        self.personal_output_file = tk.StringVar(value="Personal_MBTI_Report.xlsx")
+        self.personal_output_file = tk.StringVar(value="Personal_MBTI_Report.html")
         ttk.Entry(self.personal_tab, textvariable=self.personal_output_file, width=50).grid(row=2, column=1, padx=10,
                                                                                             pady=5)
 
@@ -338,8 +339,11 @@ class MBTIGUI:
             messagebox.showerror("Error", "Input file does not exist.")
             return
 
-        if not output_filename.endswith('.xlsx'):
-            output_filename += '.xlsx'
+        # Change default extension to .pdf for personal reports
+        if not output_filename.lower().endswith(('.pdf', '.xlsx')):
+            output_filename += '.pdf'
+        elif output_filename.lower().endswith('.xlsx'):
+            output_filename = output_filename.replace('.xlsx', '.pdf')
 
         output_path = os.path.join(output_dir, output_filename)
 
@@ -370,6 +374,35 @@ class MBTIGUI:
                 textfiles_dir = os.path.join(self.project_root, 'output', 'textfiles')
                 os.makedirs(textfiles_dir, exist_ok=True)
 
+                # Extract text from PDF
+                from data_extractor import extract_and_save_text
+                text_file_path = extract_and_save_text(input_file, textfiles_dir)
+
+                if not text_file_path:
+                    raise Exception("Failed to extract text from PDF")
+
+                # Extract images from PDF
+                pdf_basename = os.path.splitext(os.path.basename(input_file))[0]
+                screenshots_dir = os.path.join(output_dir, pdf_basename, 'screenshots')
+                os.makedirs(screenshots_dir, exist_ok=True)
+
+                try:
+                    pages_list = [4, 5, 6, 7]
+                    for page_num in pages_list:
+                        print(f"Extracting graphs from page {page_num + 1}")
+                        rect_coords_dict = page_rectangles.get(page_num)
+                        extract_multiple_graphs_from_pdf(
+                            pdf_path,
+                            output_dir,
+                            page_num,
+                            rect_coords_dict,
+                            zoom=2
+                        )
+                    print(f"Images extracted to {screenshots_dir}")
+                except Exception as img_error:
+                    print(f"Warning: Could not extract images: {str(img_error)}")
+                    # Continue execution even if image extraction fails
+
                 # Generate the personal report
                 final_output_path = generate_personal_report(input_file, output_dir, output_filename)
 
@@ -378,7 +411,7 @@ class MBTIGUI:
 
                 # Show success message
                 self.master.after(100, lambda: messagebox.showinfo("Success",
-                                                                   f"Personal MBTI report generated successfully!\n\nSaved to: {final_output_path}"))
+                                                                  f"Personal MBTI report generated successfully!\n\nSaved to: {final_output_path}"))
 
                 # Open the generated file
                 def open_file():
@@ -402,7 +435,7 @@ class MBTIGUI:
                 print(f"Error details: {error_details}")
 
                 self.master.after(100, lambda: messagebox.showerror("Error",
-                                                                    f"An error occurred: {str(e)}\n\nPlease check the console for more details."))
+                                                                  f"An error occurred: {str(e)}\n\nPlease check the console for more details."))
 
         # Start the processing thread
         threading.Thread(target=process_thread, daemon=True).start()
