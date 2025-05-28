@@ -10,36 +10,17 @@ MBTI_LETTERS = {
     "J": "Judging", "P": "Perceiving"}
 
 FACETS = [
-    "Initiating", "Receiving",
-    "Expressive", "Contained",
-    "Gregarious", "Intimate",
-    "Active", "Reflective",
-    "Enthusiastic", "Quiet",
-    "Concrete", "Abstract",
-    "Realistic", "Imaginative",
-    "Practical", "Conceptual",
-    "Experiential", "Theoretical",
-    "Traditional", "Original",
-    "Logical", "Empathetic",
-    "Reasonable", "Compassionate",
-    "Questioning", "Accommodating",
-    "Critical", "Accepting",
-    "Tough", "Tender",
-    "Systematic", "Casual",
-    "Planful", "Open-Ended",
-    "Early Starting", "Pressure-Prompted",
-    "Scheduled", "Spontaneous",
-    "Methodical", "Emergent"
+    "Initiating", "Receiving", "Expressive", "Contained", "Gregarious", "Intimate", "Active", "Reflective", "Enthusiastic", "Quiet",
+    "Concrete", "Abstract", "Realistic", "Imaginative", "Practical", "Conceptual", "Experiential", "Theoretical", "Traditional", "Original",
+    "Logical", "Empathetic", "Reasonable", "Compassionate", "Questioning", "Accommodating", "Critical", "Accepting", "Tough", "Tender",
+    "Systematic", "Casual", "Planful", "Open-Ended", "Early Starting", "Pressure-Prompted", "Scheduled", "Spontaneous", "Methodical", "Emergent"
 ]
 
 MIDZONE_FACETS = [
-    "Initiating–Receiving", "Expressive–Contained", "Gregarious–Intimate",
-    "Active–Reflective", "Enthusiastic–Quiet", "Concrete–Abstract",
-    "Realistic–Imaginative", "Practical–Conceptual", "Experiential–Theoretical",
-    "Traditional–Original", "Logical–Empathetic", "Reasonable–Compassionate",
-    "Questioning–Accommodating", "Critical–Accepting", "Tough–Tender",
-    "Systematic–Casual", "Planful–Open-Ended", "Early Starting–Pressure-Prompted",
-    "Scheduled–Spontaneous", "Methodical–Emergent"
+    "Initiating–Receiving", "Expressive–Contained", "Gregarious–Intimate", "Active–Reflective", "Enthusiastic–Quiet",
+    "Concrete–Abstract", "Realistic–Imaginative", "Practical–Conceptual", "Experiential–Theoretical", "Traditional–Original",
+    "Logical–Empathetic", "Reasonable–Compassionate", "Questioning–Accommodating", "Critical–Accepting", "Tough–Tender",
+    "Systematic–Casual", "Planful–Open-Ended", "Early Starting–Pressure-Prompted", "Scheduled–Spontaneous", "Methodical–Emergent"
 ]
 All_Facets = FACETS + MIDZONE_FACETS
 
@@ -119,43 +100,7 @@ dominant_type = {"ISTJ": "Si", "ISFJ": "Si", "INFJ": "Ni", "INTJ": "Ni", "ISTP":
                  "ENFP": "Ne", "ENTP": "Ne", "ESTJ": "Te", "ESFJ": "Fe", "ENFJ": "Fe",
                  "ENTJ": "Te"}
 
-type_descriptions = {
-    'ISTJ': 'Quiet, serious, thorough, dependable, practical, matter-of-fact, realistic, and responsible.',
-    'ISFJ': 'Quiet, friendly, responsible, conscientious, committed, steady, and detail-oriented.',
-    'INFJ': 'Seek meaning and connection, insightful about others, organized, decisive, values-driven.',
-    'INTJ': 'Original, driven by their own ideas and purpose, skeptical, independent, high standards.',
-    'ISTP': 'Tolerant, flexible, observant, practical problem-solvers, logical, and analytical.',
-    'ISFP': 'Quiet, friendly, sensitive, kind, present-oriented, enjoy their own space.',
-    'INFP': 'Idealistic, loyal to values, curious, seek to understand people, adaptable, flexible.',
-    'INTP': 'Seek logical explanations, theoretical, abstract, more interested in ideas than social interaction.',
-    'ESTP': 'Flexible, tolerant, pragmatic, focused on immediate results, energetic, and spontaneous.',
-    'ESFP': 'Outgoing, friendly, accepting, enjoy working with others, realistic, spontaneous.',
-    'ENFP': 'Enthusiastic, imaginative, see possibilities, spontaneous, flexible, innovative.',
-    'ENTP': 'Quick, ingenious, stimulating, alert, outspoken, resourceful, and adaptable.',
-    'ESTJ': 'Practical, realistic, matter-of-fact, decisive, focus on efficient results.',
-    'ESFJ': 'Warmhearted, conscientious, cooperative, seek harmony, work with determination.',
-    'ENFJ': 'Warm, empathetic, responsive, responsible, sociable, highly attuned to others.',
-    'ENTJ': 'Frank, decisive, assume leadership readily, structured, logical, and efficient.'
-}
 
-career_insights = {
-    'ISTJ': "You excel in roles requiring attention to detail, reliability, and logical organization. Consider careers in accounting, project management, logistics, or quality assurance.",
-    'ISFJ': "You thrive in supportive roles where you can help others in practical ways. Consider careers in healthcare, education, administrative support, or social services.",
-    'INFJ': "You're drawn to meaningful work that aligns with your values. Consider careers in counseling, writing, non-profit work, or human resources development.",
-    'INTJ': "You excel in strategic planning and complex problem-solving. Consider careers in systems analysis, scientific research, strategic planning, or engineering.",
-    'ISTP': "You enjoy hands-on problem-solving and technical challenges. Consider careers in mechanics, engineering, technical troubleshooting, or emergency response.",
-    'ISFP': "You thrive in creative roles with practical applications. Consider careers in design, healthcare, culinary arts, or personal care services.",
-    'INFP': "You're motivated by work that aligns with your personal values. Consider careers in writing, counseling, teaching, or artistic pursuits.",
-    'INTP': "You excel in theoretical and analytical problem-solving. Consider careers in research, programming, systems analysis, or academia.",
-    'ESTP': "You thrive in dynamic, action-oriented environments. Consider careers in sales, entrepreneurship, emergency services, or sports.",
-    'ESFP': "You excel in people-oriented, practical roles. Consider careers in entertainment, sales, customer service, or event planning.",
-    'ENFP': "You're drawn to creative work involving people and possibilities. Consider careers in counseling, teaching, marketing, or public relations.",
-    'ENTP': "You thrive in innovative, intellectually stimulating environments. Consider careers in entrepreneurship, consulting, creative design, or technology.",
-    'ESTJ': "You excel in structured leadership roles. Consider careers in management, administration, law enforcement, or military leadership.",
-    'ESFJ': "You thrive in roles focused on supporting others' wellbeing. Consider careers in healthcare, education, customer service, or community services.",
-    'ENFJ': "You're drawn to roles where you can inspire and develop others. Consider careers in teaching, counseling, human resources, or non-profit leadership.",
-    'ENTJ': "You excel in strategic leadership and organizational development. Consider careers in executive leadership, consulting, law, or business development."
-}
 
 dominant_functions = {
     "ENTJ": "Te",
@@ -166,8 +111,8 @@ dominant_functions = {
     "ENTP": "Ne",
     "INFJ": "Ni",
     "INTJ": "Ni",
-    "ENFJ": "Te",
-    "ESFJ": "Te",
+    "ENFJ": "Fe",
+    "ESFJ": "Fe",
     "INFP": "Fi",
     "ISFP": "Fi",
     "ESFP": "Se",
@@ -195,3 +140,13 @@ mbti_pair_explanations = {
     "FJ": "Organized and people-focused, creating harmony through structured approaches to relationships and community needs.",
     "FP": "Compassionate and adaptable, valuing authentic expression and remaining open to the emotional needs of each unique situation."
 }
+
+facet_chart_list = {
+    "page5_EIGraph.png": ["Initiating", "Receiving", "Expressive", "Contained", "Gregarious", "Intimate", "Active", "Reflective", "Enthusiastic", "Quiet", "Initiating–Receiving", "Expressive–Contained", "Gregarious–Intimate", "Active–Reflective", "Enthusiastic–Quiet"],
+    "page6_SNgraph.png": ["Concrete", "Abstract", "Realistic", "Imaginative","Practical", "Conceptual","Experiential", "Theoretical","Traditional", "Original", "Concrete–Abstract", "Realistic–Imaginative", "Practical–Conceptual", "Experiential–Theoretical", "Traditional–Original"],
+    "page7_TFgraph.png": ["Logical", "Empathetic", "Reasonable", "Compassionate", "Questioning", "Accommodating", "Critical", "Accepting", "Tough", "Tender",     "Logical–Empathetic", "Reasonable–Compassionate", "Questioning–Accommodating", "Critical–Accepting", "Tough–Tender"],
+    "page8_JPgraph.png": ["Systematic", "Casual", "Planful", "Open-Ended", "Early Starting", "Pressure-Prompted", "Scheduled", "Spontaneous", "Methodical", "Emergent",     "Systematic–Casual", "Planful–Open-Ended", "Early Starting–Pressure-Prompted", "Scheduled–Spontaneous", "Methodical–Emergent"]
+}
+
+
+

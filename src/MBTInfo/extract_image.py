@@ -1,6 +1,7 @@
 import fitz  # PyMuPDF
 import os
 import time
+import re
 
 
 def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2):
@@ -117,10 +118,9 @@ def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords
 
     pdf_document.close()
 
-
 if __name__ == "__main__":
     # Path to your PDF file
-    pdf_path = r"F:\projects\MBTInfo\input\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a.pdf"
+    pdf_path = r"F:\projects\MBTInfo\input\Tomer Shimon-Haiman-267149-7381d4d8-6235-f011-8b3d-000d3a381fe7.pdf"
 
     # Output image path
     output_dir = r"F:\projects\MBTInfo\output"
@@ -133,39 +133,29 @@ if __name__ == "__main__":
     # Format: Dictionary with name indicators as keys and coordinate tuples as values
     page_rectangles = {
         4: {
-            "ExtIntGraph": (0.1, 0.12, 0.9, 0.44),
-            "Initiating-Receiving": (0.088, 0.45, 0.9, 0.534),
-            "Expressive-Contained": (0.088, 0.534, 0.9, 0.615),
-            "Gregarious-Intimate": (0.088, 0.615, 0.9, 0.7),
-            "Active-Reflactive": (0.088, 0.7, 0.9, 0.785),
-            "Enthusiastic-Quite": (0.088, 0.785, 0.9, 0.865),
+            "EIGraph": (0.1, 0.12, 0.9, 0.44),
+
         },
         5: {
-            "facet_scores_1": (0.1, 0.12, 0.9, 0.44),
-            "Concrete–Abstract": (0.088, 0.45, 0.9, 0.54),
-            "Realistic–Imaginative": (0.088, 0.54, 0.9, 0.62),
-            "Practical–Conceptual": (0.088, 0.62, 0.9, 0.69),
-            "Experiential–Theoretical": (0.088, 0.69, 0.9, 0.775),
-            "Traditional–Original": (0.088, 0.775, 0.9, 0.875),
+            "SNgraph": (0.1, 0.12, 0.9, 0.44),
+
         },
         6: {
-            "type_dynamics": (0.1, 0.12, 0.9, 0.44),
-            "Logical–Empathetic": (0.088, 0.445, 0.9, 0.53),
-            "Reasonable–Compassionate": (0.088, 0.528, 0.9, 0.6),
-            "Questioning–Accommodating": (0.088, 0.6, 0.9, 0.685),
-            "Critical–Accepting": (0.088, 0.7, 0.9, 0.785),
-            "Tough–Tender": (0.088, 0.785, 0.9, 0.865),
+            "TFgraph": (0.1, 0.12, 0.9, 0.44),
+
         },
         7: {
-            "type_comparison": (0.1, 0.12, 0.9, 0.44),
-            "Systematic–Casual": (0.088, 0.45, 0.9, 0.534),
-            "Planful–OpenEnded": (0.088, 0.534, 0.9, 0.615),
-            "EarlyStarting–PressurePrompted": (0.088, 0.615, 0.9, 0.7),
-            "Scheduled–Spontaneous": (0.088, 0.7, 0.9, 0.785),
-            "Methodical–Emergent": (0.088, 0.785, 0.9, 0.865),
+            "JPgraph": (0.1, 0.12, 0.9, 0.44),
+
         }
     }
-    pages_list = [4, 5, 6, 7]
+
+    pages_list = [4,5,6,7]
+    # page_rectangles = {0: {
+    #         "ST": (0.71, 0.54, 0.9, 0.76),
+    #
+    #     }}
+    # pages_list = [0]
     for page_num in pages_list:
         print(f"Extracting graphs from page {page_num + 1}")
         rect_coords_dict = page_rectangles.get(page_num)

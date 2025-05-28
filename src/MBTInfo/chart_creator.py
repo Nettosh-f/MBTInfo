@@ -550,7 +550,7 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
     # Add data to chart
     main_chart.add_data(data)
     main_chart.set_categories(labels)
-    chart.legend = None
+    main_chart.legend = None
 
     # Chart size
     main_chart.width = 11.8618
