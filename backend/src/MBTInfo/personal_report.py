@@ -126,7 +126,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
     # Helper function to map facet name to image path
     def get_facet_image_path(facet_name):
         from consts import facet_chart_list
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 
         # Get the PDF file name from the input_pdf_path
         pdf_base_name = os.path.splitext(os.path.basename(input_pdf_path))[0]
@@ -134,7 +134,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         for filename, facets in facet_chart_list.items():
             if facet_name.lower() in [f.lower() for f in facets]:
                 # Use the PDF file name as part of the path
-                image_path = os.path.join(project_root, 'output', pdf_base_name, 'screenshots', filename)
+                image_path = os.path.join(project_root, 'backend/media', pdf_base_name, 'screenshots', filename)
 
                 # Check if the file exists
                 if os.path.isfile(image_path):
@@ -157,6 +157,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
     mbti_type = info.get('type', '')
     dominant_function = info.get('dominant', '')
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    print(f"Project root: {project_root}")
 
     # Initialize image paths dictionary
     image_paths = {}
@@ -500,9 +501,9 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
 
 if __name__ == "__main__":
     # For testing purposes
-    input_pdf_path = r"F:\projects\MBTInfo\input\eran-turko-267149-e33d49cd-c629-f011-8b3d-000d3a381fe7.pdf"
+    input_pdf_path = r"C:\Users\user\Downloads\Shiri-Ben Sinai.pdf"
     output_dir = r"F:\projects\MBTInfo\output"
-    output_filename = "Einat-Trebitch_Personal_MBTI_Report_Test.pdf"
+    output_filename = "Shiri-Ben Sinai_Personal_MBTI_Report_Test.pdf"
 
     if os.path.exists(input_pdf_path):
         output_path = generate_personal_report(input_pdf_path, output_dir, output_filename)
