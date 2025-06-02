@@ -828,7 +828,7 @@
     </div>
 
     <script>
-        const BASE_URL = 'http://localhost:8000';
+        const BASE_URL = 'http://desktop-sm21qic.tail63492a.ts.net:8000';
 
         // Tab switching functionality
         function showTab(tabName) {
@@ -883,12 +883,41 @@
             statusEl.appendChild(downloadBtn);
         }
 
-        // Download function that triggers browser's save dialog
+        // Download function that triggers browser's save dialog or opens HTML in new tab
         async function downloadFile(taskId, filename) {
             try {
                 const response = await fetch(`${BASE_URL}/download/${taskId}/${filename}`);
                 if (!response.ok) throw new Error('Download failed');
 
+                // If it's an HTML file, open it in a new tab
+                if (filename.toLowerCase().endsWith('.html')) {
+                    const htmlContent = await response.text();
+
+                    // Create a new tab and write the HTML content to it
+                    const newTab = window.open('', '_blank');
+                    if (newTab) {
+                        newTab.document.write(htmlContent);
+                        newTab.document.close();
+                    } else {
+                        // If popup is blocked, offer to download instead
+                        alert('Popup blocked. Please allow popups or use the download option.');
+
+                        // Create a blob and download
+                        const blob = new Blob([htmlContent], { type: 'text/html' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    }
+                    return;
+                }
+
+                // For non-HTML files, download as before
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
 
@@ -910,7 +939,6 @@
                 alert(`Download failed: ${error.message}`);
             }
         }
-
         // Polling function to check task status
         async function pollTaskStatus(taskId, statusElementId) {
             const maxAttempts = 60; // 5 minutes at 5-second intervals
