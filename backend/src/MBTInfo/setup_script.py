@@ -1,4 +1,4 @@
-1#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 MBTI FastAPI Service Setup and Run Script
 """
@@ -22,10 +22,10 @@ def check_python_version():
 def install_requirements():
     """Install required packages"""
     print("\n📦 Installing requirements...")
-    
+
     requirements = [
         "fastapi==0.104.1",
-        "uvicorn[standard]==0.24.0", 
+        "uvicorn[standard]==0.24.0",
         "python-multipart==0.0.6",
         "pydantic==2.5.0",
         "openpyxl==3.1.2",
@@ -35,49 +35,49 @@ def install_requirements():
         "python-dateutil==2.8.2",
         "requests==2.31.0"
     ]
-    
+
     for req in requirements:
         try:
             print(f"Installing {req}...")
-            subprocess.check_call([sys.executable, "-m", "pip", "install", req], 
+            subprocess.check_call([sys.executable, "-m", "pip", "install", req],
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError:
             print(f"⚠️  Warning: Failed to install {req}")
-    
+
     print("✅ Requirements installation completed")
 
 def create_directories():
     """Create necessary directories"""
     print("\n📁 Creating directories...")
-    
+
     directories = [
         r"F:\projects\MBTInfo\output",
         r"F:\projects\MBTInfo\input",
         "./temp",
         "./media"
     ]
-    
+
     for directory in directories:
         try:
             os.makedirs(directory, exist_ok=True)
             print(f"✅ Created: {directory}")
         except Exception as e:
             print(f"⚠️  Warning: Could not create {directory}: {e}")
-    
+
     # Check for logo file
     logo_paths = [
         "./media/full_logo.png",
         "./Media/full_logo.png",
         r"F:\projects\MBTInfo\Media\full_logo.png"
     ]
-    
+
     logo_found = False
     for logo_path in logo_paths:
         if os.path.exists(logo_path):
             print(f"✅ Logo found: {logo_path}")
             logo_found = True
             break
-    
+
     if not logo_found:
         print("⚠️  Logo not found. Please place your logo at ./media/full_logo.png")
         print("   The web interface will work without it, but the logo won't display.")
@@ -85,7 +85,7 @@ def create_directories():
 def create_index_html():
     """Create the index.html file if it doesn't exist"""
     print("\n🌐 Setting up web interface...")
-    
+
     html_file = "index.html"
     if not os.path.exists(html_file):
         print("Creating index.html file...")
@@ -97,16 +97,16 @@ def create_index_html():
 def check_existing_modules():
     """Check if required MBTI processing modules exist"""
     print("\n🔍 Checking existing MBTI modules...")
-    
+
     required_modules = [
         "main.py",
-        "personal_report.py", 
+        "personal_report.py",
         "extract_image.py",
         "data_extractor.py",
         "utils.py",
         "consts.py"
     ]
-    
+
     missing_modules = []
     for module in required_modules:
         if os.path.exists(module):
@@ -114,23 +114,23 @@ def check_existing_modules():
         else:
             print(f"❌ Missing: {module}")
             missing_modules.append(module)
-    
+
     if missing_modules:
         print(f"\n⚠️  Warning: Missing modules: {', '.join(missing_modules)}")
         print("Make sure your existing MBTI processing files are in the same directory")
         return False
-    
+
     return True
 
 def check_test_files():
     """Check if test files exist"""
     print("\n📋 Checking test files...")
-    
+
     test_files = [
         r"F:\projects\MBTInfo\input\nir-bensinai-MBTI.pdf",
         r"F:\projects\MBTInfo\input"
     ]
-    
+
     for file_path in test_files:
         if os.path.exists(file_path):
             if os.path.isfile(file_path):
@@ -145,14 +145,14 @@ def start_service():
     """Start the FastAPI service"""
     print("\n🚀 Starting MBTI FastAPI Service...")
     print("=" * 50)
-    
+
     # Check if the service script exists
     service_script = "fastapi_service.py"  # The main FastAPI script
     if not os.path.exists(service_script):
         print(f"❌ Service script not found: {service_script}")
         print("Make sure the FastAPI service file is named 'fastapi_service.py'")
         return False
-    
+
     try:
         print(f"Starting service with: python {service_script}")
         print("\n📊 Service Information:")
@@ -161,7 +161,7 @@ def start_service():
         print("   Web Interface: http://localhost:8000")
         print("\n⏹️  Press Ctrl+C to stop the service")
         print("=" * 50)
-        
+
         # Wait a moment then open browser
         def open_browser():
             time.sleep(3)
@@ -170,15 +170,15 @@ def start_service():
                 print("\n🌐 Opening web browser...")
             except:
                 pass
-        
+
         import threading
         browser_thread = threading.Thread(target=open_browser)
         browser_thread.daemon = True
         browser_thread.start()
-        
+
         # Start the service
         subprocess.run([sys.executable, service_script])
-        
+
     except KeyboardInterrupt:
         print("\n\n⏹️  Service stopped by user")
         return True
@@ -192,12 +192,12 @@ def start_service():
 def run_quick_test():
     """Run the quick test script"""
     print("\n🧪 Running quick tests...")
-    
+
     test_script = "quick_test.py"
     if not os.path.exists(test_script):
         print(f"❌ Test script not found: {test_script}")
         return False
-    
+
     try:
         subprocess.run([sys.executable, test_script])
         return True
@@ -255,17 +255,17 @@ def check_system():
     """Check if system is ready"""
     print("\n🔍 System Check")
     print("="*30)
-    
+
     all_good = True
-    
+
     if not check_python_version():
         all_good = False
-    
+
     if not check_existing_modules():
         all_good = False
-    
+
     check_test_files()
-    
+
     # Check directories
     print("\n📁 Directory Check:")
     dirs = [r"F:\projects\MBTInfo\output", r"F:\projects\MBTInfo\input"]
@@ -275,7 +275,7 @@ def check_system():
         else:
             print(f"❌ {d}")
             all_good = False
-    
+
     print(f"\n{'✅ System Ready!' if all_good else '⚠️  Issues Found'}")
     return all_good
 
@@ -284,7 +284,7 @@ def main():
     while True:
         show_menu()
         choice = input("\n👉 Enter your choice (0-5): ").strip()
-        
+
         if choice == "0":
             print("\n👋 Goodbye!")
             break

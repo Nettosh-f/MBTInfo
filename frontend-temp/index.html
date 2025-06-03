@@ -828,7 +828,7 @@
     </div>
 
     <script>
-        const BASE_URL = 'http://desktop-sm21qic.tail63492a.ts.net:8000';
+        const BASE_URL = 'http://localhost:8000';
 
         // Tab switching functionality
         function showTab(tabName) {
@@ -990,7 +990,7 @@
                         showStatus(statusElementId, '⏰ <strong>TIMEOUT:</strong> Task took too long to complete. Please try again.', 'error');
                     }
                 } catch (error) {
-                    showStatus(statusElementId, `❌ <strong>CONNECTION ERROR:</strong> Cannot connect to server at ${BASE_URL}. Please ensure the server is running.`, 'error');
+                    showStatus(statusElementId, `❌ <strong>ERROR:</strong> ${error.message}`, 'error');
                 }
             };
 
@@ -1027,7 +1027,7 @@
                     showStatus('groupStatus', `❌ <strong>ERROR:</strong> ${result.detail}`, 'error');
                 }
             } catch (error) {
-                showStatus('groupStatus', `❌ <strong>CONNECTION ERROR:</strong> Cannot connect to server at ${BASE_URL}. Please ensure the server is running.`, 'error');
+                showStatus('groupStatus', `❌ <strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
             }
         });
 
@@ -1060,7 +1060,7 @@
                     showStatus('personalStatus', `❌ <strong>ERROR:</strong> ${result.detail}`, 'error');
                 }
             } catch (error) {
-                showStatus('personalStatus', `❌ <strong>CONNECTION ERROR:</strong> Cannot connect to server at ${BASE_URL}. Please ensure the server is running.`, 'error');
+                showStatus('personalStatus', `❌ <strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
             }
         });
 
@@ -1094,7 +1094,7 @@
                     showStatus('dualStatus', `❌ <strong>ERROR:</strong> ${result.detail}`, 'error');
                 }
             } catch (error) {
-                showStatus('dualStatus', `❌ <strong>CONNECTION ERROR:</strong> Cannot connect to server at ${BASE_URL}. Please ensure the server is running.`, 'error');
+                showStatus('dualStatus', `❌ <strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
             }
         });
 
@@ -1108,12 +1108,12 @@
             }
 
             try {
-                showStatus('translateStatus', '🌐 <strong>PROCESSING:</strong> Translating report...', 'processing');
+                showStatus('translateStatus', '🌐 <strong>PROCESSING:</strong> Processing translation request...', 'processing');
 
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
 
-                const response = await fetch(`${BASE_URL}/translate-report`, {
+                const response = await fetch(`${BASE_URL}/translate`, {
                     method: 'POST',
                     body: formData
                 });
@@ -1126,7 +1126,7 @@
                     showStatus('translateStatus', `❌ <strong>ERROR:</strong> ${result.detail}`, 'error');
                 }
             } catch (error) {
-                showStatus('translateStatus', `❌ <strong>CONNECTION ERROR:</strong> Cannot connect to server at ${BASE_URL}. Please ensure the server is running.`, 'error');
+                showStatus('translateStatus', `❌ <strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
             }
         });
 
@@ -1157,7 +1157,7 @@
                     max-width: 300px;
                     font-size: 0.9rem;
                 `;
-                notification.innerHTML = '⚠️ <strong>Service Offline:</strong> Make sure the MBTI Processing Service is running on http://desktop-sm21qic.tail63492a.ts.net:8000';
+                notification.innerHTML = '⚠️ <strong>Service Offline:</strong> Make sure the MBTI Processing Service is running on http://localhost:8000';
                 document.body.appendChild(notification);
 
                 // Auto-remove notification after 10 seconds

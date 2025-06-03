@@ -8,17 +8,31 @@ import os
 import uuid
 import tempfile
 import traceback
+import tempfile
 import shutil
 from datetime import datetime, timedelta
 import signal
 import atexit
 import asyncio
 import sys
-
+import uvicorn
 # Import your existing modules
 from main import process_files  # Your group processing function
 from personal_report import generate_personal_report
 from extract_image import extract_multiple_graphs_from_pdf
+
+
+TEMP_DIR = tempfile.mkdtemp()
+OUTPUT_DIR = r"F:\projects\MBTInfo\output"
+
+
+# @app.on_event("startup")
+# async def startup_event():
+#     """Initialize the application"""
+#     os.makedirs(TEMP_DIR, exist_ok=True)
+#     os.makedirs(OUTPUT_DIR, exist_ok=True)
+#     print(f"FastAPI MBTI Service started. Temp directory: {TEMP_DIR}")
+#     print(f"Output directory: {OUTPUT_DIR}")
 
 
 # Add this with your other Pydantic models at the top of the file
@@ -33,6 +47,7 @@ app = FastAPI(
     description="Service for MBTI report processing with 4 main activities",
     version="1.0.0"
 )
+app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
 
 # Add CORS middleware
 app.add_middleware(
@@ -219,7 +234,7 @@ async def process_personal_report(task_id: str, file_path: str):
         # Update task status to completed
         task_storage[task_id].status = "completed"
         task_storage[task_id].message = "Personal report generated successfully"
-        task_storage[task_id].download_url = f"/download/{task_id}/{output_filename}"
+        task_storage[task_id].download_url = f"/output/{output_filename}"
 
         # Add a flag to indicate this is an HTML file that should be opened in browser
         task_storage[task_id].file_type = "html"
@@ -232,7 +247,7 @@ async def process_personal_report(task_id: str, file_path: str):
         traceback.print_exc()
 
 
-@app.get("/download/{task_id}/{filename}")
+@app.get("/output/{filename}")
 async def download_file(task_id: str, filename: str):
     """Download the processed file or view HTML/PDF content"""
     if task_id not in task_storage:
@@ -250,6 +265,8 @@ async def download_file(task_id: str, filename: str):
         # Otherwise check in OUTPUT_DIR (for other files)
         file_path = os.path.join(OUTPUT_DIR, filename)
         if not os.path.exists(file_path):
+            print(file_path)
+
             raise HTTPException(status_code=404, detail="File not found")
 
     # For HTML files, return the content as HTML response
@@ -299,7 +316,7 @@ async def create_group_report_background(task_id: str, folder_path: str):
         workbook = process_files(folder_path, OUTPUT_DIR, output_filename, textfiles_dir)
 
         output_path = os.path.join(OUTPUT_DIR, output_filename)
-        download_url = f"/download/{task_id}/{output_filename}"
+        download_url = f"/output/{output_filename}"
 
         update_task_status(task_id, "completed", "Group report created successfully", download_url)
 
@@ -330,9 +347,10 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
 
         # Generate personal report using your personal_report.py - save to fixed output directory
         output_filename = f"personal_report_{task_id}.pdf"
+        output_html = f"personal_report_{task_id}.html"
         output_path = generate_personal_report(pdf_path, OUTPUT_DIR, output_filename)
 
-        download_url = f"/download/{task_id}/{os.path.basename(output_path)}"
+        download_url = f"/output/{output_html}"
         
         # Update task status with file_type set to "pdf_view" to indicate it should be opened in browser
         if task_id in task_storage:
@@ -689,4 +707,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

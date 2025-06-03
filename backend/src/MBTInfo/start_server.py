@@ -14,12 +14,13 @@ def main():
     print("Press Ctrl+C to stop the server")
     
     uvicorn.run(
-        "MBTInfo.App:app",
+        "MBTInfo.server:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
         log_level="info"
     )
+
 
 if __name__ == "__main__":
     main()
