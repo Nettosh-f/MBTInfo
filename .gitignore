@@ -36,3 +36,4 @@ __pycache__/
 # Output & input files
 output/
 input/
+*.zip

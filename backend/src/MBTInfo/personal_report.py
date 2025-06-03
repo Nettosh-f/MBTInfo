@@ -109,12 +109,31 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
     with open(temp_html_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
 
-    # Convert HTML to PDF
+    # Convert HTML to PDF using pdfkit or weasyprint
     output_path = os.path.join(output_dir, output_filename.replace('.xlsx', '.pdf'))
-
-    # Open HTML in browser for printing to PDF
-    print(f"Opening HTML report in browser. Please save as PDF to: {output_path}")
-    webbrowser.open(f"file://{os.path.abspath(temp_html_path)}")
+    
+    try:
+        # Try using WeasyPrint first (more reliable for complex layouts)
+        from weasyprint import HTML
+        HTML(string=html_content).write_pdf(output_path)
+        print(f"PDF generated successfully using WeasyPrint: {output_path}")
+    except ImportError:
+        try:
+            # Fall back to pdfkit if WeasyPrint is not available
+            import pdfkit
+            options = {
+                'page-size': 'Letter',
+                'encoding': 'UTF-8',
+                'enable-local-file-access': None,
+                'quiet': None
+            }
+            pdfkit.from_string(html_content, output_path, options=options)
+            print(f"PDF generated successfully using pdfkit: {output_path}")
+        except ImportError:
+            # If neither library is available, fall back to browser method
+            print("PDF generation libraries not found. Falling back to browser method.")
+            print(f"Opening HTML report in browser. Please save as PDF to: {output_path}")
+            webbrowser.open(f"file://{os.path.abspath(temp_html_path)}")
 
     return output_path
 
@@ -484,15 +503,6 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         <div class="footer">
         All rights reserved ©, Hagit Guira | 054-7828247 and Nir Ben Sinai 054-4343701
         </div>
-
-
-        <script>
-            window.onload = function() {{
-                setTimeout(function() {{
-                    window.print();
-                }}, 1000);
-            }};
-        </script>
     </body>
     </html>
     """

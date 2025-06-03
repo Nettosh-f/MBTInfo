@@ -50,6 +50,7 @@ class TaskStatus(BaseModel):
     status: str  # "pending", "processing", "completed", "failed"
     message: str
     download_url: Optional[str] = None
+    file_type: Optional[str] = None  # "html", "pdf", "xlsx", etc.
     created_at: datetime
 
 
@@ -65,6 +66,7 @@ task_storage: Dict[str, TaskStatus] = {}
 # Configuration - Fixed paths for testing
 TEMP_DIR = tempfile.mkdtemp()
 OUTPUT_DIR = r"F:\projects\MBTInfo\output"
+OUTPUT_DIR_FACET_GRAPH = r"F:\projects\MBTInfo\backend\media"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Media cleanup configuration
@@ -178,8 +180,6 @@ def update_task_status(task_id: str, status: str, message: str, download_url: Op
             task_storage[task_id].download_url = download_url
 
 
-
-
 async def process_personal_report(task_id: str, file_path: str):
     """Process a personal MBTI report"""
     try:
@@ -189,6 +189,7 @@ async def process_personal_report(task_id: str, file_path: str):
 
         # Get the output directory
         output_dir = os.path.join(TEMP_DIR, task_id)
+        os.makedirs(output_dir, exist_ok=True)
 
         # Process the PDF and generate the HTML report
         from personal_report import generate_html_report
@@ -220,6 +221,9 @@ async def process_personal_report(task_id: str, file_path: str):
         task_storage[task_id].message = "Personal report generated successfully"
         task_storage[task_id].download_url = f"/download/{task_id}/{output_filename}"
 
+        # Add a flag to indicate this is an HTML file that should be opened in browser
+        task_storage[task_id].file_type = "html"
+
     except Exception as e:
         # Update task status to failed
         task_storage[task_id].status = "failed"
@@ -230,7 +234,7 @@ async def process_personal_report(task_id: str, file_path: str):
 
 @app.get("/download/{task_id}/{filename}")
 async def download_file(task_id: str, filename: str):
-    """Download the processed file with proper headers for save dialog"""
+    """Download the processed file or view HTML/PDF content"""
     if task_id not in task_storage:
         raise HTTPException(status_code=404, detail="Task not found")
 
@@ -248,6 +252,12 @@ async def download_file(task_id: str, filename: str):
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail="File not found")
 
+    # For HTML files, return the content as HTML response
+    if filename.lower().endswith('.html'):
+        with open(file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+
     # Determine media type based on file extension
     media_type = "application/octet-stream"
     if filename.lower().endswith('.xlsx'):
@@ -256,22 +266,19 @@ async def download_file(task_id: str, filename: str):
         media_type = "application/pdf"
     elif filename.lower().endswith('.txt'):
         media_type = "text/plain"
-    elif filename.lower().endswith('.html'):
-        media_type = "text/html"
-        # For HTML files, you can either:
-        # 1. Return as a downloadable file (current behavior)
-        # 2. Return as HTML content to be displayed in the browser
-        # Option 2 would look like this:
-        with open(file_path, "r", encoding="utf-8") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
+
+    # Set Content-Disposition based on file_type in task_storage
+    # For PDF files that should be viewed in browser, use 'inline' instead of 'attachment'
+    content_disposition = "attachment"
+    if hasattr(task, 'file_type') and task.file_type == "pdf_view" and filename.lower().endswith('.pdf'):
+        content_disposition = "inline"
 
     return FileResponse(
         path=file_path,
         filename=filename,
         media_type=media_type,
         headers={
-            "Content-Disposition": f"attachment; filename=\"{filename}\"",
+            "Content-Disposition": f'{content_disposition}, filename"=\"{filename}\"',
             "Cache-Control": "no-cache"
         }
     )
@@ -316,7 +323,7 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
         for page_num in [4, 5, 6, 7]:
             rect_coords_dict = page_rectangles.get(page_num)
             extract_multiple_graphs_from_pdf(
-                pdf_path, OUTPUT_DIR, page_num, rect_coords_dict, zoom=2
+                pdf_path, OUTPUT_DIR_FACET_GRAPH, page_num, rect_coords_dict, zoom=2
             )
 
         update_task_status(task_id, "processing", "Generating personal report...")
@@ -326,7 +333,15 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
         output_path = generate_personal_report(pdf_path, OUTPUT_DIR, output_filename)
 
         download_url = f"/download/{task_id}/{os.path.basename(output_path)}"
-        update_task_status(task_id, "completed", "Personal report created successfully", download_url)
+        
+        # Update task status with file_type set to "pdf_view" to indicate it should be opened in browser
+        if task_id in task_storage:
+            task_storage[task_id].status = "completed"
+            task_storage[task_id].message = "Personal report created successfully"
+            task_storage[task_id].download_url = download_url
+            task_storage[task_id].file_type = "pdf_view"  # Add this flag to indicate browser opening
+        else:
+            update_task_status(task_id, "completed", "Personal report created successfully", download_url)
 
     except Exception as e:
         update_task_status(task_id, "failed", f"Personal report creation failed: {str(e)}")
@@ -593,40 +608,6 @@ async def get_task_status(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
     return task_storage[task_id]
-
-
-@app.get("/download/{task_id}/{filename}")
-async def download_file(task_id: str, filename: str):
-    """Download the processed file with proper headers for save dialog"""
-    if task_id not in task_storage:
-        raise HTTPException(status_code=404, detail="Task not found")
-
-    task = task_storage[task_id]
-    if task.status != "completed":
-        raise HTTPException(status_code=400, detail="Task not completed")
-
-    file_path = os.path.join(OUTPUT_DIR, filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    # Determine media type based on file extension
-    media_type = "application/octet-stream"
-    if filename.lower().endswith('.xlsx'):
-        media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    elif filename.lower().endswith('.pdf'):
-        media_type = "application/pdf"
-    elif filename.lower().endswith('.txt'):
-        media_type = "text/plain"
-
-    return FileResponse(
-        path=file_path,
-        filename=filename,
-        media_type=media_type,
-        headers={
-            "Content-Disposition": f"attachment; filename=\"{filename}\"",
-            "Cache-Control": "no-cache"
-        }
-    )
 
 
 @app.post("/admin/cleanup-media")

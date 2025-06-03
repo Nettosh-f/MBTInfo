@@ -30,3 +30,6 @@ requests==2.31.0
 
 # Optional: For production deployment
 gunicorn==21.2.0
+
+weasyprint>=53.0
+pdfkit>=1.0.0
