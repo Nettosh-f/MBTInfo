@@ -16,23 +16,31 @@ import atexit
 import asyncio
 import sys
 import uvicorn
+import logging
+from datetime import datetime
 # Import your existing modules
 from main import process_files  # Your group processing function
 from personal_report import generate_personal_report
 from extract_image import extract_multiple_graphs_from_pdf
 
+from utils import get_all_info
+
 
 TEMP_DIR = tempfile.mkdtemp()
 OUTPUT_DIR = r"F:\projects\MBTInfo\output"
 
+# Configure logging with timestamps
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
-# @app.on_event("startup")
-# async def startup_event():
-#     """Initialize the application"""
-#     os.makedirs(TEMP_DIR, exist_ok=True)
-#     os.makedirs(OUTPUT_DIR, exist_ok=True)
-#     print(f"FastAPI MBTI Service started. Temp directory: {TEMP_DIR}")
-#     print(f"Output directory: {OUTPUT_DIR}")
+# Create a logger for this module
+logger = logging.getLogger("mbti_server")
+
+# Log startup information
+logger.info("MBTI Processing Service initializing...")
 
 
 # Add this with your other Pydantic models at the top of the file
@@ -57,6 +65,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the application"""
+    app.state.start_time = datetime.now()
+
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    logger.info(f"FastAPI MBTI Service started at {app.state.start_time.isoformat()}")
+    logger.info(f"Temp directory: {TEMP_DIR}")
+    logger.info(f"Output directory: {OUTPUT_DIR}")
 
 
 # Pydantic models
@@ -344,13 +365,17 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
             )
 
         update_task_status(task_id, "processing", "Generating personal report...")
+        person_name = os.path.basename(pdf_path)
+        person_name = person_name.replace(" ", "_")
+        person_name = person_name.replace("-", "_")
+        person_name = person_name.replace(".pdf", "")
 
         # Generate personal report using your personal_report.py - save to fixed output directory
-        output_filename = f"personal_report_{task_id}.pdf"
-        output_html = f"personal_report_{task_id}.html"
+        output_filename = f"{person_name}_personal_report_{task_id}.pdf"
+        output_html = f"{person_name}_personal_report_{task_id}.html"
         output_path = generate_personal_report(pdf_path, OUTPUT_DIR, output_filename)
-
-        download_url = f"/output/{output_html}"
+        print(person_name)
+        download_url = f"/output/{output_filename}"
         
         # Update task status with file_type set to "pdf_view" to indicate it should be opened in browser
         if task_id in task_storage:
@@ -694,13 +719,17 @@ async def get_media_status():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    current_time = datetime.now()
     return {
         "status": "healthy",
-        "timestamp": datetime.now(),
+        "timestamp": current_time,
+        "timestamp_iso": current_time.isoformat(),
+        "timestamp_utc": datetime.utcnow().isoformat() + "Z",
         "active_tasks": len(task_storage),
         "output_dir": OUTPUT_DIR,
         "output_dir_exists": os.path.exists(OUTPUT_DIR),
-        "cleanup_on_exit": "enabled"
+        "cleanup_on_exit": "enabled",
+        "server_uptime": str(current_time - app.state.start_time) if hasattr(app.state, "start_time") else "unknown"
     }
 
 
