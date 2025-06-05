@@ -7,6 +7,7 @@ from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.styles import Font, PatternFill
 from openpyxl.drawing.line import LineProperties
 from openpyxl.chart.layout import Layout, ManualLayout
+# local import
 from consts import mbti_colors, MBTI_TYPES
 
 

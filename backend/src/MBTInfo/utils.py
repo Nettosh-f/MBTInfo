@@ -1,8 +1,11 @@
 import re
 import os
 from datetime import datetime
-from consts import MBTI_TYPES, FACETS, MIDZONE_FACETS, dominant_functions, All_Facets
+import openpyxl
 from typing import Dict, Optional, List, Tuple
+# local imports
+from consts import MBTI_TYPES, FACETS, MIDZONE_FACETS, dominant_functions, All_Facets
+
 lowercase_facets = [facet.lower() for facet in All_Facets]
 
 
@@ -334,8 +337,20 @@ def check_managing_change(file_path: str) -> list[str]:
 
 def reorder_sheets(workbook):
     """Reorder sheets to put Dashboard first, followed by main data sheet"""
+    # Check if workbook is a string (file path)
+    if isinstance(workbook, str):
+        try:
+            # Load the workbook from the file path
+            wb = openpyxl.load_workbook(workbook)
+        except Exception as e:
+            print(f"Error loading workbook from path '{workbook}': {e}")
+            return None
+    else:
+        # Use the provided workbook object
+        wb = workbook
+
     # Get the current sheet names
-    sheet_names = workbook.sheetnames
+    sheet_names = wb.sheetnames
 
     # Define the desired order - Dashboard first, then Data, then others
     desired_order = []
@@ -354,7 +369,31 @@ def reorder_sheets(workbook):
             desired_order.append(sheet_name)
 
     # Reorder the sheets
-    workbook._sheets = [workbook[sheet_name] for sheet_name in desired_order]
+    wb._sheets = [wb[sheet_name] for sheet_name in desired_order]
+
+    # If workbook was a file path, save the changes back to the file
+    if isinstance(workbook, str):
+        try:
+            wb.save(workbook)
+        except Exception as e:
+            print(f"Error saving workbook to path '{workbook}': {e}")
+
+    return wb
+
+
+def load_and_reorder_workbook(file_path: str):
+    try:
+        # Load the workbook
+        workbook = openpyxl.load_workbook(file_path)
+
+        # Call the reorder_sheets function with the loaded workbook
+        reorder_sheets(workbook)
+
+        # Save the workbook if needed
+        workbook.save(file_path)
+    except Exception as e:
+        print(f"Error loading or processing workbook: {e}")
+
 
 
 def count_first_words_on_page(file_path: str, word_list: List[str], page_number: int) -> Dict[str, int]:

@@ -2,9 +2,11 @@ import os
 import openpyxl as xl
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.styles import Alignment, Font
+# local import
 from utils import (get_all_info, find_and_parse_mbti_scores, convert_scores_to_mbti_dict, collect_qualities,
-                   check_communication, check_managing_change, check_managing_conflict)
+                    check_communication, check_managing_change, check_managing_conflict)
 from consts import FACETS
+
 
 def process_pdf_to_xl(text_path, output_dir, result_sheet_name, output_filename):
     info = get_all_info(text_path)

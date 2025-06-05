@@ -3,6 +3,7 @@ from openpyxl.styles import PatternFill
 from openpyxl.formatting.rule import ColorScaleRule, Rule, FormulaRule
 from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.utils import get_column_letter
+# local import
 from consts import mbti_colors, FACETS, MIDZONE_FACETS
 
 

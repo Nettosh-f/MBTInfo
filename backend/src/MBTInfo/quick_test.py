@@ -8,8 +8,8 @@ import os
 
 # Your specific file paths
 SINGLE_PDF = r"F:\projects\MBTInfo\input\nir-bensinai-MBTI.pdf"
-FOLDER_PATH = r"F:\projects\MBTInfo\input"
-OUTPUT_DIR = r"F:\projects\MBTInfo\output"
+FOLDER_PATH = r"/input"
+OUTPUT_DIR = r"/output"
 BASE_URL = "http://localhost:8000"
 
 

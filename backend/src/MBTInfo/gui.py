@@ -4,7 +4,8 @@ import os
 import subprocess
 import sys
 import threading
-from main import process_files
+from group_report import process_files
+# local import
 from personal_report import generate_personal_report
 from extract_image import extract_multiple_graphs_from_pdf
 

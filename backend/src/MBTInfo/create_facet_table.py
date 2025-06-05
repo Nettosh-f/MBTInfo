@@ -1,8 +1,9 @@
 import openpyxl
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.styles import Font, PatternFill
-from formatting import adjust_column_widths
 from collections import Counter
+# local import
+from formatting import adjust_column_widths
 
 
 def create_facet_table(workbook):

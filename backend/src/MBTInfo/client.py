@@ -116,7 +116,7 @@ def example_usage():
     print("1. CREATE GROUP REPORT")
     print("-" * 30)
     try:
-        folder_path = r"F:\projects\MBTInfo\input"
+        folder_path = r"/input"
         print(f"Processing folder: {folder_path}")
 
         task_id = client.create_group_report(folder_path)
@@ -140,7 +140,7 @@ def example_usage():
     print("2. CREATE PERSONAL REPORT")
     print("-" * 30)
     try:
-        pdf_path = r"F:\projects\MBTInfo\input\nir-bensinai-MBTI.pdf"
+        pdf_path = r"/input/nir-bensinai-MBTI.pdf"
         print(f"Processing file: {pdf_path}")
 
         task_id = client.create_personal_report(pdf_path)
@@ -164,9 +164,9 @@ def example_usage():
     print("-" * 30)
     try:
         # Using two files from your input folder for dual report example
-        pdf1_path = r"F:\projects\MBTInfo\input\nir-bensinai-MBTI.pdf"
+        pdf1_path = r"/input/nir-bensinai-MBTI.pdf"
         # You can add another PDF file path here when you have multiple files
-        pdf2_path = r"F:\projects\MBTInfo\input\nir-bensinai-MBTI.pdf"  # Using same file for demo
+        pdf2_path = r"/input/nir-bensinai-MBTI.pdf"  # Using same file for demo
         print(f"Processing files: {os.path.basename(pdf1_path)} and {os.path.basename(pdf2_path)}")
 
         task_id = client.create_dual_report(pdf1_path, pdf2_path)
@@ -189,7 +189,7 @@ def example_usage():
     print("4. TRANSLATE PDF (To be implemented)")
     print("-" * 30)
     try:
-        pdf_path = r"F:\projects\MBTInfo\input\nir-bensinai-MBTI.pdf"
+        pdf_path = r"/input/nir-bensinai-MBTI.pdf"
         print(f"Translating file: {os.path.basename(pdf_path)}")
 
         task_id = client.translate_pdf(pdf_path)

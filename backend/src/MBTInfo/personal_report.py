@@ -2,6 +2,7 @@ import os
 import webbrowser
 import tempfile
 from PIL import Image as PILImage
+# local imports
 from data_extractor import extract_and_save_text
 from utils import get_all_info, find_and_parse_mbti_scores, convert_scores_to_mbti_dict, collect_qualities, get_dominant
 from utils import get_three_repeating_explanations, get_facet_explanations, get_facet_descriptor
@@ -111,7 +112,7 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
 
     # Convert HTML to PDF using pdfkit or weasyprint
     output_path = os.path.join(output_dir, output_filename.replace('.xlsx', '.pdf'))
-    
+
     try:
         # Try using WeasyPrint first (more reliable for complex layouts)
         from weasyprint import HTML
@@ -422,29 +423,23 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 max-width: 100%;
             }}
             .content-wrapper {{
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                justify-content: flex-start; 
                 margin-top: 20px;
+                text-align: center;
             }}
             .first-page {{ 
                 min-height: 90vh; 
-                display: flex; 
-                flex-direction: column; 
-                align-items: center; 
-                justify-content: center; 
-                }}
+                text-align: center;
+            }}
             .first-page .image-container {{ 
                 max-width: 33%; 
                 max-height: 33%; 
                 padding-bottom: 30px; 
-                }}
-            .IntExtimg img {{ max-width: 80%; 
+            }}
+            .IntExtimg img {{ 
+                max-width: 80%; 
                 max-height: 50%;
                 display: block; 
                 margin: 10px auto 20px auto; 
-                margin-bottom: 20px; 
                 box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Right-bottom drop shadow */
             }}
             .functionality-description {{
@@ -484,17 +479,17 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         </div>
 
         <div class="page-break"></div>
-        <div class="content-wrapper page-content" style="justify-content: flex-start;">
+        <div class="content-wrapper page-content">
             <h2>אותיות חיצוניות</h2>
             <p class="functionality-description">מדברות על נראות חיצונית, וייב, גישה לחיים והתנהלות ביום-יום</p>
             <div class="IntExtimg" style="margin-bottom: 5px">
-                <img src="{image_data_urls.get('external', '')}" alt="MBTI External Function Image">
+                <img src="{image_data_urls.get('external', '')}" alt="MBTI External Function Image" style="width: 185px; height: 300px; object-fit: contain;">
             </div>
 
             <h2>אותיות פנימיות</h2>
             <p class="functionality-description">מדברות על תחומי עניין, סוג הקשר עם אחרים, תשוקה פנימית, מה "עושה לי את זה", וכן על גבי איזה "פנימיות" רוכבת או מתבססת ההתנהלות שמתוארת ע"י האותיות החיצוניות</p>
             <div class="IntExtimg">
-                <img src="{image_data_urls.get('internal', '')}" alt="MBTI Internal Function Image">
+                <img src="{image_data_urls.get('internal', '')}" alt="MBTI Internal Function Image" style="width: 209px; height: 300px; object-fit: contain;">
             </div>
         </div>
 

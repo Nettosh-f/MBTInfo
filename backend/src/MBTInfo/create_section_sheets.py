@@ -1,6 +1,7 @@
 import os
 from openpyxl.styles import Alignment, Font
 from openpyxl.worksheet.table import Table, TableStyleInfo
+# local import
 from utils import get_all_info, check_communication, check_managing_change, check_managing_conflict
 
 

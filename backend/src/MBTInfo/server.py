@@ -16,23 +16,36 @@ import atexit
 import asyncio
 import sys
 import uvicorn
+import logging
+from datetime import datetime
 # Import your existing modules
-from main import process_files  # Your group processing function
-from personal_report import generate_personal_report
+from group_report import process_group_report  # Your group processing function
+from personal_report import generate_personal_report, generate_html_report
 from extract_image import extract_multiple_graphs_from_pdf
+from utils import get_all_info
+from data_extractor import extract_and_save_text
 
 
 TEMP_DIR = tempfile.mkdtemp()
-OUTPUT_DIR = r"F:\projects\MBTInfo\output"
+OUTPUT_DIR = r"/output"
+INPUT_DIR = r"/input"
+OUTPUT_DIR_FACET_GRAPH = r"/backend/media"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(INPUT_DIR, exist_ok=True)
 
 
-# @app.on_event("startup")
-# async def startup_event():
-#     """Initialize the application"""
-#     os.makedirs(TEMP_DIR, exist_ok=True)
-#     os.makedirs(OUTPUT_DIR, exist_ok=True)
-#     print(f"FastAPI MBTI Service started. Temp directory: {TEMP_DIR}")
-#     print(f"Output directory: {OUTPUT_DIR}")
+# Configure logging with timestamps
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# Create a logger for this module
+logger = logging.getLogger("mbti_server")
+
+# Log startup information
+logger.info("MBTI Processing Service initializing...")
 
 
 # Add this with your other Pydantic models at the top of the file
@@ -59,6 +72,19 @@ app.add_middleware(
 )
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the application"""
+    app.state.start_time = datetime.now()
+
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    logger.info(f"FastAPI MBTI Service started at {app.state.start_time.isoformat()}")
+    logger.info(f"Temp directory: {TEMP_DIR}")
+    logger.info(f"Output directory: {OUTPUT_DIR}")
+
+
 # Pydantic models
 class TaskStatus(BaseModel):
     task_id: str
@@ -79,10 +105,7 @@ class TaskResponse(BaseModel):
 task_storage: Dict[str, TaskStatus] = {}
 
 # Configuration - Fixed paths for testing
-TEMP_DIR = tempfile.mkdtemp()
-OUTPUT_DIR = r"F:\projects\MBTInfo\output"
-OUTPUT_DIR_FACET_GRAPH = r"F:\projects\MBTInfo\backend\media"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 
 # Media cleanup configuration
 MEDIA_DIRECTORIES_TO_CHECK = [
@@ -90,7 +113,9 @@ MEDIA_DIRECTORIES_TO_CHECK = [
     "./backend/media",
     "../backend/media",
     "media",
-    "./media"
+    "./media",
+    "../media",
+    r"F:\projects\MBTInfo\backend\media"
 ]
 
 
@@ -106,7 +131,7 @@ def cleanup_media_directory():
             break
 
     if not active_media_dir:
-        print("📁 No media directory found, skipping cleanup")
+        print(f"📁 No media directory found in, skipping cleanup")
         return
 
     print(f"📁 Cleaning media directory: {active_media_dir}")
@@ -207,8 +232,7 @@ async def process_personal_report(task_id: str, file_path: str):
         os.makedirs(output_dir, exist_ok=True)
 
         # Process the PDF and generate the HTML report
-        from personal_report import generate_html_report
-        from data_extractor import extract_mbti_data
+
 
         # Extract data from the PDF
         mbti_data = extract_mbti_data(file_path)
@@ -344,14 +368,19 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
             )
 
         update_task_status(task_id, "processing", "Generating personal report...")
+        person_name = os.path.basename(pdf_path)
+        person_name = person_name.replace(" ", "_").replace("-", "_").replace(".pdf", "")
 
-        # Generate personal report using your personal_report.py - save to fixed output directory
-        output_filename = f"personal_report_{task_id}.pdf"
-        output_html = f"personal_report_{task_id}.html"
-        output_path = generate_personal_report(pdf_path, OUTPUT_DIR, output_filename)
+        # Create a directory for the PDF if it doesn't exist
+        person_dir = os.path.join(OUTPUT_DIR, person_name)
+        os.makedirs(person_dir, exist_ok=True)
 
-        download_url = f"/output/{output_html}"
-        
+        # Generate personal report using your personal_report.py - save to the person's directory
+        output_filename = f"{person_name}_personal_report_{task_id}.pdf"
+        output_path = generate_personal_report(pdf_path, person_dir, output_filename)
+        print(person_name)
+        download_url = f"/output/{person_name}/{output_filename}"
+
         # Update task status with file_type set to "pdf_view" to indicate it should be opened in browser
         if task_id in task_storage:
             task_storage[task_id].status = "completed"
@@ -397,12 +426,17 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
     try:
         update_task_status(task_id, "processing", "Processing translation request...")
 
+        # Create a directory for the PDF if it doesn't exist
+        person_name = os.path.basename(pdf_path).replace(" ", "_").replace("-", "_").replace(".pdf", "")
+        person_dir = os.path.join(OUTPUT_DIR, person_name)
+        os.makedirs(person_dir, exist_ok=True)
+
         # Simulate some processing time
         await asyncio.sleep(1)
 
-        # Create a message file in fixed output directory
+        # Create a message file in the person's directory
         output_filename = f"translation_{task_id}.txt"
-        output_path = os.path.join(OUTPUT_DIR, output_filename)
+        output_path = os.path.join(person_dir, output_filename)
 
         with open(output_path, 'w') as f:
             f.write(f"Translation request for: {os.path.basename(pdf_path)}\n")
@@ -410,7 +444,7 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
             f.write(f"Created: {datetime.now()}\n")
             f.write(f"Output Directory: {OUTPUT_DIR}\n")
 
-        download_url = f"/download/{task_id}/{output_filename}"
+        download_url = f"/output/{person_name}/{output_filename}"
         update_task_status(task_id, "completed", "Translation: To be implemented", download_url)
 
     except Exception as e:
@@ -694,13 +728,17 @@ async def get_media_status():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    current_time = datetime.now()
     return {
         "status": "healthy",
-        "timestamp": datetime.now(),
+        "timestamp": current_time,
+        "timestamp_iso": current_time.isoformat(),
+        "timestamp_utc": datetime.utcnow().isoformat() + "Z",
         "active_tasks": len(task_storage),
         "output_dir": OUTPUT_DIR,
         "output_dir_exists": os.path.exists(OUTPUT_DIR),
-        "cleanup_on_exit": "enabled"
+        "cleanup_on_exit": "enabled",
+        "server_uptime": str(current_time - app.state.start_time) if hasattr(app.state, "start_time") else "unknown"
     }
 
 
