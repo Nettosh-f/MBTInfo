@@ -20,19 +20,14 @@ import logging
 from datetime import datetime
 # Import your existing modules
 from group_report import process_group_report  # Your group processing function
-from personal_report import generate_personal_report, generate_html_report
+from personal_report import generate_personal_report
 from extract_image import extract_multiple_graphs_from_pdf
+
 from utils import get_all_info
-from data_extractor import extract_and_save_text
 
 
 TEMP_DIR = tempfile.mkdtemp()
-OUTPUT_DIR = r"/output"
-INPUT_DIR = r"/input"
-OUTPUT_DIR_FACET_GRAPH = r"/backend/media"
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-os.makedirs(INPUT_DIR, exist_ok=True)
-
+OUTPUT_DIR = r"F:\projects\MBTInfo\output"
 
 # Configure logging with timestamps
 logging.basicConfig(
@@ -105,7 +100,10 @@ class TaskResponse(BaseModel):
 task_storage: Dict[str, TaskStatus] = {}
 
 # Configuration - Fixed paths for testing
-
+TEMP_DIR = tempfile.mkdtemp()
+OUTPUT_DIR = r"F:\projects\MBTInfo\output"
+OUTPUT_DIR_FACET_GRAPH = r"F:\projects\MBTInfo\backend\media"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Media cleanup configuration
 MEDIA_DIRECTORIES_TO_CHECK = [
@@ -113,9 +111,7 @@ MEDIA_DIRECTORIES_TO_CHECK = [
     "./backend/media",
     "../backend/media",
     "media",
-    "./media",
-    "../media",
-    r"F:\projects\MBTInfo\backend\media"
+    "./media"
 ]
 
 
@@ -131,7 +127,7 @@ def cleanup_media_directory():
             break
 
     if not active_media_dir:
-        print(f"📁 No media directory found in, skipping cleanup")
+        print("📁 No media directory found, skipping cleanup")
         return
 
     print(f"📁 Cleaning media directory: {active_media_dir}")
@@ -232,7 +228,8 @@ async def process_personal_report(task_id: str, file_path: str):
         os.makedirs(output_dir, exist_ok=True)
 
         # Process the PDF and generate the HTML report
-
+        from personal_report import generate_html_report
+        from data_extractor import extract_mbti_data
 
         # Extract data from the PDF
         mbti_data = extract_mbti_data(file_path)
@@ -369,18 +366,17 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
 
         update_task_status(task_id, "processing", "Generating personal report...")
         person_name = os.path.basename(pdf_path)
-        person_name = person_name.replace(" ", "_").replace("-", "_").replace(".pdf", "")
+        person_name = person_name.replace(" ", "_")
+        person_name = person_name.replace("-", "_")
+        person_name = person_name.replace(".pdf", "")
 
-        # Create a directory for the PDF if it doesn't exist
-        person_dir = os.path.join(OUTPUT_DIR, person_name)
-        os.makedirs(person_dir, exist_ok=True)
-
-        # Generate personal report using your personal_report.py - save to the person's directory
+        # Generate personal report using your personal_report.py - save to fixed output directory
         output_filename = f"{person_name}_personal_report_{task_id}.pdf"
-        output_path = generate_personal_report(pdf_path, person_dir, output_filename)
+        output_html = f"{person_name}_personal_report_{task_id}.html"
+        output_path = generate_personal_report(pdf_path, OUTPUT_DIR, output_filename)
         print(person_name)
-        download_url = f"/output/{person_name}/{output_filename}"
-
+        download_url = f"/output/{output_filename}"
+        
         # Update task status with file_type set to "pdf_view" to indicate it should be opened in browser
         if task_id in task_storage:
             task_storage[task_id].status = "completed"
@@ -426,17 +422,12 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
     try:
         update_task_status(task_id, "processing", "Processing translation request...")
 
-        # Create a directory for the PDF if it doesn't exist
-        person_name = os.path.basename(pdf_path).replace(" ", "_").replace("-", "_").replace(".pdf", "")
-        person_dir = os.path.join(OUTPUT_DIR, person_name)
-        os.makedirs(person_dir, exist_ok=True)
-
         # Simulate some processing time
         await asyncio.sleep(1)
 
-        # Create a message file in the person's directory
+        # Create a message file in fixed output directory
         output_filename = f"translation_{task_id}.txt"
-        output_path = os.path.join(person_dir, output_filename)
+        output_path = os.path.join(OUTPUT_DIR, output_filename)
 
         with open(output_path, 'w') as f:
             f.write(f"Translation request for: {os.path.basename(pdf_path)}\n")
@@ -444,7 +435,7 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
             f.write(f"Created: {datetime.now()}\n")
             f.write(f"Output Directory: {OUTPUT_DIR}\n")
 
-        download_url = f"/output/{person_name}/{output_filename}"
+        download_url = f"/download/{task_id}/{output_filename}"
         update_task_status(task_id, "completed", "Translation: To be implemented", download_url)
 
     except Exception as e:
@@ -738,6 +729,9 @@ async def health_check():
         "output_dir": OUTPUT_DIR,
         "output_dir_exists": os.path.exists(OUTPUT_DIR),
         "cleanup_on_exit": "enabled",
+        "server_port": 3000,  # Added port information
+        "server_host": "0.0.0.0",  # Added host information
+        "tailscale_funnel": "enabled",  # Added Tailscale Funnel information
         "server_uptime": str(current_time - app.state.start_time) if hasattr(app.state, "start_time") else "unknown"
     }
 
@@ -745,4 +739,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("server:app", host="127.0.0.1", port=8443, reload=True)
+    uvicorn.run("server:app", host="127.0.0.1", port=3000, reload=True)
