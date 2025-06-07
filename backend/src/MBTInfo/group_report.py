@@ -9,6 +9,7 @@ from create_section_sheets import create_section_sheets
 from create_facet_table import create_facet_table
 from utils import reorder_sheets
 
+
 def process_group_report(input_directory, output_directory, output_filename):
     textfiles_directory = os.path.join(output_directory, 'textfiles')
     os.makedirs(output_directory, exist_ok=True)

@@ -11,7 +11,7 @@ def main():
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     print("Starting MBTI Processing API server...")
-    print("The server will be available at http://localhost:8443")
+    print("The server will be available at http://localhost:3000")
     print("Press Ctrl+C to stop the server")
     
     uvicorn.run(
