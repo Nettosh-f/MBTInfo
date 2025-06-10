@@ -46,9 +46,9 @@ def process_group_report(input_directory, output_directory, output_filename):
 
 
 def main():
-    input_directory = r"F:\projects\MBTInfo\input"
+    input_directory = r"F:\projects\MBTInfo\input\דוחות של כל אלעל\דוחות של כל אלעל"
     output_directory = r"F:\projects\MBTInfo\output"
-    output_filename = "MBTI_Results.xlsx"
+    output_filename = "MBTI_Results_EL_AL.xlsx"
 
     process_group_report(input_directory, output_directory, output_filename)
     print("Group report processing complete.")

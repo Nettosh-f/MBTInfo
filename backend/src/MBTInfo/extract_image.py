@@ -118,44 +118,16 @@ def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords
 
     pdf_document.close()
 
-if __name__ == "__main__":
-    # Path to your PDF file
-    pdf_path = r"F:\projects\MBTInfo\input\Tomer Shimon-Haiman-267149-7381d4d8-6235-f011-8b3d-000d3a381fe7.pdf"
 
-    # Output image path
-    output_dir = r"F:\projects\MBTInfo\output"
+def extract_all_facet_graphs(pdf_path, output_dir):
     os.makedirs(output_dir, exist_ok=True)
-
-    # Reset the used filenames for this run
     extract_multiple_graphs_from_pdf.used_filenames = set()
-
-    # Define different rectangle coordinates for each page with name indicators
-    # Format: Dictionary with name indicators as keys and coordinate tuples as values
     page_rectangles = {
-        4: {
-            "EIGraph": (0.1, 0.12, 0.9, 0.44),
-
-        },
-        5: {
-            "SNgraph": (0.1, 0.12, 0.9, 0.44),
-
-        },
-        6: {
-            "TFgraph": (0.1, 0.12, 0.9, 0.44),
-
-        },
-        7: {
-            "JPgraph": (0.1, 0.12, 0.9, 0.44),
-
-        }
-    }
-
-    pages_list = [4,5,6,7]
-    # page_rectangles = {0: {
-    #         "ST": (0.71, 0.54, 0.9, 0.76),
-    #
-    #     }}
-    # pages_list = [0]
+        4: {"EIGraph": (0.1, 0.12, 0.9, 0.44)},
+        5: {"SNgraph": (0.1, 0.12, 0.9, 0.44)},
+        6: {"TFgraph": (0.1, 0.12, 0.9, 0.44)},
+        7: {"JPgraph": (0.1, 0.12, 0.9, 0.44)}}
+    pages_list = [4, 5, 6, 7]
     for page_num in pages_list:
         print(f"Extracting graphs from page {page_num + 1}")
         rect_coords_dict = page_rectangles.get(page_num)
@@ -166,3 +138,67 @@ if __name__ == "__main__":
             rect_coords_dict,
             zoom=2
         )
+
+
+def extract_first_graph(pdf_path, output_dir):
+    """
+    Extract the first graph from a PDF and save it as an image.
+
+    Args:
+        pdf_path (str): Path to the PDF file
+        output_dir (str): Directory where the extracted image will be saved
+    """
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Define the rectangle coordinates for the first graph
+    rect_coords = (0.2507, 0.66665, 0.748, 0.7845)  # Example coordinates
+
+    # Define the output image path
+    pdf_filename = os.path.basename(pdf_path)
+    pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
+    output_image_path = os.path.join(output_dir, f"{pdf_name_without_ext[:6]}_first_graph.png")
+
+    # Extract the graph from the PDF
+    extract_graph_from_pdf(pdf_path, output_image_path, page_num=2, rect_coords=rect_coords, zoom=2)
+
+    print(f"First graph extracted and saved to {output_image_path}")
+
+    return output_image_path
+
+
+def extract_dominant_graph(pdf_path, output_dir):
+    """
+    Extract the dominant graph from a PDF and save it as an image.
+
+    Args:
+        pdf_path (str): Path to the PDF file
+        output_dir (str): Directory where the extracted image will be saved
+    """
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Define the rectangle coordinates for the first graph
+    rect_coords = (0.31, 0.28, 0.68, 0.455)  # Example coordinates
+
+    # Define the output image path
+    pdf_filename = os.path.basename(pdf_path)
+    pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
+    output_image_path = os.path.join(output_dir, f"{pdf_name_without_ext[:6]}_dominant_graph.png")
+
+    # Extract the graph from the PDF
+    extract_graph_from_pdf(pdf_path, output_image_path, page_num=12, rect_coords=rect_coords, zoom=2)
+
+    print(f"First graph extracted and saved to {output_image_path}")
+
+    return output_image_path
+
+
+if __name__ == "__main__":
+    path_to_pdf = r"F:\projects\MBTInfo\input\amir-tal-267149-f2ba2118-048a-ef11-8474-000d3a58ca2b.pdf"
+    name = os.path.basename(path_to_pdf).replace('.pdf', '')[:6]
+    path_to_output_dir = os.path.join(r"F:\projects\MBTInfo\backend\media\tmp", name)
+
+    extract_first_graph(path_to_pdf, path_to_output_dir)
+
+    extract_dominant_graph(path_to_pdf, path_to_output_dir)

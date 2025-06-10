@@ -148,6 +148,7 @@ def cleanup_media_directory():
     # Items to keep (whitelist)
     keep_items = {
         "Personal_Report_Media",  # Folder to keep
+        "Dual_Report_Media",  # Folder to keep
         "full_logo.png"  # File to keep
     }
 
@@ -679,7 +680,7 @@ async def manual_media_cleanup():
             "status": "success",
             "message": "Media directory cleanup completed",
             "timestamp": datetime.now(),
-            "kept_items": ["Personal_Report_Media/", "full_logo.png"]
+            "kept_items": ["Personal_Report_Media/", "Dual_Report_Media/", "full_logo.png"]
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
