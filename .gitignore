@@ -36,4 +36,5 @@ __pycache__/
 # Output & input files
 output/
 input/
+media/tmp/
 *.zip
