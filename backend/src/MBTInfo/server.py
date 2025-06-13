@@ -7,6 +7,10 @@ from typing import List, Optional, Dict
 import os
 import uuid
 import tempfile
+from zipfile import ZipFile
+import rarfile
+import glob
+import re
 import traceback
 import tempfile
 import shutil
@@ -24,13 +28,13 @@ from personal_report import generate_personal_report, generate_html_report
 from extract_image import extract_multiple_graphs_from_pdf
 from utils import get_all_info
 from data_extractor import extract_and_save_text
-
+from dual_report import generate_dual_report
 from utils import get_all_info
 
 TEMP_DIR = tempfile.mkdtemp()
-OUTPUT_DIR = r"/output"
-INPUT_DIR = r"/input"
-OUTPUT_DIR_FACET_GRAPH = r"/backend/media"
+OUTPUT_DIR = r"F:\projects\MBTInfo\output"
+INPUT_DIR = r"F:\projects\MBTInfo\input"
+OUTPUT_DIR_FACET_GRAPH = r"F:\projects\MBTInfo\backend\media"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 os.makedirs(INPUT_DIR, exist_ok=True)
 
@@ -187,7 +191,8 @@ def cleanup_on_exit():
     """Cleanup function called when service exits"""
     print("\n🛑 MBTI Processing Service shutting down...")
     cleanup_media_directory()
-
+    delete_uuid_folders_from(INPUT_DIR)
+    delete_uuid_folders_from(TEMP_DIR)
     # Cleanup temp directory
     try:
         shutil.rmtree(TEMP_DIR, ignore_errors=True)
@@ -340,13 +345,13 @@ async def create_group_report_background(task_id: str, folder_path: str):
     try:
         update_task_status(task_id, "processing", "Creating group report...")
 
-        # Use your existing process_files function with fixed output directory
+        # Use your existing process_group_report function with fixed output directory
         textfiles_dir = os.path.join(OUTPUT_DIR, "textfiles")
         os.makedirs(textfiles_dir, exist_ok=True)
         output_filename = f"group_report_{task_id}.xlsx"
 
-        # Call your main.py process_files function
-        workbook = process_files(folder_path, OUTPUT_DIR, output_filename, textfiles_dir)
+        # Call your main.py process_group_report function
+        workbook = process_group_report(folder_path, OUTPUT_DIR, output_filename)
 
         output_path = os.path.join(OUTPUT_DIR, output_filename)
         download_url = f"/output/{output_filename}"
@@ -410,24 +415,27 @@ async def create_dual_report_background(task_id: str, pdf1_path: str, pdf2_path:
 
         # Simulate some processing time
         await asyncio.sleep(2)
-
+        first_name_part = os.path.basename(pdf1_path)[:6]
+        second_name_part = os.path.basename(pdf2_path)[:6]
+        identifier = f"{first_name_part}_{second_name_part}"
         # For now, just create a placeholder message in fixed output directory
-        output_filename = f"dual_report_{task_id}.txt"
-        output_path = os.path.join(OUTPUT_DIR, output_filename)
+        output_filename = f"dual_report_{identifier}_{task_id[:6]}.pdf"
+        output_path = OUTPUT_DIR
+        generate_dual_report(pdf1_path, pdf2_path, output_path)
+        download_url = f"/output/{identifier}_dual_report.pdf"
 
-        with open(output_path, 'w') as f:
-            f.write(f"Dual report for:\n")
-            f.write(f"File 1: {os.path.basename(pdf1_path)}\n")
-            f.write(f"File 2: {os.path.basename(pdf2_path)}\n")
-            f.write(f"Status: To be implemented\n")
-            f.write(f"Created: {datetime.now()}\n")
-            f.write(f"Output Directory: {OUTPUT_DIR}\n")
-
-        download_url = f"/download/{task_id}/{output_filename}"
-        update_task_status(task_id, "completed", "Dual report placeholder created (to be implemented)", download_url)
+        if task_id in task_storage:
+            task_storage[task_id].status = "completed"
+            task_storage[task_id].message = "Dual comparison report created successfully"
+            task_storage[task_id].download_url = download_url
+            task_storage[task_id].file_type = "pdf_view"  # Add this flag to indicate browser opening
+        else:
+            update_task_status(task_id, "completed", "Dual comparison report created successfully", download_url)
 
     except Exception as e:
         update_task_status(task_id, "failed", f"Dual report creation failed: {str(e)}")
+        print(f"Error processing dual report: {str(e)}")
+        traceback.print_exc()
 
 
 async def translate_pdf_background(task_id: str, pdf_path: str):
@@ -509,6 +517,68 @@ async def root():
     </body>
     </html>
     """)
+
+
+@app.post("/upload-zip-group-report", response_model=TaskResponse)
+async def upload_zip_group_report(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(..., description="ZIP archive containing MBTI PDFs")
+    ):
+    ext = os.path.splitext(file.filename)[-1].lower()
+    if ext not in [".zip"]:
+        raise HTTPException(status_code=400, detail="Only ZIP files are supported")
+
+    task_id = create_task_id()
+    # Use archive filename (without extension) as folder name
+    base_name = os.path.splitext(os.path.basename(file.filename))[0]
+    task_dir = os.path.join(INPUT_DIR, base_name)
+
+    # Create clean folder (optional: clear if already exists)
+    if os.path.exists(task_dir):
+        shutil.rmtree(task_dir)
+    os.makedirs(task_dir, exist_ok=True)
+
+    # Save uploaded file
+    zip_path = os.path.join(task_dir, file.filename)
+    with open(zip_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    try:
+        with ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(task_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error extracting ZIP: {str(e)}")
+
+    os.remove(zip_path)
+
+    # Recursively find PDFs
+    pdf_files = glob.glob(os.path.join(task_dir, '**', '*.pdf'), recursive=True)
+    if not pdf_files:
+        raise HTTPException(status_code=400, detail="No PDF files found in archive")
+
+    # Flatten PDFs into one directory
+    flat_pdf_dir = os.path.join(task_dir, "all_pdfs")
+    os.makedirs(flat_pdf_dir, exist_ok=True)
+    for pdf in pdf_files:
+        base = os.path.basename(pdf)
+        new_name = f"{uuid.uuid4().hex[:8]}_{base}"
+        shutil.copy2(pdf, os.path.join(flat_pdf_dir, new_name))
+
+    # Queue background task
+    task_storage[task_id] = TaskStatus(
+        task_id=task_id,
+        status="pending",
+        message="Group report queued from archive",
+        created_at=datetime.now()
+    )
+    background_tasks.add_task(create_group_report_background, task_id, flat_pdf_dir)
+
+    return TaskResponse(
+        task_id=task_id,
+        status="pending",
+        message=f"Group report processing started for {file.filename}"
+    )
+
 
 
 @app.post("/create-group-report", response_model=TaskResponse)
@@ -612,7 +682,7 @@ async def create_dual_report(
     task_storage[task_id] = TaskStatus(
         task_id=task_id,
         status="pending",
-        message="Dual report queued (to be implemented)",
+        message="Dual report queued",
         created_at=datetime.now()
     )
 
@@ -749,6 +819,27 @@ async def health_check():
         "cleanup_on_exit": "enabled",
         "server_uptime": str(current_time - app.state.start_time) if hasattr(app.state, "start_time") else "unknown"
     }
+
+
+def is_uuid_folder(name: str) -> bool:
+    """Check if folder name looks like a UUID task ID"""
+    uuid_regex = re.compile(r"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$", re.IGNORECASE)
+    return bool(uuid_regex.match(name))
+
+
+def delete_uuid_folders_from(directory):
+    """Delete folders named like task_ids in the given directory"""
+    if not os.path.exists(directory):
+        return
+
+    for item in os.listdir(directory):
+        path = os.path.join(directory, item)
+        if os.path.isdir(path) and is_uuid_folder(item):
+            try:
+                shutil.rmtree(path)
+                print(f"🗑️  Removed task folder: {item}")
+            except Exception as e:
+                print(f"⚠️  Could not remove {item}: {e}")
 
 
 if __name__ == "__main__":
