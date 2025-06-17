@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 import threading
-from group_report import process_files
+from group_report import process_group_report
 # local import
 from personal_report import generate_personal_report
 from extract_image import extract_multiple_graphs_from_pdf
@@ -265,7 +265,7 @@ class MBTIGUI:
         # Define the processing function
         def process_thread():
             try:
-                workbook = process_files(input_dir, output_dir, output_filename, textfiles_dir)
+                workbook = process_group_report(input_dir, output_dir, output_filename)
 
                 # Ensure proper sheet ordering
                 try:

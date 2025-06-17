@@ -117,8 +117,6 @@ class TaskResponse(BaseModel):
 # In-memory task storage
 task_storage: Dict[str, TaskStatus] = {}
 
-# Configuration - Fixed paths for testing
-
 
 # Media cleanup configuration
 MEDIA_DIRECTORIES_TO_CHECK = [

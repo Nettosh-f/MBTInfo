@@ -20,6 +20,9 @@ def process_group_report(input_directory, output_directory, output_filename):
         os.remove(excel_file)
         print(f"Deleted existing {excel_file}")
 
+    # Track if we've successfully processed any files
+    processed_files = False
+
     for file in os.listdir(input_directory):
         if file.endswith('.pdf'):
             pdf_path = os.path.join(input_directory, file)
@@ -28,27 +31,38 @@ def process_group_report(input_directory, output_directory, output_filename):
             extract_and_save_text(pdf_path, textfiles_directory)
             if os.path.exists(txt_path):
                 process_pdf_to_xl(txt_path, output_directory, 'MBTI Results', output_filename)
+                processed_files = True
                 print(f'Processed {file}')
             else:
                 print(f'Error: Text file not found for {file}')
         else:
             print(f'Skipped {file} (not a PDF file)')
 
-    workbook = xl.load_workbook(excel_file)
-    create_distribution_charts(workbook)
-    create_section_sheets(textfiles_directory, workbook)
-    create_facet_table(workbook)
-    workbook.save(excel_file)
-    format_xl(excel_file)
-    reorder_sheets(excel_file)
-    print(f"All MBTI results, charts, and section sheets have been saved to {excel_file}")
+    # Only proceed with workbook operations if we've processed at least one file
+    if processed_files and os.path.exists(excel_file):
+        try:
+            workbook = xl.load_workbook(excel_file)
+            create_distribution_charts(workbook)
+            create_section_sheets(textfiles_directory, workbook)
+            create_facet_table(workbook)
+            workbook.save(excel_file)
+            format_xl(excel_file)
+            reorder_sheets(excel_file)
+            print(f"All MBTI results, charts, and section sheets have been saved to {excel_file}")
+            return True
+        except Exception as e:
+            print(f"Error processing workbook: {str(e)}")
+            return False
+    else:
+        print(f"No Excel file was created. Check if there were valid PDF files in the input directory.")
+        return False
 
 
 
 def main():
-    input_directory = r"F:\projects\MBTInfo\input\דוחות של כל אלעל\דוחות של כל אלעל"
+    input_directory = r"C:\Users\user\Downloads\שאלונים של זמינגו\שאלונים של זמינגו"
     output_directory = r"F:\projects\MBTInfo\output"
-    output_filename = "MBTI_Results_EL_AL.xlsx"
+    output_filename = "MBTI_Results_Zamingo.xlsx"
 
     process_group_report(input_directory, output_directory, output_filename)
     print("Group report processing complete.")

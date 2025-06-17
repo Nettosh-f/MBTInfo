@@ -50,14 +50,6 @@ def create_distribution_charts(workbook):
     # Hide gridlines in the dashboard for a cleaner look
     chart_sheet.sheet_view.showGridLines = False
 
-    # Reorder sheets to put Dashboard first
-    # reorder_sheets(workbook)
-
-    # if 'Dashboard' in workbook.sheetnames:
-    #     reset_column_widths(workbook['Dashboard'])
-
-    # create_dashboard_frame(chart_sheet)
-
 
 def prepare_main_distribution_data(data_sheet):
     # Write headers
@@ -93,7 +85,7 @@ def prepare_dichotomy_data(data_sheet):
     }
 
     # Energy source - E/I
-    data_sheet['D2'] = "Energy source - E/I"
+    data_sheet['D2'] = "Energy Orientation (E/I)"
     data_sheet['D2'].font = Font(bold=True)
     data_sheet['D3'] = "Extroversion"
     data_sheet['E3'] = "Introversion"
@@ -105,7 +97,7 @@ def prepare_dichotomy_data(data_sheet):
                                         end_color=dichotomy_colors["Introversion"], fill_type="solid")
 
     # Information - S/N
-    data_sheet['D6'] = "Information - S/N"
+    data_sheet['D6'] = "Information Gathering (S/N)"
     data_sheet['D6'].font = Font(bold=True)
     data_sheet['D7'] = "Sensing"
     data_sheet['E7'] = "Intuition"
@@ -117,7 +109,7 @@ def prepare_dichotomy_data(data_sheet):
                                         end_color=dichotomy_colors["Intuition"], fill_type="solid")
 
     # Decisions - T/F
-    data_sheet['D10'] = "Decisions - T/F"
+    data_sheet['D10'] = "Decision Making (T/F)"
     data_sheet['D10'].font = Font(bold=True)
     data_sheet['D11'] = "Thinking"
     data_sheet['E11'] = "Feeling"
@@ -129,7 +121,7 @@ def prepare_dichotomy_data(data_sheet):
                                          end_color=dichotomy_colors["Feeling"], fill_type="solid")
 
     # Lifestyle - J/P
-    data_sheet['D14'] = "Lifestyle - J/P"
+    data_sheet['D14'] = "Lifestyle & Structure (J/P)"
     data_sheet['D14'].font = Font(bold=True)
     data_sheet['D15'] = "Judging"
     data_sheet['E15'] = "Perceiving"
@@ -477,7 +469,6 @@ def prepare_facet_legend(chart_sheet):
     chart_sheet['X35'] = "MIDZONE"
 
 
-
 def prepare_external_internal_data(data_sheet):
     Internal_list = ["ST", "SF", "NF", "NT"]
     External_list = ["IJ", "IP", "EJ", "EP"]
@@ -549,7 +540,7 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
 
     # Chart size
     main_chart.width = 11.8618
-    main_chart.height = 13.1826
+    main_chart.height = 9.489
 
     # Data labels
     main_chart.dataLabels = DataLabelList()
@@ -566,10 +557,10 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
 
 def create_dichotomy_charts(data_sheet, chart_sheet):
     # Create stacked bar charts for each dichotomy
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Energy source - E/I", 3, 4, "K3")
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Information - S/N", 7, 8, "V3")
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Decisions - T/F", 11, 12, "K16")
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Lifestyle - J/P", 15, 16, "V16")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Energy source - E/I", 3, 4, "C22")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Information - S/N", 7, 8, "K22")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Decisions - T/F", 11, 12, "R22")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Lifestyle - J/P", 15, 16, "Z22")
 
 
 def create_stacked_dichotomy_chart(data_sheet, chart_sheet, title, label_row, count_row, position):
@@ -578,110 +569,73 @@ def create_stacked_dichotomy_chart(data_sheet, chart_sheet, title, label_row, co
     chart.type = "bar"
     chart.title = title
     chart.style = 10
+    chart.width = 11.86
+    chart.height = 3.0
 
-    # Set chart size
-    chart.width = 16.9164
-    chart.height = 2.69
-
-    # Reference the count data
+    # Data and categories
     data = Reference(data_sheet, min_col=4, max_col=5, min_row=count_row, max_row=count_row)
-
-    # Reference the labels
     cats = Reference(data_sheet, min_col=4, max_col=5, min_row=label_row, max_row=label_row)
-
-    # Add data and categories
     chart.add_data(data, titles_from_data=False)
     chart.set_categories(cats)
 
-    # Configure chart appearance
-    chart.y_axis.delete = True  # Remove y-axis
-    chart.plot_area.dTable = None
-    chart.x_axis.majorGridlines = None
-    chart.x_axis.minorGridlines = None
-    chart.legend = None
-
-    # Make it stacked
+    # Stacked, 100%
     chart.grouping = "percentStacked"
     chart.overlap = 100
+
+    # Remove ALL axes and legend
+    chart.y_axis.visible = False
+    chart.x_axis.visible = False
+    chart.legend = None
+    chart.y_axis.majorTickMark = "none"
+    chart.x_axis.majorTickMark = "none"
+    chart.y_axis.delete = True
+    chart.x_axis.delete = True
+
+    # Remove gridlines
     chart.x_axis.majorGridlines = None
     chart.x_axis.minorGridlines = None
     chart.y_axis.majorGridlines = None
     chart.y_axis.minorGridlines = None
-    # Remove vertical lines by setting the x-axis line properties to None
-    chart.x_axis.spPr = GraphicalProperties()
-    chart.x_axis.spPr.ln = LineProperties(noFill=True)
-    # Remove tick marks
-    chart.x_axis.majorTickMark = "none"
-    chart.x_axis.minorTickMark = "none"
-    # Hide legend
-    chart.legend = None
-    # Add data labels
+
+    # Data labels ON bar only
     chart.dataLabels = DataLabelList()
-    chart.dataLabels.showPercent = True
+    chart.dataLabels.showCatName = True    # Show only the category name (label)
     chart.dataLabels.showVal = False
-    chart.dataLabels.showCatName = True
+    chart.dataLabels.showPercent = False
     chart.dataLabels.showSerName = False
     chart.dataLabels.position = "ctr"
-    # Format the percentage display
-    chart.dataLabels.numFmt = '0%'
 
-    # Add legend back and position it below the title
-    chart.legend = None  # First remove any existing legend
-    chart.legend = openpyxl.chart.legend.Legend()
-    chart.legend.position = 't'
-    chart.legend.topMode = None
-    chart.legend.overlay = False
-    manual = ManualLayout(
-        x=0.33,      # Center horizontally (0.5 = 50%)
-        y=0.15,     # Position vertically (adjust as needed)
-        h=0.05,     # Height (adjust as needed)
-        w=0.9       # Width (adjust as needed)
-    )
-    chart.legend.layout = Layout(manualLayout=manual)
-    chart.legend.horAlign = 'center'
-    left_label = data_sheet.cell(row=label_row, column=4).value
-    right_label = data_sheet.cell(row=label_row, column=5).value
-    # Add the chart to the sheet
+    # Set custom fill colors
+    colors = ["4472C4", "C0504D"]  # Blue, Red (hex)
+    for idx, ser in enumerate(chart.series):
+        ser.graphicalProperties.solidFill = colors[idx]
+
+    # Add chart to sheet
     chart_sheet.add_chart(chart, position)
-    # Initialize series titles if needed
-    for i, s in enumerate(chart.series):
-        if i == 0:
-            # Create a new text object if none exists
-            if s.tx is None:
-                s.tx = SeriesLabel(v=left_label)
-            else:
-                # Set the value directly
-                s.tx.v = left_label
-        elif i == 1:
-            # Create a new text object if none exists
-            if s.tx is None:
-                s.tx = SeriesLabel(v=right_label)
-            else:
-                # Set the value directly
-                s.tx.v = right_label
+
     return chart
 
 
 def create_external_internal_charts(data_sheet, chart_sheet):
     # Create Internal Analysis Pie Chart
     internal_pie = PieChart()
-    internal_pie.title = "Internal Analysis Distribution"
+    internal_pie.title = "Internal letters Distribution"
     labels = Reference(data_sheet, min_col=7, min_row=3, max_row=6)
     data = Reference(data_sheet, min_col=8, min_row=3, max_row=6)
     internal_pie.add_data(data, titles_from_data=False)
     internal_pie.set_categories(labels)
-    internal_pie.width = 8.43
-    internal_pie.height = 8.128
+    internal_pie.width = 11.8618
+    internal_pie.height = 9.489
 
     # Create External Analysis Pie Chart
     external_pie = PieChart()
-    external_pie.title = "External Analysis Distribution"
+    external_pie.title = "External letters Distribution"
     labels = Reference(data_sheet, min_col=10, min_row=3, max_row=6)
     data = Reference(data_sheet, min_col=11, min_row=3, max_row=6)
     external_pie.add_data(data, titles_from_data=False)
     external_pie.set_categories(labels)
-    external_pie.width = 8.43
-    external_pie.height = 8.128
+    external_pie.width = 11.8618
+    external_pie.height = 9.489
 
     # Configure data labels for both charts
     for pie in [internal_pie, external_pie]:
@@ -692,8 +646,8 @@ def create_external_internal_charts(data_sheet, chart_sheet):
         pie.dataLabels.showSerName = False
 
     # Add the charts to the sheet
-    chart_sheet.add_chart(internal_pie, "K30")
-    chart_sheet.add_chart(external_pie, "P30")
+    chart_sheet.add_chart(internal_pie, "R3")
+    chart_sheet.add_chart(external_pie, "Z3")
 
 
 def create_dominant_chart(data_sheet, chart_sheet):
@@ -704,7 +658,7 @@ def create_dominant_chart(data_sheet, chart_sheet):
     dominant_pie.add_data(data, titles_from_data=False)
     dominant_pie.set_categories(labels)
     dominant_pie.width = 11.8618
-    dominant_pie.height = 8.128
+    dominant_pie.height = 9.489
     # Configure data labels for dominant function chart
     dominant_pie.dataLabels = DataLabelList()
     dominant_pie.dataLabels.showCatName = True
@@ -713,75 +667,94 @@ def create_dominant_chart(data_sheet, chart_sheet):
     dominant_pie.dataLabels.showSerName = False
 
     # Add the chart to the sheet
-    chart_sheet.add_chart(dominant_pie, "C30")
+    chart_sheet.add_chart(dominant_pie, "K3")
 
 
 def create_facet_bar_charts(data_sheet, chart_sheet):
     # Create pie charts for facet dichotomies, organized in rows
 
     # Row 1: E/I facets
-    create_facet_pie_chart(data_sheet, chart_sheet, "D20", "D21:D25", "E21:E25", "K9")  # Initiating-Receiving
-    create_facet_pie_chart(data_sheet, chart_sheet, "D28", "D29:D33", "E29:E33", "M9")  # Expressive-Contained
-    create_facet_pie_chart(data_sheet, chart_sheet, "D36", "D37:D41", "E37:E41", "O9")  # Gregarious-Intimate
-    create_facet_pie_chart(data_sheet, chart_sheet, "D44", "D45:D49", "E45:E49", "Q9")  # Active-Reflective
-    create_facet_pie_chart(data_sheet, chart_sheet, "D52", "D53:D57", "E53:E57", "S9")  # Enthusiastic-Quiet
+    create_facet_bar_chart(data_sheet, chart_sheet, "D20", "D21:D25", "E21:E25", "C29")  # Initiating-Receiving
+    create_facet_bar_chart(data_sheet, chart_sheet, "D28", "D29:D33", "E29:E33", "C35")  # Expressive-Contained
+    create_facet_bar_chart(data_sheet, chart_sheet, "D36", "D37:D41", "E37:E41", "C42")  # Gregarious-Intimate
+    create_facet_bar_chart(data_sheet, chart_sheet, "D44", "D45:D49", "E45:E49", "C50")  # Active-Reflective
+    create_facet_bar_chart(data_sheet, chart_sheet, "D52", "D53:D57", "E53:E57", "C57")  # Enthusiastic-Quiet
 
     # Row 2: S/N facets
-    create_facet_pie_chart(data_sheet, chart_sheet, "D60", "D61:D65", "E61:E65", "V9")  # Concrete-Abstract
-    create_facet_pie_chart(data_sheet, chart_sheet, "D68", "D69:D73", "E69:E73", "X9")  # Realistic-Imaginative
-    create_facet_pie_chart(data_sheet, chart_sheet, "D76", "D77:D81", "E77:E81", "Z9")  # Practical-Conceptual
-    create_facet_pie_chart(data_sheet, chart_sheet, "D84", "D85:D89", "E85:E89", "AB9")  # Experiential-Theoretical
-    create_facet_pie_chart(data_sheet, chart_sheet, "D92", "D93:D97", "E93:E97", "AD9")  # Traditional-Original
+    create_facet_bar_chart(data_sheet, chart_sheet, "D60", "D61:D65", "E61:E65", "K29")  # Concrete-Abstract
+    create_facet_bar_chart(data_sheet, chart_sheet, "D68", "D69:D73", "E69:E73", "K35")  # Realistic-Imaginative
+    create_facet_bar_chart(data_sheet, chart_sheet, "D76", "D77:D81", "E77:E81", "K42")  # Practical-Conceptual
+    create_facet_bar_chart(data_sheet, chart_sheet, "D84", "D85:D89", "E85:E89", "K50")  # Experiential-Theoretical
+    create_facet_bar_chart(data_sheet, chart_sheet, "D92", "D93:D97", "E93:E97", "K57")  # Traditional-Original
 
     # Row 3: T/F facets
-    create_facet_pie_chart(data_sheet, chart_sheet, "D100", "D101:D105", "E101:E105", "K22")  # Logical-Empathetic
-    create_facet_pie_chart(data_sheet, chart_sheet, "D108", "D109:D113", "E109:E113", "M22")  # Reasonable-Compassionate
-    create_facet_pie_chart(data_sheet, chart_sheet, "D116", "D117:D121", "E117:E121", "O22")  # Questioning-Accommodating
-    create_facet_pie_chart(data_sheet, chart_sheet, "D124", "D125:D129", "E125:E129", "Q22")  # Critical-Accepting
-    create_facet_pie_chart(data_sheet, chart_sheet, "D132", "D133:D137", "E133:E137", "S22")  # Tough-Tender
+    create_facet_bar_chart(data_sheet, chart_sheet, "D100", "D101:D105", "E101:E105", "R29")  # Logical-Empathetic
+    create_facet_bar_chart(data_sheet, chart_sheet, "D108", "D109:D113", "E109:E113", "R35")  # Reasonable-Compassionate
+    create_facet_bar_chart(data_sheet, chart_sheet, "D116", "D117:D121", "E117:E121", "R42")  # Questioning-Accommodating
+    create_facet_bar_chart(data_sheet, chart_sheet, "D124", "D125:D129", "E125:E129", "R50")  # Critical-Accepting
+    create_facet_bar_chart(data_sheet, chart_sheet, "D132", "D133:D137", "E133:E137", "R57")  # Tough-Tender
 
     # Row 4: J/P facets
-    create_facet_pie_chart(data_sheet, chart_sheet, "D140", "D141:D145", "E141:E145", "V22")  # Systematic-Casual
-    create_facet_pie_chart(data_sheet, chart_sheet, "D148", "D149:D153", "E149:E153", "X22")  # Planful-Open-Ended
-    create_facet_pie_chart(data_sheet, chart_sheet, "D156", "D157:D161", "E157:E161", "Z22")  # Early Starting-Pressure-Prompted
-    create_facet_pie_chart(data_sheet, chart_sheet, "D164", "D165:D169", "E165:E169", "AB22")  # Scheduled-Spontaneous
-    create_facet_pie_chart(data_sheet, chart_sheet, "D172", "D173:D177", "E173:E177", "AD22")  # Methodical-Emergent
+    create_facet_bar_chart(data_sheet, chart_sheet, "D140", "D141:D145", "E141:E145", "Z29")  # Systematic-Casual
+    create_facet_bar_chart(data_sheet, chart_sheet, "D148", "D149:D153", "E149:E153", "Z35")  # Planful-Open-Ended
+    create_facet_bar_chart(data_sheet, chart_sheet, "D156", "D157:D161", "E157:E161", "Z42")  # Early Starting-Pressure-Prompted
+    create_facet_bar_chart(data_sheet, chart_sheet, "D164", "D165:D169", "E165:E169", "Z50")  # Scheduled-Spontaneous
+    create_facet_bar_chart(data_sheet, chart_sheet, "D172", "D173:D177", "E173:E177", "Z57")  # Methodical-Emergent
 
 
-def create_facet_pie_chart(data_sheet, chart_sheet, title_cell, labels_range, data_range, position):
+def create_facet_bar_chart(data_sheet, chart_sheet, title_cell, labels_range, data_range, position):
     """Create a stacked bar chart for a facet dichotomy with improved styling"""
     # Create a horizontal stacked bar chart
     chart = BarChart()
     chart.type = "bar"
+
     # Get the title from the specified cell
     title = data_sheet[title_cell].value
     chart.title = title
     chart.style = 10
+
     # Set chart size
-    chart.width = 3.2766
-    chart.height = 3.5
+    chart.width = 11.8618
+    chart.height = 3
+
     # Reference the data and labels
     data = Reference(data_sheet, range_string=f"Data!{data_range}")
     labels = Reference(data_sheet, range_string=f"Data!{labels_range}")
     # Add data and categories
     chart.add_data(data, from_rows=True)
     chart.set_categories(labels)
-    # Configure chart appearance
-    chart.y_axis.delete = True  # Remove y-axis
-    chart.plot_area.dTable = None
-    chart.x_axis.majorGridlines = None
-    chart.x_axis.minorGridlines = None
+
     # Make it stacked
     chart.grouping = "percentStacked"
     chart.overlap = 100
+
+    # Remove ALL axes and legend
+    chart.y_axis.visible = False
+    chart.x_axis.visible = False
+    chart.legend = None
+    chart.y_axis.majorTickMark = "none"
+    chart.x_axis.majorTickMark = "none"
+    chart.y_axis.delete = True
+    chart.x_axis.delete = True
+
+    # Remove gridlines
+    chart.x_axis.majorGridlines = None
+    chart.x_axis.minorGridlines = None
     chart.y_axis.majorGridlines = None
     chart.y_axis.minorGridlines = None
+
+    # Data labels ON bar only
+    chart.dataLabels = DataLabelList()
+    chart.dataLabels.showCatName = True    # Show only the category name (label)
+    chart.dataLabels.showVal = False
+    chart.dataLabels.showPercent = False
+    chart.dataLabels.showSerName = False
+    chart.dataLabels.position = "ctr"
+
     # Remove vertical lines by setting the x-axis line properties to None
     chart.x_axis.spPr = GraphicalProperties()
     chart.x_axis.spPr.ln = LineProperties(noFill=True)
-    # Remove tick marks
-    chart.x_axis.majorTickMark = "none"
-    chart.x_axis.minorTickMark = "none"
+
     # Add data labels
     chart.dataLabels = DataLabelList()
     chart.dataLabels.showPercent = False

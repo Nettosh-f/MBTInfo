@@ -48,7 +48,7 @@ def remove_background_colors(img_path, target_colors, tolerance=60, output_path=
 
         # Save result
         output_img.save(output_path)
-        print(f"Image saved to {output_path}")
+        # print(f"Image saved to {output_path}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -75,7 +75,7 @@ def crop_image(img_path, crop_box, output_path=None):
 
         # Save the cropped image
         cropped_img.save(output_path)
-        print(f"Cropped image saved to {output_path}")
+        # print(f"Cropped image saved to {output_path}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -139,8 +139,8 @@ def create_red_graph(image_path: str, output_path: str, identifier: str) -> None
     crop_image(image_path, crop_box, output_path=cropped_output_path)
 
     # Debugging output
-    print(f"Cropped image path: {cropped_output_path}")
-    print(f"Output path for red graph: {output_path}")
+    # print(f"Cropped image path: {cropped_output_path}")
+    # print(f"Output path for red graph: {output_path}")
 
     background_colors = [(193, 206, 228), (216, 224, 199), (0, 0, 0), (255, 255, 255),
                          (45, 34, 14), (154, 143, 141), (255, 246, 216), (215, 234, 230),
@@ -176,15 +176,16 @@ def ensure_directory_exists(directory_path):
     os.makedirs(directory_path, exist_ok=True)
 
 
-def resize_image(image_path, output_path, scale_factor=2):
+def resize_image(image_path, output_path, scale_factor=2, preserve_colors=False):
     """
-    Resize an image by a given scale factor while preserving the original red and blue color values
+    Resize an image by a given scale factor while optionally preserving the original red and blue color values
     and maintaining the organic, wavy look.
     
     Args:
         image_path (str): Path to the input image.
         output_path (str): Path to save the resized image.
         scale_factor (float): Factor by which to scale the image.
+        preserve_colors (bool): Whether to preserve the original red and blue color values. Default is False.
     """
     # Load the image
     img = Image.open(image_path).convert("RGBA")
@@ -195,30 +196,35 @@ def resize_image(image_path, output_path, scale_factor=2):
     # Resize using nearest neighbor to maintain sharp edges
     resized_img = img.resize((new_width, new_height), Image.NEAREST)
 
-    # Convert to numpy array for pixel manipulation
-    data = np.array(resized_img)
+    if not preserve_colors:
+        # Convert to numpy array for pixel manipulation
+        data = np.array(resized_img)
 
-    # Extract RGB channels
-    r, g, b, a = data.T
+        # Extract RGB channels
+        r, g, b, a = data.T
 
-    # Create masks for red-dominant and blue-dominant pixels
-    red_dominant = (r > g) & (r > b) & (a > 0)
-    blue_dominant = (b > r) & (b > g) & (a > 0)
+        # Create masks for red-dominant and blue-dominant pixels
+        red_dominant = (r > g) & (r > b) & (a > 0)
+        blue_dominant = (b > r) & (b > g) & (a > 0)
 
-    # Set all non-red-dominant, non-blue-dominant pixels to transparent
-    transparent_mask = ~(red_dominant | blue_dominant)
-    data[..., 3][transparent_mask.T] = 0  # Set alpha to 0 for transparent pixels
+        # Set all non-red-dominant, non-blue-dominant pixels to transparent
+        transparent_mask = ~(red_dominant | blue_dominant)
+        data[..., 3][transparent_mask.T] = 0  # Set alpha to 0 for transparent pixels
 
-    # For red-dominant pixels, preserve the red value but zero out green and blue
-    data[..., 1][red_dominant.T] = 0
-    data[..., 2][red_dominant.T] = 0
+        # For red-dominant pixels, preserve the red value but zero out green and blue
+        data[..., 1][red_dominant.T] = 0
+        data[..., 2][red_dominant.T] = 0
 
-    # For blue-dominant pixels, preserve the blue value but zero out red and green
-    data[..., 0][blue_dominant.T] = 0
-    data[..., 1][blue_dominant.T] = 0
+        # For blue-dominant pixels, preserve the blue value but zero out red and green
+        data[..., 0][blue_dominant.T] = 0
+        data[..., 1][blue_dominant.T] = 0
 
-    # Convert back to image and save
-    result_img = Image.fromarray(data)
+        # Convert back to image
+        result_img = Image.fromarray(data)
+    else:
+        result_img = resized_img
+
+    # Save the result
     result_img.save(output_path)
 
 
@@ -250,11 +256,11 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
     ensure_directory_exists(tmp_dir)
     ensure_directory_exists(final_dir)
 
-    print(f"Extracting graphs from {first_name_part}'s PDF...")
+    # print(f"Extracting graphs from {first_name_part}'s PDF...")
     first_pdf_output_dir = os.path.join(output_dir, first_name)
     extract_all_facet_graphs(first_pdf_path, output_dir)
 
-    print(f"Extracting graphs from {second_name_part}'s PDF...")
+    # print(f"Extracting graphs from {second_name_part}'s PDF...")
     second_pdf_output_dir = os.path.join(output_dir, second_name)
     extract_all_facet_graphs(second_pdf_path, output_dir)
 
@@ -266,7 +272,7 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
 
     # Process each graph type
     for graph_type in graph_types:
-        print(f"Processing {graph_type}...")
+        # print(f"Processing {graph_type}...")
 
         # Define background image path based on graph type
         background_path = rf'F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\background{graph_type[:2]}.jpeg'
@@ -302,7 +308,7 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
         # Store the output path
         output_paths[graph_type] = final_output_path
 
-        print(f"Completed {graph_type} graph")
+        # print(f"Completed {graph_type} graph")
 
     print("All graphs created successfully!")
     return output_paths
@@ -312,7 +318,7 @@ def create_first_graph(first_pdf_path, second_pdf_path, output_dir):
     first_name_part = os.path.basename(first_pdf_path)[:6]
     second_name_part = os.path.basename(second_pdf_path)[:6]
     identifier = f"{first_name_part}_{second_name_part}"
-    background_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\page3_graph.png"
+    background_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\backgroundMBTI.jpeg"
     
     # Set up directories
     if output_dir is None:
@@ -323,8 +329,8 @@ def create_first_graph(first_pdf_path, second_pdf_path, output_dir):
     ensure_directory_exists(tmp_dir)
     ensure_directory_exists(final_dir)
 
-    print(f"Extracting graph from {first_name_part}'s PDF...")
-    print(f"Extracting graph from {second_name_part}'s PDF...")
+    # print(f"Extracting graph from {first_name_part}'s PDF...")
+    # print(f"Extracting graph from {second_name_part}'s PDF...")
     target_colors = [(192, 208, 167), (206, 218, 187), (178, 197, 148), (164, 187, 129), (0, 0, 0), (255, 255, 255)]
     first_graph_one_path = extract_first_graph(first_pdf_path, tmp_dir)
     first_graph_two_path = extract_first_graph(second_pdf_path, tmp_dir)
@@ -337,11 +343,11 @@ def create_first_graph(first_pdf_path, second_pdf_path, output_dir):
     resized_red_path = os.path.join(tmp_dir, f'{identifier}_one_red_resized.png')
     resized_blue_path = os.path.join(tmp_dir, f'{identifier}_two_blue_resized.png')
 
-    resize_image(rf"{tmp_dir}\first_graph_one_red.png", resized_red_path, scale_factor=2.1)
-    resize_image(rf"{tmp_dir}\first_graph_two_blue.png", resized_blue_path, scale_factor=2.1)
+    resize_image(rf"{tmp_dir}\first_graph_one_red.png", resized_red_path, scale_factor=1.5)
+    resize_image(rf"{tmp_dir}\first_graph_two_blue.png", resized_blue_path, scale_factor=1.5)
 
     overlay_images(resized_blue_path, resized_red_path, rf"{tmp_dir}\first_graph_combined.png", position=(0, 12))
-    overlay_images(background_path, rf"{tmp_dir}\first_graph_combined.png", rf"{final_dir}\{identifier}_first_graph_final.png", position=(392, 88))
+    overlay_images(background_path, rf"{tmp_dir}\first_graph_combined.png", rf"{final_dir}\{identifier}_first_graph_final.png", position=(300, 95))
     return rf"{final_dir}\{identifier}_first_graph_final.png"
 
 
@@ -349,7 +355,8 @@ def create_dominant_graph(first_pdf_path, second_pdf_path, output_dir):
     first_name_part = os.path.basename(first_pdf_path)[:6]
     second_name_part = os.path.basename(second_pdf_path)[:6]
     identifier = f"{first_name_part}_{second_name_part}"
-    background_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\white_1180x417.png"
+    background_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\white_1180x480.png"
+    text_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\backgroundtext.png"
     
     # Set up directories
     if output_dir is None:
@@ -360,17 +367,18 @@ def create_dominant_graph(first_pdf_path, second_pdf_path, output_dir):
     ensure_directory_exists(tmp_dir)
     ensure_directory_exists(final_dir)
 
-    print(f"Extracting graph from {first_name_part}'s PDF...")
-    print(f"Extracting graph from {second_name_part}'s PDF...")
+    # print(f"Extracting graph from {first_name_part}'s PDF...")
+    # print(f"Extracting graph from {second_name_part}'s PDF...")
     dom_graph_one_path = extract_dominant_graph(first_pdf_path, tmp_dir)
     dom_graph_two_path = extract_dominant_graph(second_pdf_path, tmp_dir)
     target_colors = [(226, 234, 215)]
     remove_background_colors(dom_graph_one_path, target_colors, tolerance=60)
     remove_background_colors(dom_graph_two_path, target_colors, tolerance=60)
-    print(rf"{tmp_dir}\dominant_graph_combined.png")
-    overlay_images(background_path, dom_graph_one_path, rf"{tmp_dir}\dominant_graph_combined.png", position=(90, 69))
-    overlay_images(rf"{tmp_dir}\dominant_graph_combined.png", dom_graph_two_path, rf"{final_dir}\{identifier}_dominant_graph_final.png", position=(634, 69))
-    print(f"Creating final image for {identifier}'s dominant graph...")
+    overlay_images(background_path, dom_graph_one_path, rf"{tmp_dir}\dominant_graph_combined.png", position=(90, 140))
+    overlay_images(rf"{tmp_dir}\dominant_graph_combined.png", dom_graph_two_path, rf"{final_dir}\{identifier}_dominant_graph_final.png", position=(634, 140))
+    overlay_images(rf"{final_dir}\{identifier}_dominant_graph_final.png", text_path,
+                   rf"{final_dir}\{identifier}_dominant_final_final.png", position=(84, 36))
+    # print(f"Creating final image for {identifier}'s dominant graph...")
     return rf"{final_dir}\{identifier}_dominant_graph_final.png"
 
 

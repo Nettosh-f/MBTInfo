@@ -925,25 +925,4 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
 if __name__ == "__main__":
     test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
     directory = r"F:\projects\MBTInfo\output"
-    # print(get_all_info(test_file_path))
-    # print(check_communication(test_file_path))
-    # print(check_managing_change(test_file_path))
-    # print(check_managing_conflict(test_file_path))
-    # print(get_dominant(test_file_path))
-
-    # page_list = [9, 11, 12]  # Pages to analyze
-    #
-    # # Get all counts (including zeros)
-    # print(f"\nAll counts across pages {page_list[0]}-{page_list[-1]}:")
-    # all_counts = count_first_words_across_pages(test_file_path, lowercase_facets, page_list)
-    # print(all_counts)
-    #
-    # # Get only non-zero counts
-    # print(f"\nNon-zero counts across pages {page_list[0]}-{page_list[-1]}:")
-    # non_zero_counts = count_first_words_across_pages(test_file_path, lowercase_facets, page_list, only_non_zero=True)
-    # print(non_zero_counts)
-
-    # Extract sections between markers, limiting to pages 6-9
-    # page_range = [9, 11, 12]
-    print(get_three_repeating_explanations(test_file_path))
-    print(get_facet_descriptor(test_file_path, "expressive-contained"))
+    print(get_all_info(test_file_path))

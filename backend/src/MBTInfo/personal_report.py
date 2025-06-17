@@ -281,7 +281,9 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
             <div class="page-break"></div>
             <div class="content-wrapper page-content" style="margin-bottom: 5px;">
                 <h2>Personal Focus: {display_facet}</h2>
-                <p>היבטים המופיעים במספר מימדים לאורך הדו"ח שלך</p>
+                <p style="text-align: center;">
+                היבטים המופיעים במספר מימדים לאורך הדו"ח שלך
+                </p>
 
                 {facet_image_tag}
 
@@ -339,9 +341,17 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 }}
                 .logo {{
                     position: fixed;
-                    top: 20px;
-                    left: 20px;
+                    top: -50px;  /* Moved closer to the top */
+                    left: 50%;
+                    transform: translateX(-50%);
+                    width: 100px; /* Adjust size as needed */
+                    height: auto;
                     z-index: 1000;
+                }}
+                .logo img {{
+                    border: none;
+                    padding: 0;
+                    background: none;
                 }}
             }}
             body {{
@@ -355,20 +365,23 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
             }}
             .logo {{
                 position: fixed;
-                top: 20px;
+                top: -50px;
                 left: 50%;
                 transform: translateX(-50%);
-                width: 100px; /* Adjust size as needed */
+                width: 100px;
                 height: auto;
                 z-index: 1000;
             }}
             .logo img {{
                 width: 100%;
                 height: auto;
+                border: none;
+                padding: 0;
+                background: none;
             }}
             /* Add padding to the top of each page to make room for the logo */
             .page-content {{
-                padding-top: 40px; /* Adjust based on logo size */
+                padding-top: 10px; /* Adjust based on logo size */
             }}
             h1, h2, h3 {{
                 color: #2c3e50;
@@ -397,7 +410,6 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Right-bottom drop shadow */
             }}
             .dominant-image img {{ max-width: 90%; max-height: 50%; }}
-            /* Full-size styling for facet images only */
             .facet-image-container {{ text-align: center; margin: 5px auto; width: 100%; }}
             .facet-image-container img {{ 
                 width: 75%; 
@@ -423,7 +435,6 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 max-width: 100%;
             }}
             .content-wrapper {{
-                margin-top: 20px;
                 text-align: center;
             }}
             .first-page {{ 
@@ -434,6 +445,16 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 max-width: 33%; 
                 max-height: 33%; 
                 padding-bottom: 30px; 
+            }}
+            /* Add a frame to all images */
+            img {{
+                border: 1px solid #2c3e50;
+                padding: 3px;
+                background-color: white;
+            }}
+            .general-image {{
+                padding:0;
+                margin:0;
             }}
             .IntExtimg img {{ 
                 max-width: 80%; 
@@ -455,6 +476,18 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 text-align: center;
                 font-size: 9pt;
                 color: #666;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+            }}
+            .footer img {{
+                height: 20px;
+                width: auto;
+                vertical-align: middle;
+                border: none;
+                padding: 0;
+                background: none;
             }}
         </style>
     </head>
@@ -487,7 +520,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
             </div>
 
             <h2>אותיות פנימיות</h2>
-            <p class="functionality-description">מדברות על תחומי עניין, סוג הקשר עם אחרים, תשוקה פנימית, מה "עושה לי את זה", וכן על גבי איזה "פנימיות" רוכבת או מתבססת ההתנהלות שמתוארת ע"י האותיות החיצוניות</p>
+            <p class="functionality-description">מדברות על תחומי עניין, סוג הקשר עם אחרים, תשוקה פנימית, מה "עושלי את זה", וכן על גבי איזה "פנימיות" רוכבת או מתבססת ההתנהלות שמתוארת ע"י האותיות החיצוניות</p>
             <div class="IntExtimg">
                 <img src="{image_data_urls.get('internal', '')}" alt="MBTI Internal Function Image" style="width: 209px; height: 300px; object-fit: contain;">
             </div>
@@ -496,7 +529,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         {facet_sections_html}
 
         <div class="footer">
-        All rights reserved ©, Hagit Guira | 054-7828247 and Nir Ben Sinai 054-4343701
+            All rights reserved © <img src="{logo_data_url}" alt="TEMBTI Logo">
         </div>
     </body>
     </html>

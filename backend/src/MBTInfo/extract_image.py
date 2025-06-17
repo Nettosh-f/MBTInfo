@@ -114,7 +114,7 @@ def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords
         # Save the pixmap as an image
         pixmap.save(output_image_path)
 
-        print(f"Graph '{name_indicator}' extracted from page {page_num + 1} and saved to {output_image_path}")
+        # print(f"Graph '{name_indicator}' extracted from page {page_num + 1} and saved to {output_image_path}")
 
     pdf_document.close()
 
@@ -129,7 +129,7 @@ def extract_all_facet_graphs(pdf_path, output_dir):
         7: {"JPgraph": (0.1, 0.12, 0.9, 0.44)}}
     pages_list = [4, 5, 6, 7]
     for page_num in pages_list:
-        print(f"Extracting graphs from page {page_num + 1}")
+        # print(f"Extracting graphs from page {page_num + 1}")
         rect_coords_dict = page_rectangles.get(page_num)
         extract_multiple_graphs_from_pdf(
             pdf_path,
@@ -162,7 +162,7 @@ def extract_first_graph(pdf_path, output_dir):
     # Extract the graph from the PDF
     extract_graph_from_pdf(pdf_path, output_image_path, page_num=2, rect_coords=rect_coords, zoom=2)
 
-    print(f"First graph extracted and saved to {output_image_path}")
+    # print(f"First graph extracted and saved to {output_image_path}")
 
     return output_image_path
 
@@ -189,7 +189,7 @@ def extract_dominant_graph(pdf_path, output_dir):
     # Extract the graph from the PDF
     extract_graph_from_pdf(pdf_path, output_image_path, page_num=12, rect_coords=rect_coords, zoom=2)
 
-    print(f"First graph extracted and saved to {output_image_path}")
+    # print(f"First graph extracted and saved to {output_image_path}")
 
     return output_image_path
 
