@@ -3,6 +3,8 @@ import base64
 from weasyprint import HTML
 from image_manipulation import create_all_graphs
 
+from data_extractor import extract_and_save_text
+
 from utils import get_all_info
 
 
@@ -14,14 +16,16 @@ def encode_image_base64(path):
 
 
 def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
-    # Generate overlaid facet graphs
-
+    text_folder = fr"F:\projects\MBTInfo\output\textfiles"
+    os.makedirs(text_folder, exist_ok=True)
 
     # get all info from text files
     name1 = os.path.basename(pdf1_path).replace(".pdf", "")
     name2 = os.path.basename(pdf2_path).replace(".pdf", "")
     text1 = fr"F:\projects\MBTInfo\output\textfiles\{name1}_text.txt"
     text2 = fr"F:\projects\MBTInfo\output\textfiles\{name2}_text.txt"
+    extract_and_save_text(pdf1_path, text_folder)
+    extract_and_save_text(pdf2_path, text_folder)
     info_pdf1 = get_all_info(text1)
     info_pdf2 = get_all_info(text2)
     first_name_part = os.path.basename(pdf1_path)[:6]
@@ -172,7 +176,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
             <img src="data:image/png;base64,{full_logo_base64}" alt="Company Logo">
         </div>
         <h1>
-        מה האשיות הזוגית שלכם?
+        ?מה האשיות הזוגית שלכם
         </h1>
         <div class="names"><b class="name1">{info_pdf1['name']}</b> | <b class="name2">  {info_pdf2['name']}</b></div>
         <div class="hebrewText">
@@ -187,8 +191,8 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
         <div class="hebrewText">
 במקומות בהם אתם <strong>שונים</strong> יכולות, מצד אחד, להתפתח דינאמיקות "משלימות" המייצרות 2<1+1. אילו נקודות חוזקה זוגיות אותן מומלץ להמשיך ולפתח. לעומת זאת,
 ייתכן וישנם מקומות של שוני המיצרים חילוקי דעות, חיכוחים וקונפליקטים. נסו להבין לעומק את מקומכם ואת מקומו של בן הזוג בהם.
-פיתוח מודעות שכזו עשויה להביא להבנה טובה יותר של אי ההבנות והחיכוחים ובהמשך קבלה והכלה שלהםת הצעד הבא הוא לחשוב על דרכים
-למנף את השוני ולנסות להפוך אותוупить הגדול מסך חלקיו, ע"י למשל, פיתוח הבנה שמה שיש לבן הזוג שלי יכול לעזור לי (להפך).
+פיתוח מודעות שכזו עשויה להביא להבנה טובה יותר של אי ההבנות והחיכוחים ובהמשך קבלה והכלה שלהם. הצעד הבא הוא לחשוב על דרכים
+למנף את השוני ולנסות להפוך אותו לשלם הגדול מסך חלקיו, ע"י למשל, פיתוח הבנה שמה שיש לבן הזוג שלי יכול לעזור לי (להפך).
         </div>
         
         <div class="section">

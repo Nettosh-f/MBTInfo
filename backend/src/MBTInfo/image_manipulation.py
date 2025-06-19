@@ -331,7 +331,7 @@ def create_first_graph(first_pdf_path, second_pdf_path, output_dir):
 
     # print(f"Extracting graph from {first_name_part}'s PDF...")
     # print(f"Extracting graph from {second_name_part}'s PDF...")
-    target_colors = [(192, 208, 167), (206, 218, 187), (178, 197, 148), (164, 187, 129), (0, 0, 0), (255, 255, 255)]
+    target_colors = [(192, 208, 167), (206, 218, 187), (178, 197, 148), (164, 187, 129), (0, 0, 0), (255, 255, 255), (126, 124, 124)]
     first_graph_one_path = extract_first_graph(first_pdf_path, tmp_dir)
     first_graph_two_path = extract_first_graph(second_pdf_path, tmp_dir)
     remove_background_colors(first_graph_one_path, target_colors, tolerance=60)
@@ -343,11 +343,11 @@ def create_first_graph(first_pdf_path, second_pdf_path, output_dir):
     resized_red_path = os.path.join(tmp_dir, f'{identifier}_one_red_resized.png')
     resized_blue_path = os.path.join(tmp_dir, f'{identifier}_two_blue_resized.png')
 
-    resize_image(rf"{tmp_dir}\first_graph_one_red.png", resized_red_path, scale_factor=1.5)
-    resize_image(rf"{tmp_dir}\first_graph_two_blue.png", resized_blue_path, scale_factor=1.5)
+    resize_image(rf"{tmp_dir}\first_graph_one_red.png", resized_red_path, scale_factor=1.4)
+    resize_image(rf"{tmp_dir}\first_graph_two_blue.png", resized_blue_path, scale_factor=1.4)
 
     overlay_images(resized_blue_path, resized_red_path, rf"{tmp_dir}\first_graph_combined.png", position=(0, 12))
-    overlay_images(background_path, rf"{tmp_dir}\first_graph_combined.png", rf"{final_dir}\{identifier}_first_graph_final.png", position=(300, 95))
+    overlay_images(background_path, rf"{tmp_dir}\first_graph_combined.png", rf"{final_dir}\{identifier}_first_graph_final.png", position=(328, 106))
     return rf"{final_dir}\{identifier}_first_graph_final.png"
 
 
@@ -392,8 +392,8 @@ def create_all_graphs(first_pdf_path, second_pdf_path, output_dir):
 
 
 if __name__ == '__main__':
-    first_pdf_path = r'F:\projects\MBTInfo\input\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a.pdf'
-    second_pdf_path = r'F:\projects\MBTInfo\input\Adi-Chen-267149-30ffb71f-a3fd-ef11-90cb-000d3a58c2b2.pdf'
+    first_pdf_path = r'F:\projects\MBTInfo\input\Eran-Amiry-267149-743ec182-78a1-ee11-8925-000d3a36c80e.pdf'
+    second_pdf_path = r'F:\projects\MBTInfo\input\Benyamin-Meiri-267149-b4eb8524-3773-ef11-bdfd-000d3a58cdb7.pdf'
 
     # Extract identifier based on both filenames
     first_name_part = os.path.basename(first_pdf_path).replace('.pdf', '')[:6]

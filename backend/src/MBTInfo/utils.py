@@ -1,5 +1,6 @@
 import re
 import os
+import fitz
 from datetime import datetime
 import openpyxl
 from typing import Dict, Optional, List, Tuple
@@ -31,6 +32,20 @@ def find_and_parse_mbti_scores(file_path: str) -> dict:
         print(f"An unexpected error occurred: {e}")
 
     return {}  # Return empty dictionary if no matching line is found or if there's an error
+
+
+def get_mbti_type_from_pdf(file_path: str) -> Optional[str]:
+    pdf_document = fitz.open(file_path)
+    page_num = 1  # Page number to extract text from
+    page = pdf_document[page_num]
+    text = page.get_text()
+    mbti_types = MBTI_TYPES
+    for mbti_type in mbti_types:
+        if mbti_type in text:
+            pdf_document.close()
+            return mbti_type
+    pdf_document.close()
+    return None
 
 
 def find_type(file_path: str) -> Optional[str]:
@@ -395,7 +410,6 @@ def load_and_reorder_workbook(file_path: str):
         print(f"Error loading or processing workbook: {e}")
 
 
-
 def count_first_words_on_page(file_path: str, word_list: List[str], page_number: int) -> Dict[str, int]:
     """
     Count occurrences of words from a list when they appear as the first word in a line
@@ -490,7 +504,6 @@ def count_first_words_across_pages(file_path: str, word_list: List[str], page_nu
     if only_non_zero:
         combined_counts = {word: count for word, count in combined_counts.items() if count > 0}
 
-    return combined_counts
     return combined_counts
 
 
@@ -923,6 +936,6 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
 
 
 if __name__ == "__main__":
-    test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
-    directory = r"F:\projects\MBTInfo\output"
-    print(get_all_info(test_file_path))
+    # test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
+    test_file_path = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
+    print(get_mbti_type_from_pdf(test_file_path))

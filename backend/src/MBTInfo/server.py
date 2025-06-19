@@ -23,13 +23,17 @@ import uvicorn
 import logging
 from datetime import datetime
 # Import your existing modules
-from group_report import process_group_report  # Your group processing function
+from group_report import process_group_report
 from personal_report import generate_personal_report, generate_html_report
 from extract_image import extract_multiple_graphs_from_pdf
 from utils import get_all_info
 from data_extractor import extract_and_save_text
 from dual_report import generate_dual_report
 from utils import get_all_info
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'MBTInterpret'))
+sys.path.append(parent_dir)
+from main import create_translated_pdf
+
 
 TEMP_DIR = tempfile.mkdtemp()
 OUTPUT_DIR = r"F:\projects\MBTInfo\output"
@@ -126,8 +130,26 @@ MEDIA_DIRECTORIES_TO_CHECK = [
     "media",
     "./media",
     "../media",
-    r"F:\projects\MBTInfo\backend\media"
+    r"F:\projects\MBTInfo\backend\media",
+    r"F:\projects\MBTInfo\output\textfiles",
+
 ]
+
+
+def cleanup_output_directory():
+    """Clean up the output directory by removing the 'textfiles' folder"""
+    print("\n🧹 Starting output directory cleanup...")
+
+    textfiles_dir = os.path.join(OUTPUT_DIR, "textfiles")
+
+    if os.path.exists(textfiles_dir):
+        try:
+            shutil.rmtree(textfiles_dir)
+            print(f"🗑️  Removed folder: textfiles")
+        except Exception as e:
+            print(f"⚠️  Could not remove 'textfiles' folder: {str(e)}")
+    else:
+        print("✨ 'textfiles' folder does not exist, no cleanup needed")
 
 
 def cleanup_media_directory():
@@ -189,6 +211,7 @@ def cleanup_on_exit():
     """Cleanup function called when service exits"""
     print("\n🛑 MBTI Processing Service shutting down...")
     cleanup_media_directory()
+    cleanup_output_directory()
     delete_uuid_folders_from(INPUT_DIR)
     delete_uuid_folders_from(TEMP_DIR)
     # Cleanup temp directory
@@ -337,6 +360,28 @@ async def download_file(task_id: str, filename: str):
     )
 
 
+async def translate_pdf_background(task_id: str, pdf_path: str):
+    """Background task for translating a PDF"""
+    try:
+        update_task_status(task_id, "processing", "Translating PDF...")
+
+        # Create a directory for the PDF if it doesn't exist
+        person_name = os.path.basename(pdf_path).replace(" ", "_").replace("-", "_").replace(".pdf", "")
+        person_dir = os.path.join(OUTPUT_DIR, person_name)
+        os.makedirs(person_dir, exist_ok=True)
+
+        # Await the create_translated_pdf function
+        output_pdf_path = await create_translated_pdf(pdf_path, person_dir)
+
+        download_url = f"/output/{person_name}/{os.path.basename(output_pdf_path)}"
+        update_task_status(task_id, "completed", "Translation completed successfully", download_url)
+
+    except Exception as e:
+        update_task_status(task_id, "failed", f"Translation failed: {str(e)}")
+        print(f"Error translating PDF: {str(e)}")
+        traceback.print_exc()
+        
+        
 # Background task functions
 async def create_group_report_background(task_id: str, folder_path: str):
     """Background task for creating group report from folder"""
@@ -436,35 +481,6 @@ async def create_dual_report_background(task_id: str, pdf1_path: str, pdf2_path:
         traceback.print_exc()
 
 
-async def translate_pdf_background(task_id: str, pdf_path: str):
-    """Background task for PDF translation (to be implemented)"""
-    try:
-        update_task_status(task_id, "processing", "Processing translation request...")
-
-        # Create a directory for the PDF if it doesn't exist
-        person_name = os.path.basename(pdf_path).replace(" ", "_").replace("-", "_").replace(".pdf", "")
-        person_dir = os.path.join(OUTPUT_DIR, person_name)
-        os.makedirs(person_dir, exist_ok=True)
-
-        # Simulate some processing time
-        await asyncio.sleep(1)
-
-        # Create a message file in the person's directory
-        output_filename = f"translation_{task_id}.txt"
-        output_path = os.path.join(person_dir, output_filename)
-
-        with open(output_path, 'w') as f:
-            f.write(f"Translation request for: {os.path.basename(pdf_path)}\n")
-            f.write(f"Status: To be implemented\n")
-            f.write(f"Created: {datetime.now()}\n")
-            f.write(f"Output Directory: {OUTPUT_DIR}\n")
-
-        download_url = f"/output/{person_name}/{output_filename}"
-        update_task_status(task_id, "completed", "Translation: To be implemented", download_url)
-
-    except Exception as e:
-        update_task_status(task_id, "failed", f"Translation request failed: {str(e)}")
-
 
 # API Endpoints
 @app.get("/", response_class=HTMLResponse)
@@ -504,7 +520,7 @@ async def root():
                     <li><strong>Group Report:</strong> POST /create-group-report</li>
                     <li><strong>Personal Report:</strong> POST /create-personal-report</li>
                     <li><strong>Dual Report:</strong> POST /create-dual-report</li>
-                    <li><strong>Translation:</strong> POST /translate</li>
+                    <li><strong>Translation:</strong> POST /translate-pdf</li>
                 </ul>
             </div>
 
@@ -586,7 +602,7 @@ async def create_group_report(
 ):
     """Create a group Excel report from a folder of PDF files"""
     if not os.path.exists(folder_path):
-        raise HTTPException(status_code=400, detail="Folder path does not exist")
+        raise HTTPException(status_code=400, detail="Folder path doesarest not exist")
 
     if not os.path.isdir(folder_path):
         raise HTTPException(status_code=400, detail="Path is not a directory")
@@ -716,7 +732,7 @@ async def translate_pdf(
     task_storage[task_id] = TaskStatus(
         task_id=task_id,
         status="pending",
-        message="Translation queued (to be implemented)",
+        message="Translation queued",
         created_at=datetime.now()
     )
 
@@ -726,7 +742,7 @@ async def translate_pdf(
     return TaskResponse(
         task_id=task_id,
         status="pending",
-        message=f"Translation processing started for {file.filename} (to be implemented)"
+        message=f"Translation processing started for {file.filename}"
     )
 
 

@@ -2,6 +2,7 @@ import fitz  # PyMuPDF
 import os
 import time
 import re
+from utils import get_mbti_type_from_pdf
 
 
 def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2):
@@ -150,9 +151,13 @@ def extract_first_graph(pdf_path, output_dir):
     """
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
-
-    # Define the rectangle coordinates for the first graph
-    rect_coords = (0.2507, 0.66665, 0.748, 0.7845)  # Example coordinates
+    if get_mbti_type_from_pdf(pdf_path) == "ISTJ":
+        # Define the rectangle coordinates for the first graph
+        rect_coords = (0.248, 0.6475, 0.748, 0.766)  # Example coordinates
+        print("type is ISTJ")
+    else:
+        # Define the rectangle coordinates for the first graph
+        rect_coords = (0.248, 0.66665, 0.748, 0.7845)  # Example coordinates
 
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
@@ -195,10 +200,10 @@ def extract_dominant_graph(pdf_path, output_dir):
 
 
 if __name__ == "__main__":
-    path_to_pdf = r"F:\projects\MBTInfo\input\amir-tal-267149-f2ba2118-048a-ef11-8474-000d3a58ca2b.pdf"
+    path_to_pdf = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
     name = os.path.basename(path_to_pdf).replace('.pdf', '')[:6]
     path_to_output_dir = os.path.join(r"F:\projects\MBTInfo\backend\media\tmp", name)
 
     extract_first_graph(path_to_pdf, path_to_output_dir)
 
-    extract_dominant_graph(path_to_pdf, path_to_output_dir)
+    # extract_dominant_graph(path_to_pdf, path_to_output_dir)

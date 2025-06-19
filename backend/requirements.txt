@@ -2,7 +2,13 @@ PyPDF2==3.0.1
 openpyxl==3.1.5
 pandas==2.2.3
 PyMuPDF~=1.25.1 # fitz
+
+# HTML to PDF conversion
 weasyprint~=65.1
+pdfkit>=1.0.0
+
+# Environment variables
+dotenv==0.9.9
 
 # FastAPI MBTI Service Requirements
 
@@ -18,11 +24,10 @@ pydantic==2.5.0
 PyJWT==2.8.0
 python-jose[cryptography]==3.3.0
 
-# Your existing MBTI processing dependencies
-openpyxl==3.1.2
-PyPDF2==3.0.1
-PyMuPDF==1.23.8
+# Image processing
 Pillow==10.1.0
+
+# Date and time utilities
 python-dateutil==2.8.2
 
 # HTTP client for testing
@@ -30,6 +35,3 @@ requests==2.31.0
 
 # Optional: For production deployment
 gunicorn==21.2.0
-
-weasyprint>=53.0
-pdfkit>=1.0.0

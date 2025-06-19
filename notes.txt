@@ -1,0 +1,3 @@
+Raw extracted text saved to: F:\projects\MBTInfo\output\textfiles\ADAM-P_raw.txt
+Cleaned text saved to: F:\projects\MBTInfo\output\textfiles\ADAM-P_cleaned.txt
+Translated text saved to F:\projects\MBTInfo\output\textfiles\ADAM-P_translated_raw.txt
