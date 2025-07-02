@@ -65,14 +65,18 @@ def process_pdf_with_gpt(pdf_path):
     if validation_response.upper().startswith("YES"):
         print("Generating insight...")
         insight_response = ask_gpt_with_images(content_blocks, PROMPT)
-        insight_response.replace("```html", "")
-        insight_response.replace("```", "")
+        print(insight_response)
+        insight_response = insight_response.replace("```html", "")
+        insight_response = insight_response.replace("```", "")
+        print(insight_response)
         # Create the insight.html file
-        output_path = os.path.join(os.path.dirname(pdf_path), "insight.html")
+        pdf_stub = os.path.splitext(os.path.basename(pdf_path))[0][:6]
+        insight_html_filename = f"insight_{pdf_stub}.html"
+        output_path = os.path.join(os.path.dirname(pdf_path), insight_html_filename)
         with open(output_path, "w", encoding="utf-8") as html_file:
             html_file.write(insight_response)
 
-        return {"status": "ok", "insight": insight_response}
+        return {"status": "ok", "insight": insight_response, "insight_path": output_path}
     else:
         return {"status": "not_mbti", "reason": validation_response}
 

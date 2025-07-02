@@ -30,6 +30,8 @@ from utils import get_all_info
 from data_extractor import extract_and_save_text
 from dual_report import generate_dual_report
 from utils import get_all_info
+from MBTInsight import process_pdf_with_gpt
+
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'MBTInterpret'))
 sys.path.append(parent_dir)
 from main import create_translated_pdf
@@ -360,6 +362,34 @@ async def download_file(task_id: str, filename: str):
     )
 
 
+async def insight_background(task_id: str, pdf_path: str):
+    try:
+        update_task_status(task_id, "processing", "Generating MBTI Insight with GPT-4o...")
+        result = process_pdf_with_gpt(pdf_path)
+        pdf_stub = os.path.splitext(os.path.basename(pdf_path))[0][:6]
+        insight_html_filename = f"insight_{pdf_stub}.html"
+        insight_html_path = os.path.join(os.path.dirname(pdf_path), insight_html_filename)
+
+        if result.get("status") == "ok" and "insight" in result:
+            # Save the AI's HTML to disk
+            with open(insight_html_path, "w", encoding="utf-8") as f:
+                f.write(result["insight"])
+            # Report status and correct download_url
+            update_task_status(
+                task_id, "completed", "Insight generated successfully.",
+                download_url=f"/output/{os.path.basename(os.path.dirname(pdf_path))}/{insight_html_filename}"
+            )
+            task_storage[task_id].file_type = "html"
+        else:
+            update_task_status(
+                task_id, "failed",
+                f"Insight generation failed: {result.get('reason', 'Unknown error')}"
+            )
+    except Exception as e:
+        update_task_status(task_id, "failed", f"Insight error: {str(e)}")
+
+
+
 async def translate_pdf_background(task_id: str, pdf_path: str):
     """Background task for translating a PDF"""
     try:
@@ -387,11 +417,14 @@ async def create_group_report_background(task_id: str, folder_path: str):
     """Background task for creating group report from folder"""
     try:
         update_task_status(task_id, "processing", "Creating group report...")
-
+        folder_name = os.path.basename(os.path.normpath(folder_path))
         # Use your existing process_group_report function with fixed output directory
         textfiles_dir = os.path.join(OUTPUT_DIR, "textfiles")
         os.makedirs(textfiles_dir, exist_ok=True)
-        output_filename = f"group_report_{task_id}.xlsx"
+        if os.path.exists(os.path.join(textfiles_dir, f"group_report_{folder_name}.xlsx")):
+            os.remove(os.path.join(textfiles_dir, f"group_report_{folder_name}.xlsx"))
+
+        output_filename = f"group_report_{folder_name}.xlsx"
 
         # Call your main.py process_group_report function
         workbook = process_group_report(folder_path, OUTPUT_DIR, output_filename)
@@ -479,7 +512,6 @@ async def create_dual_report_background(task_id: str, pdf1_path: str, pdf2_path:
         update_task_status(task_id, "failed", f"Dual report creation failed: {str(e)}")
         print(f"Error processing dual report: {str(e)}")
         traceback.print_exc()
-
 
 
 # API Endpoints
@@ -593,6 +625,34 @@ async def upload_zip_group_report(
         message=f"Group report processing started for {file.filename}"
     )
 
+
+@app.post("/insight-by-download-url", response_model=TaskResponse)
+async def get_mbti_insight_by_download_url(
+    background_tasks: BackgroundTasks,
+    download_url: str = Form(...)
+):
+    # Example: "/output/PersonName/filename.pdf"
+    parts = download_url.strip("/").split("/")
+    if len(parts) < 3:
+        raise HTTPException(status_code=400, detail="Invalid download_url format")
+    person_name = parts[-2]
+    filename = parts[-1]
+    file_path = os.path.join(OUTPUT_DIR, person_name, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    task_id = create_task_id()
+    task_storage[task_id] = TaskStatus(
+        task_id=task_id,
+        status="pending",
+        message="MBTI Insight queued",
+        created_at=datetime.now()
+    )
+    background_tasks.add_task(insight_background, task_id, file_path)
+    return TaskResponse(
+        task_id=task_id,
+        status="pending",
+        message=f"MBTI Insight processing started for {filename}"
+    )
 
 
 @app.post("/create-group-report", response_model=TaskResponse)

@@ -203,7 +203,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
                 </tr>
             </table>
             <div class="graph">
-                <img src="data:image/png;base64,{first_graph_base64}" alt="EI Graph">
+                <img src="data:image/png;base64,{first_graph_base64}" alt="first Graph">
             </div>
         </div> 
         <div class="section">

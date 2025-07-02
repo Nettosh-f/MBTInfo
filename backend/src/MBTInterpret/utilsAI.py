@@ -1,5 +1,9 @@
 import re
-from typing import Optional, Dict, List
+import os
+import fitz
+from datetime import datetime
+import openpyxl
+from typing import Optional, Dict, List, Tuple
 from constsAI import fixed_text_data, lines_to_remove, page_10_content
 from constsAI import MBTI_TYPES, MBTI_QUALITIES, MBTI_TYPE_QUALITIES, MBTI_QUALITIES_HEBREW, page_10_content
 
@@ -38,6 +42,20 @@ def get_all_info(file_path: str) -> Dict[str, Optional[str]]:
         'type': find_type(file_path)
     }
     return info
+
+
+def get_mbti_type_from_pdf(file_path: str) -> Optional[str]:
+    pdf_document = fitz.open(file_path)
+    page_num = 1  # Page number to extract text from
+    page = pdf_document[page_num]
+    text = page.get_text()
+    mbti_types = MBTI_TYPES
+    for mbti_type in mbti_types:
+        if mbti_type in text:
+            pdf_document.close()
+            return mbti_type
+    pdf_document.close()
+    return None
 
 
 def format_mbti_string(mbti_qualities: Dict[str, int]) -> str:

@@ -7,6 +7,7 @@ from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.styles import Font, PatternFill
 from openpyxl.drawing.line import LineProperties
 from openpyxl.chart.layout import Layout, ManualLayout
+from openpyxl.chart.legend import Legend
 # local import
 from consts import mbti_colors, MBTI_TYPES
 
@@ -28,8 +29,8 @@ def create_distribution_charts(workbook):
     chart_sheet._charts = []
 
     # Add a title to the dashboard
-    chart_sheet['K1'] = "MBTI Distribution Dashboard"
-    chart_sheet['K1'].font = Font(bold=True, size=16)
+    chart_sheet['D1'] = "MBTI Distribution Dashboard"
+    chart_sheet['D1'].font = Font(bold=True, size=16)
 
     # Prepare data in the data sheet
     prepare_main_distribution_data(data_sheet)
@@ -43,6 +44,7 @@ def create_distribution_charts(workbook):
     create_external_internal_charts(data_sheet, chart_sheet)
     create_facet_bar_charts(data_sheet, chart_sheet)
     create_dominant_chart(data_sheet, chart_sheet)
+    # create_legend_for_facet_graphs(chart_sheet)
 
     # Adjust column widths for data sheet
     adjust_column_widths(data_sheet)
@@ -88,371 +90,280 @@ def prepare_dichotomy_data(data_sheet):
     data_sheet['D2'] = "Energy Orientation (E/I)"
     data_sheet['D2'].font = Font(bold=True)
     data_sheet['D3'] = "Extroversion"
-    data_sheet['E3'] = "Introversion"
-    data_sheet['D4'] = "=COUNTIF(Table1[Type], \"*E*\")"
+    data_sheet['D4'] = "Introversion"
+    data_sheet['E3'] = "=COUNTIF(Table1[Type], \"*E*\")"
     data_sheet['E4'] = "=COUNTIF(Table1[Type], \"*I*\")"
     data_sheet['D3'].fill = PatternFill(start_color=dichotomy_colors["Extroversion"],
                                         end_color=dichotomy_colors["Extroversion"], fill_type="solid")
-    data_sheet['E3'].fill = PatternFill(start_color=dichotomy_colors["Introversion"],
+    data_sheet['D4'].fill = PatternFill(start_color=dichotomy_colors["Introversion"],
                                         end_color=dichotomy_colors["Introversion"], fill_type="solid")
 
     # Information - S/N
     data_sheet['D6'] = "Information Gathering (S/N)"
     data_sheet['D6'].font = Font(bold=True)
     data_sheet['D7'] = "Sensing"
-    data_sheet['E7'] = "Intuition"
-    data_sheet['D8'] = "=COUNTIF(Table1[Type], \"*S*\")"
+    data_sheet['D8'] = "Intuition"
+    data_sheet['E7'] = "=COUNTIF(Table1[Type], \"*S*\")"
     data_sheet['E8'] = "=COUNTIF(Table1[Type], \"*N*\")"
     data_sheet['D7'].fill = PatternFill(start_color=dichotomy_colors["Sensing"],
                                         end_color=dichotomy_colors["Sensing"], fill_type="solid")
-    data_sheet['E7'].fill = PatternFill(start_color=dichotomy_colors["Intuition"],
+    data_sheet['D8'].fill = PatternFill(start_color=dichotomy_colors["Intuition"],
                                         end_color=dichotomy_colors["Intuition"], fill_type="solid")
 
     # Decisions - T/F
     data_sheet['D10'] = "Decision Making (T/F)"
     data_sheet['D10'].font = Font(bold=True)
     data_sheet['D11'] = "Thinking"
-    data_sheet['E11'] = "Feeling"
-    data_sheet['D12'] = "=COUNTIF(Table1[Type], \"*T*\")"
+    data_sheet['D12'] = "Feeling"
+    data_sheet['E11'] = "=COUNTIF(Table1[Type], \"*T*\")"
     data_sheet['E12'] = "=COUNTIF(Table1[Type], \"*F*\")"
     data_sheet['D11'].fill = PatternFill(start_color=dichotomy_colors["Thinking"],
                                         end_color=dichotomy_colors["Thinking"], fill_type="solid")
-    data_sheet['E11'].fill = PatternFill(start_color=dichotomy_colors["Feeling"],
+    data_sheet['D12'].fill = PatternFill(start_color=dichotomy_colors["Feeling"],
                                          end_color=dichotomy_colors["Feeling"], fill_type="solid")
 
     # Lifestyle - J/P
     data_sheet['D14'] = "Lifestyle & Structure (J/P)"
     data_sheet['D14'].font = Font(bold=True)
     data_sheet['D15'] = "Judging"
-    data_sheet['E15'] = "Perceiving"
-    data_sheet['D16'] = "=COUNTIF(Table1[Type], \"*J*\")"
+    data_sheet['D16'] = "Perceiving"
+    data_sheet['E15'] = "=COUNTIF(Table1[Type], \"*J*\")"
     data_sheet['E16'] = "=COUNTIF(Table1[Type], \"*P*\")"
     data_sheet['D15'].fill = PatternFill(start_color=dichotomy_colors["Judging"],
                                          end_color=dichotomy_colors["Judging"], fill_type="solid")
-    data_sheet['E15'].fill = PatternFill(start_color=dichotomy_colors["Perceiving"],
+    data_sheet['D16'].fill = PatternFill(start_color=dichotomy_colors["Perceiving"],
                                          end_color=dichotomy_colors["Perceiving"], fill_type="solid")
-
-    # Calculate percentages for E/I
-    data_sheet['D5'] = f"=(D4/SUM(D4:E4))"
-    data_sheet['E5'] = f"=(E4/SUM(D4:E4))"
-    data_sheet['D5'].number_format = "0.0%"
-    data_sheet['E5'].number_format = "0.0%"
-    # Calculate percentages for S/N
-    data_sheet['D9'] = f"=(D8/SUM(D8:E8))"
-    data_sheet['E9'] = f"=(E8/SUM(D8:E8))"
-    data_sheet['D9'].number_format = "0.0%"
-    data_sheet['E9'].number_format = "0.0%"
-    # Calculate percentages for T/F
-    data_sheet['D13'] = f"=(D12/SUM(D12:E12))"
-    data_sheet['E13'] = f"=(E12/SUM(D12:E12))"
-    data_sheet['D13'].number_format = "0.0%"
-    data_sheet['E13'].number_format = "0.0%"
-    # Calculate percentages for J/P
-    data_sheet['D17'] = f"=(D16/SUM(D16:E16))"
-    data_sheet['E17'] = f"=(E16/SUM(D16:E16))"
-    data_sheet['D17'].number_format = "0.0%"
-    data_sheet['E17'].number_format = "0.0%"
 
     # calculate dichotomy preference
     data_sheet['D19'] = "Dichotomy Preference data"
     data_sheet['D19'].font = Font(bold=True)
+
     # titles Initiating-Receiving
     data_sheet['D20'] = "Initiating-Receiving"
     data_sheet['D20'].font = Font(bold=True)
-    data_sheet['D21'] = "In preference (Initiating)"
-    data_sheet['D22'] = "In preference (Receiving)"
-    data_sheet['D23'] = "Out of preference (Initiating)"
-    data_sheet['D24'] = "Out of preference (Receiving)"
-    data_sheet['D25'] = "MIDZONE (Initiating-Receiving)"
+    data_sheet['D21'] = "Initiating"
+    data_sheet['D22'] = "Receiving"
+    data_sheet['D23'] = "MIDZONE"
+
     # data for Initiating-Receiving
-    data_sheet['E21'] = '=COUNTIF(Table1[Initiating],"=IN-PREF")'
-    data_sheet['E22'] = '=COUNTIF(Table1[Receiving],"=IN-PREF")'
-    data_sheet['E23'] = '=COUNTIF(Table1[Initiating],"=OUT-OF-PREF")'
-    data_sheet['E24'] = '=COUNTIF(Table1[Receiving],"=OUT-OF-PREF")'
-    data_sheet['E25'] = '=COUNTIF(Table1[Initiating],"=MIDZONE")'
+    data_sheet['E21'] = '=COUNTIF(Table1[Initiating],"=IN-PREF")+COUNTIF(Table1[Initiating],"=OUT-OF-PREF")'
+    data_sheet['E22'] = '=COUNTIF(Table1[Receiving],"=IN-PREF")+COUNTIF(Table1[Receiving],"=OUT-OF-PREF")'
+    data_sheet['E23'] = '=COUNTIF(Table1[Initiating],"=MIDZONE")'
+
     # titles Initiating-Receiving
-    data_sheet['D28'] = "Expressive-Contained"
-    data_sheet['D28'].font = Font(bold=True)
-    data_sheet['D29'] = "In preference (Expressive)"
-    data_sheet['D30'] = "In preference (Contained)"
-    data_sheet['D31'] = "Out of preference (Expressive)"
-    data_sheet['D32'] = "Out of preference (Contained)"
-    data_sheet['D33'] = "MIDZONE (Expressive-Contained)"
+    data_sheet['D26'] = "Expressive-Contained"
+    data_sheet['D26'].font = Font(bold=True)
+    data_sheet['D27'] = "Expressive"
+    data_sheet['D28'] = "Contained"
+    data_sheet['D29'] = "MIDZONE"
+
     # data for Initiating-Receiving
-    data_sheet['E29'] = '=COUNTIF(Table1[Expressive],"=IN-PREF")'
-    data_sheet['E30'] = '=COUNTIF(Table1[Contained],"=IN-PREF")'
-    data_sheet['E31'] = '=COUNTIF(Table1[Expressive],"=OUT-OF-PREF")'
-    data_sheet['E32'] = '=COUNTIF(Table1[Contained],"=OUT-OF-PREF")'
-    data_sheet['E33'] = '=COUNTIF(Table1[Contained],"=MIDZONE")'
+    data_sheet['E26'] = '=COUNTIF(Table1[Expressive],"=IN-PREF")+COUNTIF(Table1[Expressive],"=OUT-OF-PREF")'
+    data_sheet['E27'] = '=COUNTIF(Table1[Contained],"=IN-PREF")+COUNTIF(Table1[Contained],"=OUT-OF-PREF")'
+    data_sheet['E28'] = '=COUNTIF(Table1[Contained],"=MIDZONE")'
+
     # titles Gregarious-Intimate
-    data_sheet['D36'] = "Gregarious-Intimate"
-    data_sheet['D36'].font = Font(bold=True)
-    data_sheet['D37'] = "In preference (Gregarious)"
-    data_sheet['D38'] = "In preference (Intimate)"
-    data_sheet['D39'] = "Out of preference (Gregarious)"
-    data_sheet['D40'] = "Out of preference (Intimate)"
-    data_sheet['D41'] = "MIDZONE (Gregarious-Intimate)"
+    data_sheet['D30'] = "Gregarious-Intimate"
+    data_sheet['D30'].font = Font(bold=True)
+    data_sheet['D31'] = "Gregarious"
+    data_sheet['D32'] = "Intimate"
+    data_sheet['D33'] = "MIDZONE"
+
     # data for Gregarious-Intimate
-    data_sheet['E37'] = '=COUNTIF(Table1[Gregarious],"=IN-PREF")'
-    data_sheet['E38'] = '=COUNTIF(Table1[Intimate],"=IN-PREF")'
-    data_sheet['E39'] = '=COUNTIF(Table1[Gregarious],"=OUT-OF-PREF")'
-    data_sheet['E40'] = '=COUNTIF(Table1[Intimate],"=OUT-OF-PREF")'
-    data_sheet['E41'] = '=COUNTIF(Table1[Intimate],"=MIDZONE")'
+    data_sheet['E31'] = '=COUNTIF(Table1[Gregarious],"=IN-PREF")+COUNTIF(Table1[Gregarious],"=OUT-OF-PREF")'
+    data_sheet['E32'] = '=COUNTIF(Table1[Intimate],"=IN-PREF")+COUNTIF(Table1[Intimate],"=OUT-OF-PREF")'
+    data_sheet['E33'] = '=COUNTIF(Table1[Intimate],"=MIDZONE")'
 
     # titles Active-Reflective
-    data_sheet['D44'] = "Active-Reflective"
-    data_sheet['D44'].font = Font(bold=True)
-    data_sheet['D45'] = "In preference (Active)"
-    data_sheet['D46'] = "In preference (Reflective)"
-    data_sheet['D47'] = "Out of preference (Active)"
-    data_sheet['D48'] = "Out of preference (Reflective)"
-    data_sheet['D49'] = "MIDZONE (Active-Reflective)"
+    data_sheet['D36'] = "Active-Reflective"
+    data_sheet['D36'].font = Font(bold=True)
+    data_sheet['D37'] = "Active"
+    data_sheet['D38'] = "Reflective"
+    data_sheet['D39'] = "MIDZONE"
+
     # data for Active-Reflective
-    data_sheet['E45'] = '=COUNTIF(Table1[Active],"=IN-PREF")'
-    data_sheet['E46'] = '=COUNTIF(Table1[Reflective],"=IN-PREF")'
-    data_sheet['E47'] = '=COUNTIF(Table1[Active],"=OUT-OF-PREF")'
-    data_sheet['E48'] = '=COUNTIF(Table1[Reflective],"=OUT-OF-PREF")'
-    data_sheet['E49'] = '=COUNTIF(Table1[Reflective],"=MIDZONE")'
+    data_sheet['E37'] = '=COUNTIF(Table1[Active],"=IN-PREF")+COUNTIF(Table1[Active],"=OUT-OF-PREF")'
+    data_sheet['E38'] = '=COUNTIF(Table1[Reflective],"=IN-PREF")+COUNTIF(Table1[Reflective],"=OUT-OF-PREF")'
+    data_sheet['E39'] = '=COUNTIF(Table1[Reflective],"=MIDZONE")'
 
     # titles Enthusiastic-Quiet
-    data_sheet['D52'] = "Enthusiastic-Quiet"
-    data_sheet['D52'].font = Font(bold=True)
-    data_sheet['D53'] = "In preference (Enthusiastic)"
-    data_sheet['D54'] = "In preference (Quiet)"
-    data_sheet['D55'] = "Out of preference (Enthusiastic)"
-    data_sheet['D56'] = "Out of preference (Quiet)"
-    data_sheet['D57'] = "MIDZONE (Enthusiastic-Quiet)"
+    data_sheet['D42'] = "Enthusiastic-Quiet"
+    data_sheet['D42'].font = Font(bold=True)
+    data_sheet['D43'] = "Enthusiastic"
+    data_sheet['D44'] = "Quiet"
+    data_sheet['D45'] = "MIDZONE"
+
     # data for Enthusiastic-Quiet
-    data_sheet['E53'] = '=COUNTIF(Table1[Enthusiastic],"=IN-PREF")'
-    data_sheet['E54'] = '=COUNTIF(Table1[Quiet],"=IN-PREF")'
-    data_sheet['E55'] = '=COUNTIF(Table1[Enthusiastic],"=OUT-OF-PREF")'
-    data_sheet['E56'] = '=COUNTIF(Table1[Quiet],"=OUT-OF-PREF")'
-    data_sheet['E57'] = '=COUNTIF(Table1[Quiet],"=MIDZONE")'
+    data_sheet['E43'] = '=COUNTIF(Table1[Enthusiastic],"=IN-PREF")+COUNTIF(Table1[Enthusiastic],"=OUT-OF-PREF")'
+    data_sheet['E44'] = '=COUNTIF(Table1[Quiet],"=IN-PREF")+COUNTIF(Table1[Quiet],"=OUT-OF-PREF")'
+    data_sheet['E45'] = '=COUNTIF(Table1[Quiet],"=MIDZONE")'
 
     # titles Concrete-Abstract
-    data_sheet['D60'] = "Concrete-Abstract"
-    data_sheet['D60'].font = Font(bold=True)
-    data_sheet['D61'] = "In preference (Concrete)"
-    data_sheet['D62'] = "In preference (Abstract)"
-    data_sheet['D63'] = "Out of preference (Concrete)"
-    data_sheet['D64'] = "Out of preference (Abstract)"
-    data_sheet['D65'] = "MIDZONE (Concrete-Abstract)"
+    data_sheet['D48'] = "Concrete-Abstract"
+    data_sheet['D48'].font = Font(bold=True)
+    data_sheet['D49'] = "Concrete"
+    data_sheet['D50'] = "Abstract"
+    data_sheet['D51'] = "MIDZONE"
+
     # data for Concrete-Abstract
-    data_sheet['E61'] = '=COUNTIF(Table1[Concrete],"=IN-PREF")'
-    data_sheet['E62'] = '=COUNTIF(Table1[Abstract],"=IN-PREF")'
-    data_sheet['E63'] = '=COUNTIF(Table1[Concrete],"=OUT-OF-PREF")'
-    data_sheet['E64'] = '=COUNTIF(Table1[Abstract],"=OUT-OF-PREF")'
-    data_sheet['E65'] = '=COUNTIF(Table1[Abstract],"=MIDZONE")'
+    data_sheet['E49'] = '=COUNTIF(Table1[Concrete],"=IN-PREF")+COUNTIF(Table1[Concrete],"=OUT-OF-PREF")'
+    data_sheet['E50'] = '=COUNTIF(Table1[Abstract],"=IN-PREF")+COUNTIF(Table1[Abstract],"=OUT-OF-PREF")'
+    data_sheet['E51'] = '=COUNTIF(Table1[Abstract],"=MIDZONE")'
 
     # titles Realistic-Imaginative
-    data_sheet['D68'] = "Realistic-Imaginative"
-    data_sheet['D68'].font = Font(bold=True)
-    data_sheet['D69'] = "In preference (Realistic)"
-    data_sheet['D70'] = "In preference (Imaginative)"
-    data_sheet['D71'] = "Out of preference (Realistic)"
-    data_sheet['D72'] = "Out of preference (Imaginative)"
-    data_sheet['D73'] = "MIDZONE (Realistic-Imaginative)"
+    data_sheet['D54'] = "Realistic-Imaginative"
+    data_sheet['D54'].font = Font(bold=True)
+    data_sheet['D55'] = "Realistic"
+    data_sheet['D56'] = "Imaginative"
+    data_sheet['D57'] = "MIDZONE"
+
     # data for Realistic-Imaginative
-    data_sheet['E69'] = '=COUNTIF(Table1[Realistic],"=IN-PREF")'
-    data_sheet['E70'] = '=COUNTIF(Table1[Imaginative],"=IN-PREF")'
-    data_sheet['E71'] = '=COUNTIF(Table1[Realistic],"=OUT-OF-PREF")'
-    data_sheet['E72'] = '=COUNTIF(Table1[Imaginative],"=OUT-OF-PREF")'
-    data_sheet['E73'] = '=COUNTIF(Table1[Imaginative],"=MIDZONE")'
+    data_sheet['E55'] = '=COUNTIF(Table1[Realistic],"=IN-PREF")+COUNTIF(Table1[Realistic],"=OUT-OF-PREF")'
+    data_sheet['E56'] = '=COUNTIF(Table1[Imaginative],"=IN-PREF")+COUNTIF(Table1[Imaginative],"=OUT-OF-PREF")'
+    data_sheet['E57'] = '=COUNTIF(Table1[Imaginative],"=MIDZONE")'
 
     # titles Practical-Conceptual
-    data_sheet['D76'] = "Practical-Conceptual"
-    data_sheet['D76'].font = Font(bold=True)
-    data_sheet['D77'] = "In preference (Practical)"
-    data_sheet['D78'] = "In preference (Conceptual)"
-    data_sheet['D79'] = "Out of preference (Practical)"
-    data_sheet['D80'] = "Out of preference (Conceptual)"
-    data_sheet['D81'] = "MIDZONE (Practical-Conceptual)"
+    data_sheet['D60'] = "Practical-Conceptual"
+    data_sheet['D60'].font = Font(bold=True)
+    data_sheet['D61'] = "Practical"
+    data_sheet['D62'] = "Conceptual"
+    data_sheet['D63'] = "MIDZONE (Practical-Conceptual)"
     # data for Practical-Conceptual
-    data_sheet['E77'] = '=COUNTIF(Table1[Practical],"=IN-PREF")'
-    data_sheet['E78'] = '=COUNTIF(Table1[Conceptual],"=IN-PREF")'
-    data_sheet['E79'] = '=COUNTIF(Table1[Practical],"=OUT-OF-PREF")'
-    data_sheet['E80'] = '=COUNTIF(Table1[Conceptual],"=OUT-OF-PREF")'
-    data_sheet['E81'] = '=COUNTIF(Table1[Conceptual],"=MIDZONE")'
+    data_sheet['E61'] = '=COUNTIF(Table1[Practical],"=IN-PREF")+COUNTIF(Table1[Practical],"=OUT-OF-PREF")'
+    data_sheet['E62'] = '=COUNTIF(Table1[Conceptual],"=IN-PREF")+COUNTIF(Table1[Conceptual],"=OUT-OF-PREF")'
+    data_sheet['E63'] = '=COUNTIF'
 
     # titles Experiential-Theoretical
-    data_sheet['D84'] = "Experiential-Theoretical"
-    data_sheet['D84'].font = Font(bold=True)
-    data_sheet['D85'] = "In preference (Experiential)"
-    data_sheet['D86'] = "In preference (Theoretical)"
-    data_sheet['D87'] = "Out of preference (Experiential)"
-    data_sheet['D88'] = "Out of preference (Theoretical)"
-    data_sheet['D89'] = "MIDZONE (Experiential-Theoretical)"
+    data_sheet['D66'] = "Experiential-Theoretical"
+    data_sheet['D66'].font = Font(bold=True)
+    data_sheet['D67'] = "Experiential"
+    data_sheet['D68'] = "Theoretical"
+    data_sheet['D69'] = "MIDZONE"
     # data for Experiential-Theoretical
-    data_sheet['E85'] = '=COUNTIF(Table1[Experiential],"=IN-PREF")'
-    data_sheet['E86'] = '=COUNTIF(Table1[Theoretical],"=IN-PREF")'
-    data_sheet['E87'] = '=COUNTIF(Table1[Experiential],"=OUT-OF-PREF")'
-    data_sheet['E88'] = '=COUNTIF(Table1[Theoretical],"=OUT-OF-PREF")'
-    data_sheet['E89'] = '=COUNTIF(Table1[Theoretical],"=MIDZONE")'
+    data_sheet['E67'] = '=COUNTIF(Table1[Experiential],"=IN-PREF")+COUNTIF(Table1[Experiential],"=OUT-OF-PREF")'
+    data_sheet['E68'] = '=COUNTIF(Table1[Theoretical],"=IN-PREF")+COUNTIF(Table1[Theoretical],"=OUT-OF-PREF")'
+    data_sheet['E69'] = '=COUNTIF(Table1[Theoretical],"=MIDZONE")'
 
     # titles Traditional-Original
-    data_sheet['D92'] = "Traditional-Original"
-    data_sheet['D92'].font = Font(bold=True)
-    data_sheet['D93'] = "In preference (Traditional)"
-    data_sheet['D94'] = "In preference (Original)"
-    data_sheet['D95'] = "Out of preference (Traditional)"
-    data_sheet['D96'] = "Out of preference (Original)"
-    data_sheet['D97'] = "MIDZONE (Traditional-Original)"
+    data_sheet['D72'] = "Traditional-Original"
+    data_sheet['D72'].font = Font(bold=True)
+    data_sheet['D73'] = "Traditional"
+    data_sheet['D74'] = "Original"
+    data_sheet['D75'] = "MIDZONE"
     # data for Traditional-Original
-    data_sheet['E93'] = '=COUNTIF(Table1[Traditional],"=IN-PREF")'
-    data_sheet['E94'] = '=COUNTIF(Table1[Original],"=IN-PREF")'
-    data_sheet['E95'] = '=COUNTIF(Table1[Traditional],"=OUT-OF-PREF")'
-    data_sheet['E96'] = '=COUNTIF(Table1[Original],"=OUT-OF-PREF")'
-    data_sheet['E97'] = '=COUNTIF(Table1[Original],"=MIDZONE")'
+    data_sheet['E73'] = '=COUNTIF(Table1[Traditional],"=IN-PREF")+COUNTIF(Table1[Traditional],"=OUT-OF-PREF")'
+    data_sheet['E74'] = '=COUNTIF(Table1[Original],"=IN-PREF")+COUNTIF(Table1[Original],"=OUT-OF-PREF")'
+    data_sheet['E75'] = '=COUNTIF(Table1[Original],"=MIDZONE")'
 
     # titles Logical-Empathetic
-    data_sheet['D100'] = "Logical-Empathetic"
-    data_sheet['D100'].font = Font(bold=True)
-    data_sheet['D101'] = "In preference (Logical)"
-    data_sheet['D102'] = "In preference (Empathetic)"
-    data_sheet['D103'] = "Out of preference (Logical)"
-    data_sheet['D104'] = "Out of preference (Empathetic)"
-    data_sheet['D105'] = "MIDZONE (Logical-Empathetic)"
+    data_sheet['D78'] = "Logical-Empathetic"
+    data_sheet['D78'].font = Font(bold=True)
+    data_sheet['D79'] = "Logical"
+    data_sheet['D80'] = "Empathetic"
+    data_sheet['D81'] = "MIDZONE"
     # data for Logical-Empathetic
-    data_sheet['E101'] = '=COUNTIF(Table1[Logical],"=IN-PREF")'
-    data_sheet['E102'] = '=COUNTIF(Table1[Empathetic],"=IN-PREF")'
-    data_sheet['E103'] = '=COUNTIF(Table1[Logical],"=OUT-OF-PREF")'
-    data_sheet['E104'] = '=COUNTIF(Table1[Empathetic],"=OUT-OF-PREF")'
-    data_sheet['E105'] = '=COUNTIF(Table1[Empathetic],"=MIDZONE")'
+    data_sheet['E79'] = '=COUNTIF(Table1[Logical],"=IN-PREF")+COUNTIF(Table1[Logical],"=OUT-OF-PREF")'
+    data_sheet['E80'] = '=COUNTIF(Table1[Empathetic],"=IN-PREF")+COUNTIF(Table1[Empathetic],"=OUT-OF-PREF")'
+    data_sheet['E81'] = '=COUNTIF(Table1[Empathetic],"=MIDZONE")'
 
     # titles Reasonable-Compassionate
-    data_sheet['D108'] = "Reasonable-Compassionate"
-    data_sheet['D108'].font = Font(bold=True)
-    data_sheet['D109'] = "In preference (Reasonable)"
-    data_sheet['D110'] = "In preference (Compassionate)"
-    data_sheet['D111'] = "Out of preference (Reasonable)"
-    data_sheet['D112'] = "Out of preference (Compassionate)"
-    data_sheet['D113'] = "MIDZONE (Reasonable-Compassionate)"
+    data_sheet['D84'] = "Reasonable-Compassionate"
+    data_sheet['D84'].font = Font(bold=True)
+    data_sheet['D85'] = "Reasonable"
+    data_sheet['D86'] = "Compassionate"
+    data_sheet['D87'] = "MIDZONE"
     # data for Reasonable-Compassionate
-    data_sheet['E109'] = '=COUNTIF(Table1[Reasonable],"=IN-PREF")'
-    data_sheet['E110'] = '=COUNTIF(Table1[Compassionate],"=IN-PREF")'
-    data_sheet['E111'] = '=COUNTIF(Table1[Reasonable],"=OUT-OF-PREF")'
-    data_sheet['E112'] = '=COUNTIF(Table1[Compassionate],"=OUT-OF-PREF")'
-    data_sheet['E113'] = '=COUNTIF(Table1[Compassionate],"=MIDZONE")'
+    data_sheet['E85'] = '=COUNTIF(Table1[Reasonable],"=IN-PREF")+COUNTIF(Table1[Reasonable],"=OUT-OF-PREF")'
+    data_sheet['E86'] = '=COUNTIF(Table1[Compassionate],"=IN-PREF")+COUNTIF(Table1[Compassionate],"=OUT-OF-PREF")'
+    data_sheet['E87'] = '=COUNTIF(Table1[Compassionate],"=MIDZONE")'
 
     # titles Questioning-Accommodating
-    data_sheet['D116'] = "Questioning-Accommodating"
-    data_sheet['D116'].font = Font(bold=True)
-    data_sheet['D117'] = "In preference (Questioning)"
-    data_sheet['D118'] = "In preference (Accommodating)"
-    data_sheet['D119'] = "Out of preference (Questioning)"
-    data_sheet['D120'] = "Out of preference (Accommodating)"
-    data_sheet['D121'] = "MIDZONE (Questioning-Accommodating)"
+    data_sheet['D90'] = "Questioning-Accommodating"
+    data_sheet['D90'].font = Font(bold=True)
+    data_sheet['D91'] = "Questioning"
+    data_sheet['D92'] = "Accommodating"
+    data_sheet['D93'] = "MIDZONE"
     # data for Questioning-Accommodating
-    data_sheet['E117'] = '=COUNTIF(Table1[Questioning],"=IN-PREF")'
-    data_sheet['E118'] = '=COUNTIF(Table1[Accommodating],"=IN-PREF")'
-    data_sheet['E119'] = '=COUNTIF(Table1[Questioning],"=OUT-OF-PREF")'
-    data_sheet['E120'] = '=COUNTIF(Table1[Accommodating],"=OUT-OF-PREF")'
-    data_sheet['E121'] = '=COUNTIF(Table1[Accommodating],"=MIDZONE")'
+    data_sheet['E91'] = '=COUNTIF(Table1[Questioning],"=IN-PREF")+COUNTIF(Table1[Questioning],"=OUT-OF-PREF")'
+    data_sheet['E92'] = '=COUNTIF(Table1[Accommodating],"=IN-PREF")+COUNTIF(Table1[Accommodating],"=OUT-OF-PREF")'
+    data_sheet['E93'] = '=COUNTIF(Table1[Accommodating],"=MIDZONE")'
 
     # titles Critical-Accepting
-    data_sheet['D124'] = "Critical-Accepting"
-    data_sheet['D124'].font = Font(bold=True)
-    data_sheet['D125'] = "In preference (Critical)"
-    data_sheet['D126'] = "In preference (Accepting)"
-    data_sheet['D127'] = "Out of preference (Critical)"
-    data_sheet['D128'] = "Out of preference (Accepting)"
-    data_sheet['D129'] = "MIDZONE (Critical-Accepting)"
+    data_sheet['D96'] = "Critical-Accepting"
+    data_sheet['D96'].font = Font(bold=True)
+    data_sheet['D97'] = "Critical"
+    data_sheet['D98'] = "Accepting"
+    data_sheet['D99'] = "MIDZONE"
     # data for Critical-Accepting
-    data_sheet['E125'] = '=COUNTIF(Table1[Critical],"=IN-PREF")'
-    data_sheet['E126'] = '=COUNTIF(Table1[Accepting],"=IN-PREF")'
-    data_sheet['E127'] = '=COUNTIF(Table1[Critical],"=OUT-OF-PREF")'
-    data_sheet['E128'] = '=COUNTIF(Table1[Accepting],"=OUT-OF-PREF")'
-    data_sheet['E129'] = '=COUNTIF(Table1[Accepting],"=MIDZONE")'
+    data_sheet['E97'] = '=COUNTIF(Table1[Critical],"=IN-PREF")+COUNTIF(Table1[Critical],"=OUT-OF-PREF")'
+    data_sheet['E98'] = '=COUNTIF(Table1[Accepting],"=IN-PREF")+COUNTIF(Table1[Accepting],"=OUT-OF-PREF")'
+    data_sheet['E99'] = '=COUNTIF(Table1[Accepting],"=MIDZONE")'
 
     # titles Tough-Tender
-    data_sheet['D132'] = "Tough-Tender"
-    data_sheet['D132'].font = Font(bold=True)
-    data_sheet['D133'] = "In preference (Tough)"
-    data_sheet['D134'] = "In preference (Tender)"
-    data_sheet['D135'] = "Out of preference (Tough)"
-    data_sheet['D136'] = "Out of preference (Tender)"
-    data_sheet['D137'] = "MIDZONE (Tough-Tender)"
+    data_sheet['D102'] = "Tough-Tender"
+    data_sheet['D102'].font = Font(bold=True)
+    data_sheet['D103'] = "Tough"
+    data_sheet['D104'] = "Tender"
+    data_sheet['D105'] = "MIDZONE"
     # data for Tough-Tender
-    data_sheet['E133'] = '=COUNTIF(Table1[Tough],"=IN-PREF")'
-    data_sheet['E134'] = '=COUNTIF(Table1[Tender],"=IN-PREF")'
-    data_sheet['E135'] = '=COUNTIF(Table1[Tough],"=OUT-OF-PREF")'
-    data_sheet['E136'] = '=COUNTIF(Table1[Tender],"=OUT-OF-PREF")'
-    data_sheet['E137'] = '=COUNTIF(Table1[Tender],"=MIDZONE")'
+    data_sheet['E103'] = '=COUNTIF(Table1[Tough],"=IN-PREF")+COUNTIF(Table1[Tough],"=OUT-OF-PREF")'
+    data_sheet['E104'] = '=COUNTIF(Table1[Tender],"=IN-PREF")+COUNTIF(Table1[Tender],"=OUT-OF-PREF")'
+    data_sheet['E105'] = '=COUNTIF(Table1[Tender],"=MIDZONE")'
 
     # titles Systematic-Casual
-    data_sheet['D140'] = "Systematic-Casual"
-    data_sheet['D140'].font = Font(bold=True)
-    data_sheet['D141'] = "In preference (Systematic)"
-    data_sheet['D142'] = "In preference (Casual)"
-    data_sheet['D143'] = "Out of preference (Systematic)"
-    data_sheet['D144'] = "Out of preference (Casual)"
-    data_sheet['D145'] = "MIDZONE (Systematic-Casual)"
+    data_sheet['D108'] = "Systematic-Casual"
+    data_sheet['D108'].font = Font(bold=True)
+    data_sheet['D109'] = "Systematic"
+    data_sheet['D110'] = "Casual"
+    data_sheet['D111'] = "MIDZONE"
     # data for Systematic-Casual
-    data_sheet['E141'] = '=COUNTIF(Table1[Systematic],"=IN-PREF")'
-    data_sheet['E142'] = '=COUNTIF(Table1[Casual],"=IN-PREF")'
-    data_sheet['E143'] = '=COUNTIF(Table1[Systematic],"=OUT-OF-PREF")'
-    data_sheet['E144'] = '=COUNTIF(Table1[Casual],"=OUT-OF-PREF")'
-    data_sheet['E145'] = '=COUNTIF(Table1[Casual],"=MIDZONE")'
+    data_sheet['E109'] = '=COUNTIF(Table1[Systematic],"=IN-PREF")+COUNTIF(Table1[Systematic],"=OUT-OF-PREF")'
+    data_sheet['E110'] = '=COUNTIF(Table1[Casual],"=IN-PREF")+COUNTIF(Table1[Casual],"=OUT-OF-PREF")'
+    data_sheet['E111'] = '=COUNTIF(Table1[Casual],"=MIDZONE")'
 
     # titles Planful-Open-Ended
-    data_sheet['D148'] = "Planful-Open-Ended"
-    data_sheet['D148'].font = Font(bold=True)
-    data_sheet['D149'] = "In preference (Planful)"
-    data_sheet['D150'] = "In preference (Open-Ended)"
-    data_sheet['D151'] = "Out of preference (Planful)"
-    data_sheet['D152'] = "Out of preference (Open-Ended)"
-    data_sheet['D153'] = "MIDZONE (Planful-Open-Ended)"
+    data_sheet['D114'] = "Planful-Open-Ended"
+    data_sheet['D114'].font = Font(bold=True)
+    data_sheet['D115'] = "Planful"
+    data_sheet['D116'] = "Open-Ended"
+    data_sheet['D117'] = "MIDZONE"
     # data for Planful-Open-Ended
-    data_sheet['E149'] = '=COUNTIF(Table1[Planful],"=IN-PREF")'
-    data_sheet['E150'] = '=COUNTIF(Table1[Open-Ended],"=IN-PREF")'
-    data_sheet['E151'] = '=COUNTIF(Table1[Planful],"=OUT-OF-PREF")'
-    data_sheet['E152'] = '=COUNTIF(Table1[Open-Ended],"=OUT-OF-PREF")'
-    data_sheet['E153'] = '=COUNTIF(Table1[Open-Ended],"=MIDZONE")'
+    data_sheet['E115'] = '=COUNTIF(Table1[Planful],"=IN-PREF")+COUNTIF(Table1[Planful],"=OUT-OF-PREF")'
+    data_sheet['E116'] = '=COUNTIF(Table1[Open-Ended],"=IN-PREF")+COUNTIF(Table1[Open-Ended],"=OUT-OF-PREF")'
+    data_sheet['E117'] = '=COUNTIF(Table1[Open-Ended],"=MIDZONE")'
 
     # titles Early Starting-Pressure-Prompted
-    data_sheet['D156'] = "Early Starting-Pressure-Prompted"
-    data_sheet['D156'].font = Font(bold=True)
-    data_sheet['D157'] = "In preference (Early Starting)"
-    data_sheet['D158'] = "In preference (Pressure-Prompted)"
-    data_sheet['D159'] = "Out of preference (Early Starting)"
-    data_sheet['D160'] = "Out of preference (Pressure-Prompted)"
-    data_sheet['D161'] = "MIDZONE (Early Starting-Pressure-Prompted)"
+    data_sheet['D120'] = "Early Starting-Pressure-Prompted"
+    data_sheet['D120'].font = Font(bold=True)
+    data_sheet['D121'] = "Early Starting"
+    data_sheet['D122'] = "Pressure-Prompted"
+    data_sheet['D123'] = "MIDZONE"
     # data for Early Starting-Pressure-Prompted
-    data_sheet['E157'] = '=COUNTIF(Table1[Early Starting],"=IN-PREF")'
-    data_sheet['E158'] = '=COUNTIF(Table1[Pressure-Prompted],"=IN-PREF")'
-    data_sheet['E159'] = '=COUNTIF(Table1[Early Starting],"=OUT-OF-PREF")'
-    data_sheet['E160'] = '=COUNTIF(Table1[Pressure-Prompted],"=OUT-OF-PREF")'
-    data_sheet['E161'] = '=COUNTIF(Table1[Early Starting],"=MIDZONE")'
+    data_sheet['E121'] = '=COUNTIF(Table1[Early Starting],"=IN-PREF")+COUNTIF(Table1[Early Starting],"=OUT-OF-PREF")'
+    data_sheet['E122'] = '=COUNTIF(Table1[Pressure-Prompted],"=IN-PREF")+COUNTIF(Table1[Pressure-Prompted],"=OUT-OF-PREF")'
+    data_sheet['E123'] = '=COUNTIF(Table1[Early Starting],"=MIDZONE")'
 
     # titles Scheduled-Spontaneous
-    data_sheet['D164'] = "Scheduled-Spontaneous"
-    data_sheet['D164'].font = Font(bold=True)
-    data_sheet['D165'] = "In preference (Scheduled)"
-    data_sheet['D166'] = "In preference (Spontaneous)"
-    data_sheet['D167'] = "Out of preference (Scheduled)"
-    data_sheet['D168'] = "Out of preference (Spontaneous)"
-    data_sheet['D169'] = "MIDZONE (Scheduled-Spontaneous)"
+    data_sheet['D126'] = "Scheduled-Spontaneous"
+    data_sheet['D126'].font = Font(bold=True)
+    data_sheet['D127'] = "Schedule"
+    data_sheet['D128'] = "Spontaneous"
+    data_sheet['D129'] = "MIDZONE"
     # data for Scheduled-Spontaneous
-    data_sheet['E165'] = '=COUNTIF(Table1[Scheduled],"=IN-PREF")'
-    data_sheet['E166'] = '=COUNTIF(Table1[Spontaneous],"=IN-PREF")'
-    data_sheet['E167'] = '=COUNTIF(Table1[Scheduled],"=OUT-OF-PREF")'
-    data_sheet['E168'] = '=COUNTIF(Table1[Spontaneous],"=OUT-OF-PREF")'
-    data_sheet['E169'] = '=COUNTIF(Table1[Spontaneous],"=MIDZONE")'
+    data_sheet['E127'] = '=COUNTIF(Table1[Scheduled],"=IN-PREF")+COUNTIF(Table1[Scheduled],"=OUT-OF-PREF")'
+    data_sheet['E128'] = '=COUNTIF(Table1[Spontaneous],"=IN-PREF")+COUNTIF(Table1[Spontaneous],"=OUT-OF-PREF")'
+    data_sheet['E129'] = '=COUNTIF(Table1[Spontaneous],"=MIDZONE")'
 
     # titles Methodical-Emergent
-    data_sheet['D172'] = "Methodical-Emergent"
-    data_sheet['D172'].font = Font(bold=True)
-    data_sheet['D173'] = "In preference (Methodical)"
-    data_sheet['D174'] = "In preference (Emergent)"
-    data_sheet['D175'] = "Out of preference (Methodical)"
-    data_sheet['D176'] = "Out of preference (Emergent)"
-    data_sheet['D177'] = "MIDZONE (Methodical-Emergent)"
+    data_sheet['D132'] = "Methodical-Emergent"
+    data_sheet['D132'].font = Font(bold=True)
+    data_sheet['D133'] = "Methodical"
+    data_sheet['D134'] = "Emergent"
+    data_sheet['D135'] = "MIDZONE"
     # data for Methodical-Emergent
-    data_sheet['E173'] = '=COUNTIF(Table1[Methodical],"=IN-PREF")'
-    data_sheet['E174'] = '=COUNTIF(Table1[Emergent],"=IN-PREF")'
-    data_sheet['E175'] = '=COUNTIF(Table1[Methodical],"=OUT-OF-PREF")'
-    data_sheet['E176'] = '=COUNTIF(Table1[Emergent],"=OUT-OF-PREF")'
-    data_sheet['E177'] = '=COUNTIF(Table1[Emergent],"=MIDZONE")'
+    data_sheet['E133'] = '=COUNTIF(Table1[Methodical],"=IN-PREF")+COUNTIF(Table1[Methodical],"=OUT-OF-PREF")'
+    data_sheet['E134'] = '=COUNTIF(Table1[Emergent],"=IN-PREF")+COUNTIF(Table1[Emergent],"=OUT-OF-PREF")'
+    data_sheet['E135'] = '=COUNTIF(Table1[Emergent],"=MIDZONE")'
 
 
 def prepare_facet_legend(chart_sheet):
@@ -557,40 +468,42 @@ def create_main_distribution_chart(data_sheet, chart_sheet):
 
 def create_dichotomy_charts(data_sheet, chart_sheet):
     # Create stacked bar charts for each dichotomy
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Energy source - E/I", 3, 4, "C22")
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Information - S/N", 7, 8, "K22")
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Decisions - T/F", 11, 12, "R22")
-    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Lifestyle - J/P", 15, 16, "Z22")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Energy source - E/I", "D3:D4", "D3:E4", "C24")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Information - S/N", "D7:D8", "D7:E8", "K24")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Decisions - T/F", "D11:D12", "D11:E12", "S24")
+    create_stacked_dichotomy_chart(data_sheet, chart_sheet, "Lifestyle - J/P", "D15:D16", "D15:E16", "AA24")
 
 
-def create_stacked_dichotomy_chart(data_sheet, chart_sheet, title, label_row, count_row, position):
+def create_stacked_dichotomy_chart(data_sheet, chart_sheet, title, labels_range, data_range, position):
     # Create a horizontal stacked bar chart
     chart = BarChart()
     chart.type = "bar"
     chart.title = title
     chart.style = 10
     chart.width = 11.86
-    chart.height = 3.0
+    chart.height = 4.24
 
     # Data and categories
-    data = Reference(data_sheet, min_col=4, max_col=5, min_row=count_row, max_row=count_row)
-    cats = Reference(data_sheet, min_col=4, max_col=5, min_row=label_row, max_row=label_row)
-    chart.add_data(data, titles_from_data=False)
-    chart.set_categories(cats)
+    data = Reference(data_sheet, range_string=f"Data!{data_range}")
+    labels = Reference(data_sheet, range_string=f"Data!{labels_range}")
+    chart.add_data(data, from_rows=True, titles_from_data=True)
+    chart.set_categories(labels)
+    chart.legend = Legend()
+    chart.legend.position = "t"
 
     # Stacked, 100%
     chart.grouping = "percentStacked"
     chart.overlap = 100
 
-    # Remove ALL axes and legend
+    # Remove ALL axes
     chart.y_axis.visible = False
     chart.x_axis.visible = False
-    chart.legend = None
     chart.y_axis.majorTickMark = "none"
     chart.x_axis.majorTickMark = "none"
     chart.y_axis.delete = True
     chart.x_axis.delete = True
-
+    chart.x_axis.spPr = GraphicalProperties()
+    chart.x_axis.spPr.ln = LineProperties(noFill=True)
     # Remove gridlines
     chart.x_axis.majorGridlines = None
     chart.x_axis.minorGridlines = None
@@ -599,11 +512,10 @@ def create_stacked_dichotomy_chart(data_sheet, chart_sheet, title, label_row, co
 
     # Data labels ON bar only
     chart.dataLabels = DataLabelList()
-    chart.dataLabels.showCatName = True    # Show only the category name (label)
+    chart.dataLabels.showCatName = False
     chart.dataLabels.showVal = False
     chart.dataLabels.showPercent = False
     chart.dataLabels.showSerName = False
-    chart.dataLabels.position = "ctr"
 
     # Set custom fill colors
     colors = ["4472C4", "C0504D"]  # Blue, Red (hex)
@@ -646,8 +558,8 @@ def create_external_internal_charts(data_sheet, chart_sheet):
         pie.dataLabels.showSerName = False
 
     # Add the charts to the sheet
-    chart_sheet.add_chart(internal_pie, "R3")
-    chart_sheet.add_chart(external_pie, "Z3")
+    chart_sheet.add_chart(internal_pie, "S3")
+    chart_sheet.add_chart(external_pie, "AA3")
 
 
 def create_dominant_chart(data_sheet, chart_sheet):
@@ -674,32 +586,32 @@ def create_facet_bar_charts(data_sheet, chart_sheet):
     # Create pie charts for facet dichotomies, organized in rows
 
     # Row 1: E/I facets
-    create_facet_bar_chart(data_sheet, chart_sheet, "D20", "D21:D25", "E21:E25", "C29")  # Initiating-Receiving
-    create_facet_bar_chart(data_sheet, chart_sheet, "D28", "D29:D33", "E29:E33", "C35")  # Expressive-Contained
-    create_facet_bar_chart(data_sheet, chart_sheet, "D36", "D37:D41", "E37:E41", "C42")  # Gregarious-Intimate
-    create_facet_bar_chart(data_sheet, chart_sheet, "D44", "D45:D49", "E45:E49", "C50")  # Active-Reflective
-    create_facet_bar_chart(data_sheet, chart_sheet, "D52", "D53:D57", "E53:E57", "C57")  # Enthusiastic-Quiet
+    create_facet_bar_chart(data_sheet, chart_sheet, "D20", "D21:D23", "D21:E23", "C33")  # Initiating-Receiving
+    create_facet_bar_chart(data_sheet, chart_sheet, "D26", "D27:D29", "D27:E29", "C40")  # Expressive-Contained
+    create_facet_bar_chart(data_sheet, chart_sheet, "D30", "D31:D33", "D31:E33", "C47")  # Gregarious-Intimate
+    create_facet_bar_chart(data_sheet, chart_sheet, "D36", "D37:D39", "D37:E39", "C54")  # Active-Reflective
+    create_facet_bar_chart(data_sheet, chart_sheet, "D42", "D43:D45", "D43:E45", "C61")  # Enthusiastic-Quiet
 
     # Row 2: S/N facets
-    create_facet_bar_chart(data_sheet, chart_sheet, "D60", "D61:D65", "E61:E65", "K29")  # Concrete-Abstract
-    create_facet_bar_chart(data_sheet, chart_sheet, "D68", "D69:D73", "E69:E73", "K35")  # Realistic-Imaginative
-    create_facet_bar_chart(data_sheet, chart_sheet, "D76", "D77:D81", "E77:E81", "K42")  # Practical-Conceptual
-    create_facet_bar_chart(data_sheet, chart_sheet, "D84", "D85:D89", "E85:E89", "K50")  # Experiential-Theoretical
-    create_facet_bar_chart(data_sheet, chart_sheet, "D92", "D93:D97", "E93:E97", "K57")  # Traditional-Original
+    create_facet_bar_chart(data_sheet, chart_sheet, "D48", "D49:D51", "D49:E51", "K33")  # Concrete-Abstract
+    create_facet_bar_chart(data_sheet, chart_sheet, "D54", "D55:D57", "D55:E57", "K40")  # Realistic-Imaginative
+    create_facet_bar_chart(data_sheet, chart_sheet, "D60", "D61:D63", "D61:E63", "K47")  # Practical-Conceptual
+    create_facet_bar_chart(data_sheet, chart_sheet, "D66", "D67:D69", "D67:E69", "K54")  # Experiential-Theoretical
+    create_facet_bar_chart(data_sheet, chart_sheet, "D72", "D73:D75", "D73:E75", "K61")  # Traditional-Original
 
     # Row 3: T/F facets
-    create_facet_bar_chart(data_sheet, chart_sheet, "D100", "D101:D105", "E101:E105", "R29")  # Logical-Empathetic
-    create_facet_bar_chart(data_sheet, chart_sheet, "D108", "D109:D113", "E109:E113", "R35")  # Reasonable-Compassionate
-    create_facet_bar_chart(data_sheet, chart_sheet, "D116", "D117:D121", "E117:E121", "R42")  # Questioning-Accommodating
-    create_facet_bar_chart(data_sheet, chart_sheet, "D124", "D125:D129", "E125:E129", "R50")  # Critical-Accepting
-    create_facet_bar_chart(data_sheet, chart_sheet, "D132", "D133:D137", "E133:E137", "R57")  # Tough-Tender
+    create_facet_bar_chart(data_sheet, chart_sheet, "D78", "D79:D81", "D79:E81", "S33")  # Logical-Empathetic
+    create_facet_bar_chart(data_sheet, chart_sheet, "D84", "D85:D87", "D85:E87", "S40")  # Reasonable-Compassionate
+    create_facet_bar_chart(data_sheet, chart_sheet, "D90", "D91:D93", "D91:E93", "S47")  # Questioning-Accommodating
+    create_facet_bar_chart(data_sheet, chart_sheet, "D96", "D97:D99", "D97:E99", "S54")  # Critical-Accepting
+    create_facet_bar_chart(data_sheet, chart_sheet, "D102", "D103:D105", "D103:E105", "S61")  # Tough-Tender
 
     # Row 4: J/P facets
-    create_facet_bar_chart(data_sheet, chart_sheet, "D140", "D141:D145", "E141:E145", "Z29")  # Systematic-Casual
-    create_facet_bar_chart(data_sheet, chart_sheet, "D148", "D149:D153", "E149:E153", "Z35")  # Planful-Open-Ended
-    create_facet_bar_chart(data_sheet, chart_sheet, "D156", "D157:D161", "E157:E161", "Z42")  # Early Starting-Pressure-Prompted
-    create_facet_bar_chart(data_sheet, chart_sheet, "D164", "D165:D169", "E165:E169", "Z50")  # Scheduled-Spontaneous
-    create_facet_bar_chart(data_sheet, chart_sheet, "D172", "D173:D177", "E173:E177", "Z57")  # Methodical-Emergent
+    create_facet_bar_chart(data_sheet, chart_sheet, "D108", "D109:D111", "D109:E111", "AA33")  # Systematic-Casual
+    create_facet_bar_chart(data_sheet, chart_sheet, "D114", "D115:D117", "D115:E117", "AA40")  # Planful-Open-Ended
+    create_facet_bar_chart(data_sheet, chart_sheet, "D120", "D121:D123", "D121:E123", "AA47")  # Early Starting-Pressure-Prompted
+    create_facet_bar_chart(data_sheet, chart_sheet, "D126", "D127:D129", "D127:E129", "AA54")  # Scheduled-Spontaneous
+    create_facet_bar_chart(data_sheet, chart_sheet, "D132", "D133:D135", "D133:E135", "AA61")  # Methodical-Emergent
 
 
 def create_facet_bar_chart(data_sheet, chart_sheet, title_cell, labels_range, data_range, position):
@@ -715,15 +627,16 @@ def create_facet_bar_chart(data_sheet, chart_sheet, title_cell, labels_range, da
 
     # Set chart size
     chart.width = 11.8618
-    chart.height = 3
+    chart.height = 3.175
 
     # Reference the data and labels
     data = Reference(data_sheet, range_string=f"Data!{data_range}")
     labels = Reference(data_sheet, range_string=f"Data!{labels_range}")
     # Add data and categories
-    chart.add_data(data, from_rows=True)
+    chart.add_data(data, from_rows=True, titles_from_data=True)
     chart.set_categories(labels)
-
+    chart.legend = Legend()
+    chart.legend.position = "t"
     # Make it stacked
     chart.grouping = "percentStacked"
     chart.overlap = 100
@@ -731,7 +644,6 @@ def create_facet_bar_chart(data_sheet, chart_sheet, title_cell, labels_range, da
     # Remove ALL axes and legend
     chart.y_axis.visible = False
     chart.x_axis.visible = False
-    chart.legend = None
     chart.y_axis.majorTickMark = "none"
     chart.x_axis.majorTickMark = "none"
     chart.y_axis.delete = True
@@ -764,12 +676,47 @@ def create_facet_bar_chart(data_sheet, chart_sheet, title_cell, labels_range, da
     chart.dataLabels.position = "ctr"
     # Format the percentage display
     chart.dataLabels.numFmt = '0%'
-    # Set legend position to bottom
-    chart.legend = None
-    # chart.legend.position = 'b'
     # Add the chart to the sheet
     chart_sheet.add_chart(chart, position)
     return chart
+
+
+def create_legend_for_facet_graphs(chart_sheet):
+    # Create a dummy bar chart
+    chart = BarChart()
+    chart.title = "Legend for Facet Graphs"
+    chart.style = 10
+
+    # Create dummy data and categories
+    data = Reference(chart_sheet, min_col=1, min_row=1, max_row=1)  # Dummy reference
+    labels = Reference(chart_sheet, min_col=1, min_row=1, max_row=1)  # Dummy reference
+    chart.add_data(data, from_rows=True)
+    chart.set_categories(labels)
+
+    # Set legend entries manually
+    chart.series = [
+        SeriesLabel("In preference (1st facet)"),
+        SeriesLabel("In preference (2nd facet)"),
+        SeriesLabel("Out of preference (1st facet)"),
+        SeriesLabel("Out of preference (2nd facet)"),
+        SeriesLabel("MIDZONE")
+    ]
+
+    # Remove all axes and gridlines
+    chart.y_axis.visible = False
+    chart.x_axis.visible = False
+    chart.legend.position = 'b'  # Position legend at the bottom
+    chart.y_axis.majorTickMark = "none"
+    chart.x_axis.majorTickMark = "none"
+    chart.y_axis.delete = True
+    chart.x_axis.delete = True
+    chart.x_axis.majorGridlines = None
+    chart.x_axis.minorGridlines = None
+    chart.y_axis.majorGridlines = None
+    chart.y_axis.minorGridlines = None
+
+    # Add the chart to the sheet
+    chart_sheet.add_chart(chart, "O22")
 
 
 def adjust_column_widths(sheet):
@@ -843,7 +790,7 @@ if __name__ == "__main__":
     # For testing purposes
     import openpyxl
 
-    workbook_path = r"F:\projects\MBTInfo\output\MBTI_Results.xlsx"
+    workbook_path = r"C:\Users\user\Downloads\group_report_all_pdfs (8).xlsx"
     workbook = openpyxl.load_workbook(workbook_path)
     create_distribution_charts(workbook)
     workbook.save(workbook_path)

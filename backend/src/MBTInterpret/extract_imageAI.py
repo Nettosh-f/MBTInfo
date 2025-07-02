@@ -2,7 +2,9 @@ import fitz  # PyMuPDF
 import os
 import time
 import re
+from pathlib import Path
 from utilsAI import get_mbti_type_from_pdf
+from constsAI import MEDIA_PATH, OUTPUT_PATH, INPUT_PATH
 
 
 def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2):
@@ -19,7 +21,7 @@ def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=
     """
     # Open the PDF
     pdf_document = fitz.open(pdf_path)
-
+    print(pdf_path)
     # Get the specified page
     page = pdf_document[page_num]
 
@@ -153,11 +155,11 @@ def extract_first_graph(pdf_path, output_dir):
     os.makedirs(output_dir, exist_ok=True)
     if get_mbti_type_from_pdf(pdf_path) == "ISTJ":
         # Define the rectangle coordinates for the first graph
-        rect_coords = (0.248, 0.6475, 0.748, 0.766)  # Example coordinates
+        rect_coords = (0.1, 0.62, 0.9, 0.79)  # Example coordinates
         print("type is ISTJ")
     else:
         # Define the rectangle coordinates for the first graph
-        rect_coords = (0.248, 0.66665, 0.748, 0.7845)  # Example coordinates
+        rect_coords = (0.1, 0.639, 0.9, 0.805)  # Example coordinates
 
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
@@ -203,7 +205,7 @@ def extract_last_graph(pdf_path, output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
     # Define the rectangle coordinates for the first graph
-    rect_coords = (0.31, 0.28, 0.68, 0.455)  # Example coordinates
+    rect_coords = (0.200, 0.30, 0.810, 0.73)  # Example coordinates
 
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
@@ -217,13 +219,24 @@ def extract_last_graph(pdf_path, output_dir):
 
     return output_image_path
 
-if __name__ == "__main__":
-    path_to_pdf = r"F:\projects\MBTInfo\input\Eran-Amiry-267149-743ec182-78a1-ee11-8925-000d3a36c80e.pdf"
-    name = os.path.basename(path_to_pdf).replace('.pdf', '')[:6]
-    path_to_output_dir = os.path.join(r"F:\projects\MBTInfo\backend\media\tmp", name)
 
-    extract_first_graph(path_to_pdf, path_to_output_dir)
-    extract_dominant_graph(path_to_pdf, path_to_output_dir)
-    extract_all_facet_graphs(path_to_pdf, path_to_output_dir)
-    extract_last_graph(path_to_pdf, path_to_output_dir)
-    # extract_dominant_graph(path_to_pdf, path_to_output_dir)
+def extract_all_graphs(pdf_path, output_dir):
+    identifier = os.path.basename(pdf_path)[:6]
+    extract_all_facet_graphs(pdf_path, output_dir)
+    all_graph_path = [extract_first_graph(pdf_path, output_dir),  # 0
+                      os.path.join(output_dir, f"{identifier}_EIGraph.png"),  # 1
+                      os.path.join(output_dir, f"{identifier}_TFgraph.png"),  # 2
+                      os.path.join(output_dir, f"{identifier}_JPgraph.png"),  # 3
+                      os.path.join(output_dir, f"{identifier}_SNgraph.png"),  # 4
+                      extract_dominant_graph(pdf_path, output_dir),  # 5
+                      extract_last_graph(pdf_path, output_dir)  # 6
+
+                      ]
+    return all_graph_path
+
+
+if __name__ == "__main__":
+    path_to_pdf = r"F:\projects\MBTInfo\input\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a.pdf"
+    name = os.path.basename(path_to_pdf).replace('.pdf', '')[:6]
+    # Read and split text
+    extract_all_graphs(path_to_pdf, MEDIA_PATH / "tmp" / name)

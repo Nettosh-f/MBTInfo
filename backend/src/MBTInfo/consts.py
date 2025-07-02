@@ -1,3 +1,5 @@
+from pathlib import Path
+
 MBTI_TYPES = [
     "ISTJ", "ISFJ", "INFJ", "INTJ",
     "ISTP", "ISFP", "INFP", "INTP",
@@ -101,7 +103,6 @@ dominant_type = {"ISTJ": "Si", "ISFJ": "Si", "INFJ": "Ni", "INTJ": "Ni", "ISTP":
                  "ENTJ": "Te"}
 
 
-
 dominant_functions = {
     "ENTJ": "Te",
     "ESTJ": "Te",
@@ -148,5 +149,35 @@ facet_chart_list = {
     "page8_JPgraph.png": ["Systematic", "Casual", "Planful", "Open-Ended", "Early Starting", "Pressure-Prompted", "Scheduled", "Spontaneous", "Methodical", "Emergent",     "Systematic–Casual", "Planful–Open-Ended", "Early Starting–Pressure-Prompted", "Scheduled–Spontaneous", "Methodical–Emergent"]
 }
 
+VALIDATION_SYSTEM_PROMPT = (
+    "Determine whether the attached PDF is clearly related to MBTI (Myers-Briggs Type Indicator), "
+    "personality types, or psychological typing. If it is, respond with YES. "
+    "If not, respond with NO and explain briefly."
+)
 
+INSIGHT_SYSTEM_PROMPT = ("""
+    You are a professional MBTI coach for businesses and individuals. 
+    You give insight for professional growth based on the given PDF. 
+    If the file is not MBTI-related, you must not answer.
+    Here you are Given a pdf that summarizes a full MBTI report for an individual.
+    your goal is to provide short insightful advice and strategies for the individual to improve their MBTI personality type.
+    Structure your response as an HTML page with appropriate tags, titles, and styling.
+    """)
+
+INSIGHT_COUPLE_SYSTEM_PROMPT = ("""
+    You are a professional MBTI coach for businesses and individuals. 
+    You give insight for professional growth based on the given PDF. 
+    Here you are Given a pdf that combines 2 personal reports for a comparison.
+    give insight into healthy cooperation and trust, potential conflict points, 
+    and potential solutions.
+    Structure your response as an HTML page with appropriate tags, titles, and styling.
+""")
+
+
+
+
+PROJECT_BASE_DIR = Path(r"F:\projects\MBTInfo")
+MEDIA_PATH = Path(r"F:\projects\MBTInfo\backend\media")
+OUTPUT_PATH = Path(r"F:\projects\MBTInfo\output")
+INPUT_PATH = Path(r"F:\projects\MBTInfo\input")
 

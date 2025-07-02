@@ -171,7 +171,6 @@ def collect_preferred_qualities(file_path: str) -> List[str]:
 
         preferred_qualities = filtered_qualities
 
-        print(f"Found {len(preferred_qualities)} preferred qualities.")
     except Exception as e:
         print(f"An error occurred while processing {file_path}: {str(e)}")
 
@@ -210,7 +209,6 @@ def collect_midzone_qualities(file_path: str) -> List[str]:
                 seen.add(lower_quality)
                 midzone_qualities.append(quality)
 
-        print(f"Found {len(midzone_qualities)} midzone qualities.")
     except Exception as e:
         print(f"An error occurred while processing {file_path}: {str(e)}")
 
@@ -240,7 +238,6 @@ def collect_out_qualities(file_path: str) -> List[str]:
         # Remove duplicates while preserving order
         out_qualities = list(dict.fromkeys(filtered_qualities))
 
-        print(f"Found {len(out_qualities)} out of preference qualities.")
     except Exception as e:
         print(f"An error occurred while processing {file_path}: {str(e)}")
 

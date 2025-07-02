@@ -33,6 +33,7 @@ def format_xl(file_path):
 
     # colors:
     black_fill = PatternFill(start_color='FF000000', end_color='FF000000', fill_type='solid')
+    gray_fill = PatternFill(start_color='BCBCBC', end_color='BCBCBC', fill_type='solid')
     light_green = 'ffb7e5b7'
     light_yellow = 'ffe5e589'
     light_red = 'ffe5b7b7'
@@ -105,10 +106,13 @@ def format_xl(file_path):
         print(f"Warning: Could not apply facet formatting: {str(e)}")
 
     if "Dashboard" in workbook.sheetnames:
+
         dashboard_sheet = workbook['Dashboard']
-        column_list = ['B', 'J', 'U', 'AF']
-        row_list = [2, 21, 8, 28, 29, 45]
-        fill_color = black_fill
+        clear_formatting(dashboard_sheet)
+        reset_dimensions_to_default(dashboard_sheet)  # Reset dimensions before applying the frame
+        column_list = ['A', 'B', 'J', 'R', 'Z', 'AH']
+        row_list = [2, 32, 39, 46, 53, 60, 67]
+        fill_color = gray_fill
         create_dashboard_frame(dashboard_sheet, column_list, row_list, fill_color)
         print(f"Applying dashboard formatting to sheet: {dashboard_sheet.title}")
     else:
@@ -213,7 +217,7 @@ def create_dashboard_frame(chart_sheet, border_columns, border_rows, fill_color)
         chart_sheet.row_dimensions[row].height = 10
         print(f"Adjusting height of row {row} to 10")
 
-    range_frame = f"B2:AF45"
+    range_frame = f"A2:AH67"
     start_col, start_row, end_col, end_row = xl.utils.range_boundaries(range_frame)
     print(f"Applying fill to range {range_frame}")
 
@@ -234,6 +238,26 @@ def create_dashboard_frame(chart_sheet, border_columns, border_rows, fill_color)
     # chart_sheet['V35'].fill = PatternFill(patternType="solid", fgColor="#4BACC6")
 
 
+def clear_formatting(sheet):
+    """
+    Remove all conditional formatting rules from the specified sheet.
+    """
+    sheet.conditional_formatting._cf_rules.clear()
+
+
+def reset_dimensions_to_default(sheet):
+    """
+    Reset all column widths and row heights to their default sizes.
+    """
+    # Reset column widths
+    for col in sheet.column_dimensions:
+        sheet.column_dimensions[col].width = 2.08
+
+    # Reset row heights
+    for row in sheet.row_dimensions:
+        sheet.row_dimensions[row].height = 0.53
+
+
 if __name__ == "__main__":
     # For testing purposes
-    format_xl(r"F:\projects\MBTInfo\output\MBTI_Results.xlsx")
+    format_xl(r"C:\Users\user\Downloads\group_report_all_pdfs (8).xlsx")

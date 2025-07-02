@@ -66,6 +66,9 @@ def insert_fixed_text(input_file, output_file, page_line_text_map):
         raise
 
 
+
+
+
 if __name__ == "__main__":
     from utils import get_all_info, extract_mbti_qualities_scores, format_mbti_string
     from constsAI import fixed_text_data

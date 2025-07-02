@@ -1,3 +1,5 @@
+from pathlib import Path
+
 SYSTEM_PROMPT = """You are a professional translator. Translate the following English text into formal, professional Hebrew suitable for inclusion in a psychological assessment report, maintaining the original meaning and tone. Ensure that the Hebrew text uses formal language and preserves the original structure and intent, with changes according to the specific instructions only.
 General Guidelines:
 1. Preserve the page count and structure exactly as in the original text.
@@ -188,8 +190,8 @@ o	**״מחוץ להעדפה״** – כלומר שייך לקוטב ההפוך מ
             },
         5: {1: f"""**1. ממה אתה מקבל אנרגיה?**\n{mbti_type_qualities[0]}"""},
         6: {1: f"""**2. כיצד את.ה קולט.ת מידע?**\n{mbti_type_qualities[1]}"""},
-        7: {1: f"""**3. באיזה אופן את.ה מקבל.ת החלטות**\n{mbti_type_qualities[2]}"""},
-        8: {1: f"""**4. איך את.ה מתנהל.ת בעולם**\n{mbti_type_qualities[3]}"""},
+        7: {1: f"""**3. באיזה אופן את.ה מקבל.ת החלטות?**\n{mbti_type_qualities[2]}"""},
+        8: {1: f"""**4. איך את.ה מתנהל.ת בעולם?**\n{mbti_type_qualities[3]}"""},
         9: {3: """כל ההיבטים של הטיפוס שלך משפיעים על האופן שבו אתה מתקשר, במיוחד כחלק מצוות. תשעה מה׳פנים׳ רלוונטיים במיוחד לתקשורת. ההעדפות שלך לתשעת הפנים הללו יחד עם טיפים לתקשורת טובה יותר מופיעים להלן.
 בנוסף לטיפים שלהלן, זכור שתקשורת עבור כל טיפוס כוללת:
 1.	לספר לאחרים איזה סוג מידע אתה צריך.
@@ -228,7 +230,7 @@ o	**״מחוץ להעדפה״** – כלומר שייך לקוטב ההפוך מ
 
 
 lines_to_remove = {
-    0: [0, 1, 2, 3, 4, 5, 6, 7, 10, 11],
+    0: [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12],
     1: "ALL",  # Skip entire page
     2: [0, 1, 2, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
         37, 38, 39, 40, 41],
@@ -255,3 +257,9 @@ lines_to_remove = {
          29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
          60, 61, 62, 63, 64, 65, 66]
 }
+
+PROJECT_BASE_DIR = Path(r"F:\projects\MBTInfo")
+MEDIA_PATH = Path(r"F:\projects\MBTInfo\backend\media")
+OUTPUT_PATH = Path(r"F:\projects\MBTInfo\output")
+INPUT_PATH = Path(r"F:\projects\MBTInfo\input")
+
