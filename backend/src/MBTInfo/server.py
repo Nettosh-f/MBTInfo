@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 import os
+import pandas as pd
 import uuid
 import tempfile
 from zipfile import ZipFile
@@ -12,6 +13,7 @@ import rarfile
 import glob
 import re
 import traceback
+from pathlib import Path
 import tempfile
 import shutil
 from datetime import datetime, timedelta
@@ -24,6 +26,8 @@ import logging
 from datetime import datetime
 # Import your existing modules
 from group_report import process_group_report
+from consts import GROUP_INSIGHT_SYSTEM_PROMPT
+from MBTInsight import extract_data_from_excel, group_user_prompt, ask_gpt_with_images
 from personal_report import generate_personal_report, generate_html_report
 from extract_image import extract_multiple_graphs_from_pdf
 from utils import get_all_info
@@ -112,6 +116,7 @@ class TaskStatus(BaseModel):
     download_url: Optional[str] = None
     file_type: Optional[str] = None  # "html", "pdf", "xlsx", etc.
     created_at: datetime
+    excel_path: Optional[str] = None  # <-- ADD THIS LINE!
 
 
 class TaskResponse(BaseModel):
@@ -389,7 +394,6 @@ async def insight_background(task_id: str, pdf_path: str):
         update_task_status(task_id, "failed", f"Insight error: {str(e)}")
 
 
-
 async def translate_pdf_background(task_id: str, pdf_path: str):
     """Background task for translating a PDF"""
     try:
@@ -413,26 +417,30 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
         
         
 # Background task functions
+
 async def create_group_report_background(task_id: str, folder_path: str):
-    """Background task for creating group report from folder"""
     try:
         update_task_status(task_id, "processing", "Creating group report...")
         folder_name = os.path.basename(os.path.normpath(folder_path))
-        # Use your existing process_group_report function with fixed output directory
         textfiles_dir = os.path.join(OUTPUT_DIR, "textfiles")
         os.makedirs(textfiles_dir, exist_ok=True)
-        if os.path.exists(os.path.join(textfiles_dir, f"group_report_{folder_name}.xlsx")):
-            os.remove(os.path.join(textfiles_dir, f"group_report_{folder_name}.xlsx"))
-
         output_filename = f"group_report_{folder_name}.xlsx"
-
-        # Call your main.py process_group_report function
-        workbook = process_group_report(folder_path, OUTPUT_DIR, output_filename)
-
         output_path = os.path.join(OUTPUT_DIR, output_filename)
+
+        if os.path.exists(output_path):
+            os.remove(output_path)
+
+        workbook = process_group_report(folder_path, OUTPUT_DIR, output_filename)
         download_url = f"/output/{output_filename}"
 
-        update_task_status(task_id, "completed", "Group report created successfully", download_url)
+        # Here, directly assign excel_path to the task object:
+        if task_id in task_storage:
+            task_storage[task_id].status = "completed"
+            task_storage[task_id].message = "Group report created successfully"
+            task_storage[task_id].download_url = download_url
+            task_storage[task_id].excel_path = output_path  # <-- FIXED HERE
+        else:
+            update_task_status(task_id, "completed", "Group report created successfully", download_url)
 
     except Exception as e:
         update_task_status(task_id, "failed", f"Group report creation failed: {str(e)}")
@@ -768,6 +776,100 @@ async def create_dual_report(
         status="pending",
         message=f"Dual report processing started for {file1.filename} and {file2.filename}"
     )
+
+
+class GroupInsightRequest(BaseModel):
+    group_task_id: str
+    group_name: str
+    industry: str
+    team_type: str
+    number_of_members: str
+    duration_together: str
+    analysis_goal: str
+    roles: Optional[str] = None
+    existing_challenges: Optional[str] = None
+    communication_style: Optional[str] = None
+    upcoming_context: Optional[str] = None
+
+
+@app.post("/group-insight", response_model=TaskResponse)
+async def group_insight(req: GroupInsightRequest):
+    try:
+        # 1. Look up the Excel file for this group task
+        group_task = task_storage.get(req.group_task_id)
+        if not group_task or not hasattr(group_task, 'download_url'):
+            raise HTTPException(status_code=400, detail="Invalid or unknown group report task ID.")
+
+        # Extract Excel path from download_url or your new excel_path property
+        # If using download_url:
+        if Path(group_task.download_url).suffix == ".xlsx":
+            excel_path = os.path.join(OUTPUT_DIR, group_task.download_url.split("/")[-1])
+        elif hasattr(group_task, 'excel_path'):
+            excel_path = group_task.excel_path
+        else:
+            raise HTTPException(status_code=400, detail="Excel file not found for this group report task.")
+
+        # Step 1: Extract data from Excel (convert to PDF and HTML table)
+        table_pdf_path = extract_data_from_excel(excel_path)
+        print(f"Data table PDF generated at: {table_pdf_path}")
+
+        # Step 2: Build the prompt
+        user_prompt = group_user_prompt(
+            req.group_name,
+            req.industry,
+            req.team_type,
+            req.number_of_members,
+            req.duration_together,
+            req.analysis_goal,
+            req.roles,
+            req.existing_challenges,
+            req.communication_style,
+            req.upcoming_context
+        )
+        print("GROUP USER PROMPT:", user_prompt)
+
+        # Step 3: Prepare Excel data as an HTML table block (you could also add as image if needed)
+
+        df = pd.read_excel(excel_path, sheet_name="Data")
+        html_table = df.to_html(index=False)
+        content_blocks = [
+            {"type": "text", "text": user_prompt},
+            {"type": "text", "text": html_table}
+        ]
+
+        # Step 4: Call GPT (with system prompt = group prompt, user content = data table)
+
+        ai_result = process_pdf_with_gpt(table_pdf_path, content_blocks)
+        print("AI RESULT:", ai_result)
+
+        # Step 5: Save result as HTML (optional)
+        task_id = create_task_id()
+        output_dir = os.path.join(OUTPUT_DIR, "insights")
+        os.makedirs(output_dir, exist_ok=True)
+        insight_filename = f"group_insight_{task_id[:8]}.html"
+        insight_path = os.path.join(output_dir, insight_filename)
+        with open(insight_path, "w", encoding="utf-8") as f:
+            f.write(ai_result["insight"])
+        download_url = f"/output/insights/{insight_filename}"
+
+        # Register in task storage if you want progress/status
+        task_storage[task_id] = TaskStatus(
+            task_id=task_id,
+            status="completed",
+            message="Group insight generated",
+            download_url=download_url,
+            file_type="html",
+            created_at=datetime.now()
+        )
+
+        return TaskResponse(
+            task_id=task_id,
+            status="completed",
+            message="Group insight generated successfully."
+        )
+    except Exception as e:
+        print("Error in /group-insight:", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/translate", response_model=TaskResponse)
