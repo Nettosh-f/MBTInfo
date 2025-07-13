@@ -3,6 +3,7 @@ import os
 import fitz
 from datetime import datetime
 import openpyxl
+import xlwings as xw
 from typing import Dict, Optional, List, Tuple
 # local imports
 from consts import MBTI_TYPES, FACETS, MIDZONE_FACETS, dominant_functions, All_Facets
@@ -930,9 +931,43 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
     return result
 
 
+def extract_charts_from_excel(excel_path, sheet_name="Dashboard", output_dir=r"F:\projects\MBTInfo\backend\media\tmp"):
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Open Excel workbook
+    app = xw.App(visible=False)
+    wb = app.books.open(excel_path)
+    sht = wb.sheets[sheet_name]
+
+    charts = sht.api.ChartObjects()  # Access charts on the sheet
+
+    # Loop through each chart, export as image
+    for i, chart_obj in enumerate(charts):
+        chart = chart_obj.Chart
+        image_path = os.path.join(output_dir, f"chart_{i + 1}.png")
+        chart.Export(image_path)
+        print(f"Exported chart {i + 1} to {image_path}")
+        print(f"File size: {os.path.getsize(image_path)} bytes")
+
+    # Cleanup
+    wb.close()
+    app.quit()
 
 
 if __name__ == "__main__":
-    # test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
-    test_file_path = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
-    print(get_mbti_type_from_pdf(test_file_path))
+    # # test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
+    # test_file_path = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
+    # print(get_mbti_type_from_pdf(test_file_path))
+    excel_path = r"F:\projects\MBTInfo\output\group_report_all_pdfs (11).xlsx"
+    # extract_charts_from_excel(excel_path, "Dashboard")
+    import pandas as pd
+
+    df = pd.read_excel(excel_path, sheet_name='Data')
+    df = df.fillna('')
+    df = df.astype(str)
+    print(df.head())  # See what's actually being imported
+    df.to_html('output.html', index=False)
+
+
+

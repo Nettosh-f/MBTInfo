@@ -1,6 +1,7 @@
 import os
 import openpyxl as xl
 from openpyxl.worksheet.table import Table, TableStyleInfo
+from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment, Font
 # local import
 from utils import (get_all_info, find_and_parse_mbti_scores, convert_scores_to_mbti_dict, collect_qualities,
@@ -82,29 +83,21 @@ def process_pdf_to_xl(text_path, output_dir, result_sheet_name, output_filename)
         sheet.cell(row=last_row, column=col, value=value if value else '')
 
     # Update or create the table
-    last_column = xl.utils.get_column_letter(actual_columns)
-    table_range = f"A1:{last_column}{sheet.max_row}"
-    
-    # If table exists, update its reference; otherwise create a new one
+    last_row = sheet.max_row
+    last_col = sheet.max_column
+    last_col_letter = get_column_letter(last_col)
+    table_range = f"A1:{last_col_letter}{last_row}"
+
+    # Remove old table if exists
     if 'Table1' in sheet.tables:
-        # Store the table style before removing
-        old_table = sheet.tables['Table1']
-        style_info = old_table.tableStyleInfo
-        
-        # Remove the old table
         del sheet.tables['Table1']
-        
-        # Create a new table with the updated range but same style
-        tab = Table(displayName="Table1", ref=table_range)
-        tab.tableStyleInfo = style_info
-        sheet.add_table(tab)
-    else:
-        # Create a new table
-        tab = Table(displayName="Table1", ref=table_range)
-        style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
-                               showLastColumn=False, showRowStripes=True, showColumnStripes=True)
-        tab.tableStyleInfo = style
-        sheet.add_table(tab)
+
+    # Create a new table with the correct range and style
+    tab = Table(displayName="Table1", ref=table_range)
+    style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
+                           showLastColumn=False, showRowStripes=True, showColumnStripes=True)
+    tab.tableStyleInfo = style
+    sheet.add_table(tab)
     
     workbook.save(filename=str(output_path))
     return output_path
@@ -117,26 +110,20 @@ def _unmerge_first_row(sheet):
 
 
 def _setup_headers(sheet, headers, sections):
-    # Unmerge any existing merged cells in the first row
-    for merge_range in list(sheet.merged_cells.ranges):
-        if merge_range.min_row == 1:
-            sheet.unmerge_cells(str(merge_range))
-
-    # Set up the headers in a single row
     col = 1
     for header in headers:
         cell = sheet.cell(row=1, column=col)
-        cell.value = header
+        # Assign placeholder for empty cells
+        cell.value = header if header not in sections else header
         cell.font = Font(bold=True)
-        
+
         if header in sections:
             cell.alignment = Alignment(horizontal='center')
-            # Add 8 empty cells after the section header
-            for _ in range(8):
+            # Add 8 *named* empty cells after the section header
+            for i in range(8):
                 col += 1
-                sheet.cell(row=1, column=col).value = ''
+                sheet.cell(row=1, column=col).value = f"{header}-{i + 1}"
         col += 1
-
     # Adjust column widths to fit content
     for column_cells in sheet.columns:
         lengths = [len(str(cell.value)) for cell in column_cells if cell.value]

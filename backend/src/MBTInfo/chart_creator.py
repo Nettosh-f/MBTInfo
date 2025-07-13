@@ -231,7 +231,7 @@ def prepare_dichotomy_data(data_sheet):
     # data for Practical-Conceptual
     data_sheet['E61'] = '=COUNTIF(Table1[Practical],"=IN-PREF")+COUNTIF(Table1[Practical],"=OUT-OF-PREF")'
     data_sheet['E62'] = '=COUNTIF(Table1[Conceptual],"=IN-PREF")+COUNTIF(Table1[Conceptual],"=OUT-OF-PREF")'
-    data_sheet['E63'] = '=COUNTIF'
+    data_sheet['E63'] = '=COUNTIF(Table1[Practical],"=MIDZONE")'
 
     # titles Experiential-Theoretical
     data_sheet['D66'] = "Experiential-Theoretical"
@@ -385,21 +385,21 @@ def prepare_external_internal_data(data_sheet):
     External_list = ["IJ", "IP", "EJ", "EP"]
 
     data_sheet['G1'] = "Internal Analysis"
-    data_sheet['J1'] = "External Analysis"
+    data_sheet['G9'] = "External Analysis"
     data_sheet['G1'].font = Font(bold=True)
-    data_sheet['J1'].font = Font(bold=True)
+    data_sheet['G9'].font = Font(bold=True)
     data_sheet['G2'] = "Internal"
-    data_sheet['J2'] = "External"
+    data_sheet['G10'] = "External"
     data_sheet['H2'] = "Count"
-    data_sheet['K2'] = "Count"
+    data_sheet['H10'] = "Count"
     data_sheet['H3'] = '=COUNTIF(Table1[Type], "*ST*")'
     data_sheet['H4'] = '=COUNTIF(Table1[Type], "*SF*")'
     data_sheet['H5'] = '=COUNTIF(Table1[Type], "*NF*")'
     data_sheet['H6'] = '=COUNTIF(Table1[Type], "*NT*")'
-    data_sheet['K3'] = '=COUNTIF(Table1[Type], "I*J")'
-    data_sheet['K4'] = '=COUNTIF(Table1[Type], "I*P")'
-    data_sheet['K5'] = '=COUNTIF(Table1[Type], "E*J")'
-    data_sheet['K6'] = '=COUNTIF(Table1[Type], "E*P")'
+    data_sheet['H11'] = '=COUNTIF(Table1[Type], "I*J")'
+    data_sheet['H12'] = '=COUNTIF(Table1[Type], "I*P")'
+    data_sheet['H13'] = '=COUNTIF(Table1[Type], "E*J")'
+    data_sheet['H14'] = '=COUNTIF(Table1[Type], "E*P")'
 
     # Insert Internal_list at G3->G6
     for i, internal_type in enumerate(Internal_list):
@@ -407,32 +407,30 @@ def prepare_external_internal_data(data_sheet):
 
     # Insert External_list at J3->J6
     for i, external_type in enumerate(External_list):
-        data_sheet[f'J{3 + i}'] = external_type
+        data_sheet[f'G{11 + i}'] = external_type
 
 
 def prepare_dominant_function_data(data_sheet):
-
-
-    data_sheet['G9'] = "Dominant Function Data"
-    data_sheet['G9'].font = Font(bold=True)
-    data_sheet['G10'] = "Dominant Function"
-    data_sheet['H10'] = "Count"
-    data_sheet['G11'] = "Te"
-    data_sheet['H11'] = '=SUM(B17,B14)'
-    data_sheet['G12'] = "Ti"
-    data_sheet['H12'] = '=SUM(B9,B6)'
-    data_sheet['G13'] = "Ne"
-    data_sheet['H13'] = '=SUM(B12,B13)'
-    data_sheet['G14'] = "Ni"
-    data_sheet['H14'] = '=SUM(B4,B5)'
-    data_sheet['G15'] = "Fe"
-    data_sheet['H15'] = '=SUM(B16,B15)'
-    data_sheet['G16'] = "Fi"
-    data_sheet['H16'] = '=SUM(B8,B7)'
-    data_sheet['G17'] = "Se"
-    data_sheet['H17'] = '=SUM(B11,B10)'
-    data_sheet['G18'] = "Si"
-    data_sheet['H18'] = '=SUM(B3,B2)'
+    data_sheet['G17'] = "Dominant Function Data"
+    data_sheet['G17'].font = Font(bold=True)
+    data_sheet['G18'] = "Dominant Function"
+    data_sheet['H18'] = "Count"
+    data_sheet['G19'] = "Te"
+    data_sheet['H19'] = '=SUM(B17,B14)'
+    data_sheet['G20'] = "Ti"
+    data_sheet['H20'] = '=SUM(B9,B6)'
+    data_sheet['G21'] = "Ne"
+    data_sheet['H21'] = '=SUM(B12,B13)'
+    data_sheet['G22'] = "Ni"
+    data_sheet['H22'] = '=SUM(B4,B5)'
+    data_sheet['G23'] = "Fe"
+    data_sheet['H23'] = '=SUM(B16,B15)'
+    data_sheet['G24'] = "Fi"
+    data_sheet['H24'] = '=SUM(B8,B7)'
+    data_sheet['G25'] = "Se"
+    data_sheet['H25'] = '=SUM(B11,B10)'
+    data_sheet['G26'] = "Si"
+    data_sheet['H26'] = '=SUM(B3,B2)'
 
 
 def create_main_distribution_chart(data_sheet, chart_sheet):
@@ -542,8 +540,8 @@ def create_external_internal_charts(data_sheet, chart_sheet):
     # Create External Analysis Pie Chart
     external_pie = PieChart()
     external_pie.title = "External letters Distribution"
-    labels = Reference(data_sheet, min_col=10, min_row=3, max_row=6)
-    data = Reference(data_sheet, min_col=11, min_row=3, max_row=6)
+    labels = Reference(data_sheet, min_col=7, min_row=11, max_row=14)
+    data = Reference(data_sheet, min_col=8, min_row=11, max_row=14)
     external_pie.add_data(data, titles_from_data=False)
     external_pie.set_categories(labels)
     external_pie.width = 11.8618
@@ -565,8 +563,8 @@ def create_external_internal_charts(data_sheet, chart_sheet):
 def create_dominant_chart(data_sheet, chart_sheet):
     dominant_pie = PieChart()
     dominant_pie.title = "Dominant Function"
-    labels = Reference(data_sheet, min_col=7, min_row=11, max_row=18)
-    data = Reference(data_sheet, min_col=8, min_row=11, max_row=18)
+    labels = Reference(data_sheet, min_col=7, min_row=19, max_row=26)
+    data = Reference(data_sheet, min_col=8, min_row=19, max_row=26)
     dominant_pie.add_data(data, titles_from_data=False)
     dominant_pie.set_categories(labels)
     dominant_pie.width = 11.8618

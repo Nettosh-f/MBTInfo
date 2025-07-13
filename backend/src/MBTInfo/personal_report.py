@@ -6,7 +6,7 @@ from PIL import Image as PILImage
 from data_extractor import extract_and_save_text
 from utils import get_all_info, find_and_parse_mbti_scores, convert_scores_to_mbti_dict, collect_qualities, get_dominant
 from utils import get_three_repeating_explanations, get_facet_explanations, get_facet_descriptor
-from consts import FACETS, dominant_functions, All_Facets, facet_chart_list
+from consts import FACETS, dominant_functions, All_Facets, facet_chart_list, PROJECT_BASE_DIR, PERSONAL_REPORT_MEDIA, MEDIA_PATH
 
 
 def generate_personal_report(input_pdf_path, output_dir, output_filename):
@@ -146,8 +146,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
     # Helper function to map facet name to image path
     def get_facet_image_path(facet_name):
         from consts import facet_chart_list
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-
+        project_root = PROJECT_BASE_DIR
         # Get the PDF file name from the input_pdf_path
         pdf_base_name = os.path.splitext(os.path.basename(input_pdf_path))[0]
 
@@ -176,8 +175,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
 
     mbti_type = info.get('type', '')
     dominant_function = info.get('dominant', '')
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-    print(f"Project root: {project_root}")
+    project_root = PROJECT_BASE_DIR
 
     # Initialize image paths dictionary
     image_paths = {}
@@ -188,7 +186,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         'ESTP', 'ESFP', 'ENTP', 'ENFP', 'ISTP', 'ISFP', 'INTP', 'INFP'
     ]:
         # General image based on MBTI type
-        general_path = os.path.join(project_root, f'Media/Personal_Report_Media/General_Pics/{mbti_type}_General.png')
+        general_path = PERSONAL_REPORT_MEDIA / f'General_Pics/{mbti_type}_General.png'
         if os.path.isfile(general_path):
             image_paths['general'] = general_path
         else:
@@ -196,24 +194,22 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
 
         # Dominant function image based on MBTI type
         if dominant_function:
-            dominant_path = os.path.join(project_root,
-                                         f'Media/Personal_Report_Media/Dominant_Pics/{mbti_type}_Dominant.png')
+            filename = f'{mbti_type}_Dominant.png'
+            dominant_path = PERSONAL_REPORT_MEDIA / 'Dominant_Pics' / filename
             if os.path.isfile(dominant_path):
                 image_paths['dominant'] = dominant_path
             else:
                 print(f"Warning: Dominant function image not found for type {mbti_type}: {dominant_path}")
 
         # External function image based on MBTI type
-        external_path = os.path.join(project_root,
-                                     f'Media/Personal_Report_Media/External_Pics/{mbti_type}_External.png')
+        external_path = PERSONAL_REPORT_MEDIA / f'External_Pics/{mbti_type}_External.png'
         if os.path.isfile(external_path):
             image_paths['external'] = external_path
         else:
             print(f"Warning: External function image not found for type {mbti_type}: {external_path}")
 
         # Internal function image based on MBTI type
-        internal_path = os.path.join(project_root,
-                                     f'Media/Personal_Report_Media/Internal_Pics/{mbti_type}_Internal.png')
+        internal_path = PERSONAL_REPORT_MEDIA / f'Internal_Pics/{mbti_type}_Internal.png'
         if os.path.isfile(internal_path):
             image_paths['internal'] = internal_path
         else:
@@ -237,7 +233,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
             image_data_urls[key] = ""
     
     # Load the logo image
-    logo_path = os.path.join(project_root, 'Media/full_logo.png')
+    logo_path = MEDIA_PATH / 'full_logo.png'
     logo_data_url = ""
     if os.path.isfile(logo_path):
         try:

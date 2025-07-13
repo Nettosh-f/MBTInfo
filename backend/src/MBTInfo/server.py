@@ -24,6 +24,7 @@ import sys
 import uvicorn
 import logging
 from datetime import datetime
+from weasyprint import HTML as WeasyHTML  # Add this at the top of server.py
 # Import your existing modules
 from group_report import process_group_report
 from consts import GROUP_INSIGHT_SYSTEM_PROMPT
@@ -117,6 +118,7 @@ class TaskStatus(BaseModel):
     file_type: Optional[str] = None  # "html", "pdf", "xlsx", etc.
     created_at: datetime
     excel_path: Optional[str] = None  # <-- ADD THIS LINE!
+    insight_pdf_url: Optional[str] = None
 
 
 class TaskResponse(BaseModel):
@@ -366,25 +368,138 @@ async def download_file(task_id: str, filename: str):
         }
     )
 
+def wrap_html_with_header( content_html, report_title="MBTI Insight Report", subject_name="", logo_url=r"F:\projects\MBTInfo\frontend\media\full_logo.png"):
+    """Wraps the provided HTML content with full HTML structure, CSS, and header."""
+    header_block = f"""
+    <div class="header">
+        <img src="{logo_url}" alt="Logo">
+        <h1>{report_title}</h1>
+        {'<h2>' + subject_name + '</h2>' if subject_name else ''}
+    </div>
+    """
+    full_html = f"""<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <title>{report_title} - {subject_name}</title>
+    <style>
+        body {{
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: #fff;
+            color: #222;
+            margin: 0;
+            padding: 0;
+        }}
+        .header {{
+            text-align: center;
+            padding: 32px 0 12px 0;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 24px;
+            background: #f6f9ff;
+        }}
+        .header img {{
+            height: 48px;
+            vertical-align: middle;
+        }}
+        .header h1 {{
+            margin: 10px 0 0 0;
+            font-size: 2.2rem;
+            color: #254C7D;
+            letter-spacing: 2px;
+        }}
+        .header h2 {{
+            margin: 0;
+            font-size: 1.3rem;
+            color: #555;
+            font-weight: normal;
+        }}
+        .report-content {{
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 36px 24px 24px 24px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(90,100,130,0.08);
+        }}
+        h2, h3, h4 {{
+            color: #254C7D;
+        }}
+    </style>
+</head>
+<body>
+    <div class="report-content">
+        {content_html}
+    </div>
+</body>
+</html>
+"""
+    return full_html
 
-async def insight_background(task_id: str, pdf_path: str):
+
+async def insight_background(task_id: str, pdf_path: str, relationship_type: str = None, relationship_goals: str = None):
     try:
         update_task_status(task_id, "processing", "Generating MBTI Insight with GPT-4o...")
-        result = process_pdf_with_gpt(pdf_path)
+        prompt_parts = []
+        if relationship_type:
+            prompt_parts.append(f"Supplementary information for MBTI couple report:")
+            prompt_parts.append(f"Relationship type: {relationship_type}")
+        if relationship_goals:
+            prompt_parts.append(f"Relationship goals: {relationship_goals}")
+        extra_user_prompt = "\n".join(prompt_parts) if prompt_parts else None
+        # ---- Build content_blocks ----
+        content_blocks = []
+        if extra_user_prompt:
+            content_blocks.append({"type": "text", "text": extra_user_prompt})
+        result = process_pdf_with_gpt(pdf_path, content_blocks if content_blocks else None)
         pdf_stub = os.path.splitext(os.path.basename(pdf_path))[0][:6]
         insight_html_filename = f"insight_{pdf_stub}.html"
         insight_html_path = os.path.join(os.path.dirname(pdf_path), insight_html_filename)
 
         if result.get("status") == "ok" and "insight" in result:
-            # Save the AI's HTML to disk
-            with open(insight_html_path, "w", encoding="utf-8") as f:
-                f.write(result["insight"])
-            # Report status and correct download_url
-            update_task_status(
-                task_id, "completed", "Insight generated successfully.",
-                download_url=f"/output/{os.path.basename(os.path.dirname(pdf_path))}/{insight_html_filename}"
+            # --- Get subject name for header (e.g., from filename) ---
+            subject_name = ""
+            # Example: parse "Eyal Golan" from filename if present
+            try:
+                base_name = os.path.basename(pdf_path)
+                if "_" in base_name:
+                    subject_name = base_name.replace(".pdf", "").replace("_", " ").strip()
+            except:
+                subject_name = ""
+
+            # --- Wrap with header and structure ---
+            html_with_header = wrap_html_with_header(
+                result["insight"],
+                report_title="MBTI Insight Report",
+                subject_name=subject_name,
+                logo_url="https://yourdomain.com/media/full_logo.png"  # Set your URL!
             )
+
+            # --- Save HTML for preview/download ---
+            with open(insight_html_path, "w", encoding="utf-8") as f:
+                f.write(html_with_header)
+
+            # --- Generate PDF from HTML ---
+            insight_pdf_filename = f"insight_{pdf_stub}.pdf"
+            insight_pdf_path = os.path.join(os.path.dirname(pdf_path), insight_pdf_filename)
+            try:
+                WeasyHTML(insight_html_path).write_pdf(insight_pdf_path)
+            except Exception as e:
+                print("PDF generation from insight HTML failed:", e)
+                insight_pdf_path = None
+
+            # --- Report status and links as before ---
+            download_url = f"/output/{os.path.basename(os.path.dirname(pdf_path))}/{insight_html_filename}"
+            insight_pdf_url = None
+            if insight_pdf_path and os.path.exists(insight_pdf_path):
+                insight_pdf_url = f"/output/{os.path.basename(os.path.dirname(pdf_path))}/{insight_pdf_filename}"
+
+            task_storage[task_id].status = "completed"
+            task_storage[task_id].message = "Insight generated successfully."
+            task_storage[task_id].download_url = download_url
             task_storage[task_id].file_type = "html"
+            if insight_pdf_url:
+                task_storage[task_id].insight_pdf_url = insight_pdf_url
+
         else:
             update_task_status(
                 task_id, "failed",
@@ -503,10 +618,12 @@ async def create_dual_report_background(task_id: str, pdf1_path: str, pdf2_path:
         second_name_part = os.path.basename(pdf2_path)[:6]
         identifier = f"{first_name_part}_{second_name_part}"
         # For now, just create a placeholder message in fixed output directory
-        output_filename = f"dual_report_{identifier}_{task_id[:6]}.pdf"
-        output_path = OUTPUT_DIR
-        generate_dual_report(pdf1_path, pdf2_path, output_path)
-        download_url = f"/output/{identifier}_dual_report.pdf"
+        output_dir = os.path.join(OUTPUT_DIR, identifier)
+        os.makedirs(output_dir, exist_ok=True)
+        output_filename = f"{identifier}_dual_report.pdf"
+        output_path = os.path.join(output_dir, output_filename)
+        generate_dual_report(pdf1_path, pdf2_path, output_dir)
+        download_url = f"/output/{identifier}/{output_filename}"
 
         if task_id in task_storage:
             task_storage[task_id].status = "completed"
@@ -635,10 +752,7 @@ async def upload_zip_group_report(
 
 
 @app.post("/insight-by-download-url", response_model=TaskResponse)
-async def get_mbti_insight_by_download_url(
-    background_tasks: BackgroundTasks,
-    download_url: str = Form(...)
-):
+async def get_mbti_insight_by_download_url(background_tasks: BackgroundTasks, download_url: str = Form(...), relationship_type: str = Form(None), relationship_goals: str = Form(None)):
     # Example: "/output/PersonName/filename.pdf"
     parts = download_url.strip("/").split("/")
     if len(parts) < 3:
@@ -655,7 +769,13 @@ async def get_mbti_insight_by_download_url(
         message="MBTI Insight queued",
         created_at=datetime.now()
     )
-    background_tasks.add_task(insight_background, task_id, file_path)
+    background_tasks.add_task(
+        insight_background,
+        task_id,
+        file_path,
+        relationship_type,
+        relationship_goals
+    )
     return TaskResponse(
         task_id=task_id,
         status="pending",
@@ -910,11 +1030,24 @@ async def translate_pdf(
 
 @app.get("/status/{task_id}", response_model=TaskStatus)
 async def get_task_status(task_id: str):
-    """Get the status of a processing task"""
+    """Get the status of a processing task, including insight PDF URL if present."""
     if task_id not in task_storage:
         raise HTTPException(status_code=404, detail="Task not found")
+    task = task_storage[task_id]
 
-    return task_storage[task_id]
+    # --- Defensive: try to add insight_pdf_url if it's not present but can be inferred ---
+    # Only if the task is for an insight and completed:
+    if getattr(task, "file_type", None) == "html" and task.status == "completed":
+        # If insight_pdf_url is missing, but the HTML exists, try to guess the PDF path
+        if not getattr(task, "insight_pdf_url", None) and task.download_url:
+            base_url, html_name = os.path.split(task.download_url)
+            if html_name.startswith("insight_") and html_name.endswith(".html"):
+                pdf_name = html_name.replace(".html", ".pdf")
+                pdf_path = os.path.join(OUTPUT_DIR, base_url.strip("/"), pdf_name)
+                if os.path.exists(pdf_path):
+                    task.insight_pdf_url = f"{base_url}/{pdf_name}"
+
+    return task
 
 
 @app.post("/admin/cleanup-media")

@@ -1,6 +1,7 @@
 import openpyxl
 from openpyxl.worksheet.table import Table, TableStyleInfo
 from openpyxl.styles import Font, PatternFill
+from openpyxl.utils import get_column_letter
 from collections import Counter
 # local import
 from formatting import adjust_column_widths
@@ -76,34 +77,40 @@ def create_facet_table(workbook):
             elif count == 2:
                 col = 12  # Move to "Appearing 1 time" columns
 
-    # Check column F and move content from E to F if F is empty
-    for row in range(2, sheet.max_row + 1):
-        if sheet.cell(row=row, column=6).value is None:  # Column F is empty
-            e_value = sheet.cell(row=row, column=5).value
-            if e_value:
-                sheet.cell(row=row, column=6, value=e_value)
-                sheet.cell(row=row, column=5, value="")  # Clear cell E
+    # # Check column F and move content from E to F if F is empty
+    # for row in range(2, sheet.max_row + 1):
+    #     if sheet.cell(row=row, column=6).value is None:  # Column F is empty
+    #         e_value = sheet.cell(row=row, column=5).value
+    #         if e_value:
+    #             sheet.cell(row=row, column=6, value=e_value)
+    #             sheet.cell(row=row, column=5, value="")  # Clear cell E
+    #
+    # # Check column K and move content from J to K if K is empty
+    # for row in range(2, sheet.max_row + 1):
+    #     if sheet.cell(row=row, column=11).value is None:  # Column K is empty
+    #         j_value = sheet.cell(row=row, column=10).value
+    #         i_value = sheet.cell(row=row, column=9).value
+    #         h_value = sheet.cell(row=row, column=8).value
+    #         if j_value:
+    #             sheet.cell(row=row, column=11, value=j_value)
+    #             sheet.cell(row=row, column=10, value=i_value)
+    #             sheet.cell(row=row, column=9, value=h_value)
+    #             sheet.cell(row=row, column=8, value="")
 
-    # Check column K and move content from J to K if K is empty
-    for row in range(2, sheet.max_row + 1):
-        if sheet.cell(row=row, column=11).value is None:  # Column K is empty
-            j_value = sheet.cell(row=row, column=10).value
-            i_value = sheet.cell(row=row, column=9).value
-            h_value = sheet.cell(row=row, column=8).value
-            if j_value:
-                sheet.cell(row=row, column=11, value=j_value)
-                sheet.cell(row=row, column=10, value=i_value)
-                sheet.cell(row=row, column=9, value=h_value)
-                sheet.cell(row=row, column=8, value="")
+    last_row = sheet.max_row
+    last_col = sheet.max_column
+    last_col_letter = get_column_letter(last_col)
+    table_ref = f"A1:{last_col_letter}{last_row}"
 
-    # Create table
-    table_ref = f"A1:T{max_row}"
+    # Remove old table if exists
+    if 'FacetTable' in sheet.tables:
+        del sheet.tables['FacetTable']
+
     table = Table(displayName="FacetTable", ref=table_ref)
     style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
                            showLastColumn=False, showRowStripes=True, showColumnStripes=False)
     table.tableStyleInfo = style
     sheet.add_table(table)
-
     # Adjust column widths
     adjust_column_widths(sheet)
 
