@@ -151,7 +151,8 @@ def extract_first_graph(pdf_path, output_dir):
     """
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
-    if get_mbti_type_from_pdf(pdf_path) == "ISTJ" or get_mbti_type_from_pdf(pdf_path) == "INTP":
+    BAD_TYPES = ["ISTJ", "INTP", "INTJ", "ENFP"]
+    if get_mbti_type_from_pdf(pdf_path) in BAD_TYPES:
         # Define the rectangle coordinates for the first graph
         rect_coords = (0.248, 0.6475, 0.748, 0.766)  # Example coordinates
         print("type is ISTJ")
