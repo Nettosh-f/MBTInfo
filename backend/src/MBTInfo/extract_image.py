@@ -2,7 +2,7 @@ import fitz  # PyMuPDF
 import os
 import time
 import re
-from utils import get_mbti_type_from_pdf
+from utils import get_mbti_type_from_pdf, sanitize_filename, sanitize_path_component
 
 
 def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2):
@@ -75,7 +75,8 @@ def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords
     # Create a specific output directory based on PDF filename
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
-    specific_output_dir = os.path.join(output_dir, pdf_name_without_ext, "screenshots")
+    safe_pdf_dir = sanitize_filename(pdf_name_without_ext).strip()
+    specific_output_dir = os.path.join(output_dir, safe_pdf_dir, "screenshots")
     os.makedirs(specific_output_dir, exist_ok=True)
 
     # Create a dictionary to track filenames used in this run
@@ -150,6 +151,7 @@ def extract_first_graph(pdf_path, output_dir):
         output_dir (str): Directory where the extracted image will be saved
     """
     # Ensure the output directory exists
+    # output_dir = sanitize_path_component(output_dir)
     os.makedirs(output_dir, exist_ok=True)
     BAD_TYPES = ["ISTJ", "INTP", "INTJ", "ENFP"]
     if get_mbti_type_from_pdf(pdf_path) in BAD_TYPES:
@@ -163,7 +165,8 @@ def extract_first_graph(pdf_path, output_dir):
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
-    output_image_path = os.path.join(output_dir, f"{pdf_name_without_ext[:6]}_first_graph.png")
+    sanitized_pdf_name = sanitize_filename(pdf_name_without_ext)
+    output_image_path = os.path.join(output_dir, f"{sanitized_pdf_name[:6]}_first_graph.png")
 
     # Extract the graph from the PDF
     extract_graph_from_pdf(pdf_path, output_image_path, page_num=2, rect_coords=rect_coords, zoom=2)
@@ -190,7 +193,8 @@ def extract_dominant_graph(pdf_path, output_dir):
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
-    output_image_path = os.path.join(output_dir, f"{pdf_name_without_ext[:6]}_dominant_graph.png")
+    sanitized_pdf_name = sanitize_filename(pdf_name_without_ext)
+    output_image_path = os.path.join(output_dir, f"{sanitized_pdf_name[:6]}_first_graph.png")
 
     # Extract the graph from the PDF
     extract_graph_from_pdf(pdf_path, output_image_path, page_num=12, rect_coords=rect_coords, zoom=2)

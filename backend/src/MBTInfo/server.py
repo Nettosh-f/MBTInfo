@@ -26,15 +26,16 @@ import logging
 from datetime import datetime
 from weasyprint import HTML as WeasyHTML  # Add this at the top of server.py
 # Import your existing modules
-from group_report import process_group_report
+from group_report import process_group_report_fixed
 from consts import GROUP_INSIGHT_SYSTEM_PROMPT
-from MBTInsight import extract_data_from_excel, group_user_prompt, ask_gpt_with_images
+from MBTInsight import extract_data_from_excel_fixed, group_user_prompt, ask_gpt_with_images
 from personal_report import generate_personal_report, generate_html_report
 from extract_image import extract_multiple_graphs_from_pdf
 from utils import get_all_info
 from data_extractor import extract_and_save_text
 from dual_report import generate_dual_report
-from utils import get_all_info
+from utils import get_all_info, sanitize_filename, sanitize_path_component
+
 from MBTInsight import process_pdf_with_gpt
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'MBTInterpret'))
@@ -117,7 +118,7 @@ class TaskStatus(BaseModel):
     download_url: Optional[str] = None
     file_type: Optional[str] = None  # "html", "pdf", "xlsx", etc.
     created_at: datetime
-    excel_path: Optional[str] = None  # <-- ADD THIS LINE!
+    excel_path: Optional[str] = None  # Add this as a proper field
     insight_pdf_url: Optional[str] = None
 
 
@@ -436,29 +437,123 @@ def wrap_html_with_header( content_html, report_title="MBTI Insight Report", sub
     return full_html
 
 
-async def insight_background(task_id: str, pdf_path: str, relationship_type: str = None, relationship_goals: str = None):
+async def group_insight_background(task_id: str, excel_path: str, req_data: dict):
+    """Background task for generating group insight"""
+    try:
+        update_task_status(task_id, "processing", "Extracting data from Excel...")
+
+        # Step 1: Extract data from Excel (convert to PDF and HTML table)
+        table_pdf_path = extract_data_from_excel_fixed(excel_path)
+        print(f"Data table PDF generated at: {table_pdf_path}")
+
+        update_task_status(task_id, "processing", "Building analysis prompt...")
+
+        # Step 2: Build the prompt
+        user_prompt = group_user_prompt(
+            req_data.get('group_name', ''),
+            req_data.get('industry', ''),
+            req_data.get('team_type', ''),
+            req_data.get('analysis_goal', ''),
+            req_data.get('roles', ''),
+            req_data.get('existing_challenges', ''),
+        )
+        print("GROUP USER PROMPT:", user_prompt)
+
+        update_task_status(task_id, "processing", "Analyzing team data with AI...")
+
+        # Step 3: Prepare Excel data as an HTML table block
+        df = pd.read_excel(excel_path, sheet_name="Data")
+        html_table = df.to_html(index=False)
+        content_blocks = [
+            {"type": "text", "text": user_prompt},
+            {"type": "text", "text": html_table}
+        ]
+
+        # Step 4: Call GPT with system prompt
+        ai_result = process_pdf_with_gpt(table_pdf_path, content_blocks)
+        print("AI RESULT:", ai_result)
+
+        if ai_result.get("status") != "ok" or "insight" not in ai_result:
+            update_task_status(task_id, "failed", f"AI analysis failed: {ai_result.get('reason', 'Unknown error')}")
+            return
+
+        update_task_status(task_id, "processing", "Generating insight report...")
+
+        # Step 5: Save result as HTML with proper structure
+        output_dir = os.path.join(OUTPUT_DIR, "insights")
+        os.makedirs(output_dir, exist_ok=True)
+
+        insight_filename = f"group_insight_{task_id[:8]}.html"
+        insight_path = os.path.join(output_dir, insight_filename)
+
+        # Wrap the insight with proper HTML structure
+        wrapped_html = wrap_html_with_header(
+            ai_result["insight"],
+            report_title="Group MBTI Analysis",
+            subject_name=req_data.get('group_name', ''),
+            logo_url="https://yourdomain.com/media/full_logo.png"
+        )
+
+        with open(insight_path, "w", encoding="utf-8") as f:
+            f.write(wrapped_html)
+
+        # Generate PDF version
+        insight_pdf_filename = f"group_insight_{task_id[:8]}.pdf"
+        insight_pdf_path = os.path.join(output_dir, insight_pdf_filename)
+
+        try:
+            WeasyHTML(insight_path).write_pdf(insight_pdf_path)
+            insight_pdf_url = f"/output/insights/{insight_pdf_filename}"
+        except Exception as e:
+            print(f"PDF generation failed: {e}")
+            insight_pdf_url = None
+
+        download_url = f"/output/insights/{insight_filename}"
+
+        # Update task status
+        task_storage[task_id].status = "completed"
+        task_storage[task_id].message = "Group insight generated successfully"
+        task_storage[task_id].download_url = download_url
+        task_storage[task_id].file_type = "html"
+        if insight_pdf_url:
+            task_storage[task_id].insight_pdf_url = insight_pdf_url
+
+    except Exception as e:
+        update_task_status(task_id, "failed", f"Group insight generation failed: {str(e)}")
+        print(f"Error in group insight background: {str(e)}")
+        traceback.print_exc()
+
+
+async def insight_background(task_id: str, pdf_path: str, relationship_type: str = None,
+                             relationship_goals: str = None):
+    """Background task for generating MBTI insights for personal/dual reports"""
     try:
         update_task_status(task_id, "processing", "Generating MBTI Insight with GPT-4o...")
-        prompt_parts = []
+
+        # Build user prompt for dual reports with relationship context
+        user_prompt = ""
         if relationship_type:
-            prompt_parts.append(f"Supplementary information for MBTI couple report:")
-            prompt_parts.append(f"Relationship type: {relationship_type}")
+            user_prompt += "Supplementary information for MBTI couple report:\n"
+            user_prompt += f"Relationship type: {relationship_type}\n"
         if relationship_goals:
-            prompt_parts.append(f"Relationship goals: {relationship_goals}")
-        extra_user_prompt = "\n".join(prompt_parts) if prompt_parts else None
-        # ---- Build content_blocks ----
+            user_prompt += f"Relationship goals: {relationship_goals}\n"
+
+        # Build content blocks for GPT
         content_blocks = []
-        if extra_user_prompt:
-            content_blocks.append({"type": "text", "text": extra_user_prompt})
+        if user_prompt:
+            content_blocks.append({"type": "text", "text": user_prompt})
+
+        # Process the PDF with GPT
         result = process_pdf_with_gpt(pdf_path, content_blocks if content_blocks else None)
+
+        # Generate file names based on PDF
         pdf_stub = os.path.splitext(os.path.basename(pdf_path))[0][:6]
         insight_html_filename = f"insight_{pdf_stub}.html"
         insight_html_path = os.path.join(os.path.dirname(pdf_path), insight_html_filename)
 
         if result.get("status") == "ok" and "insight" in result:
-            # --- Get subject name for header (e.g., from filename) ---
+            # Extract subject name for header (from filename)
             subject_name = ""
-            # Example: parse "Eyal Golan" from filename if present
             try:
                 base_name = os.path.basename(pdf_path)
                 if "_" in base_name:
@@ -466,33 +561,39 @@ async def insight_background(task_id: str, pdf_path: str, relationship_type: str
             except:
                 subject_name = ""
 
-            # --- Wrap with header and structure ---
+            # Wrap with header and structure
             html_with_header = wrap_html_with_header(
                 result["insight"],
                 report_title="MBTI Insight Report",
                 subject_name=subject_name,
-                logo_url="https://yourdomain.com/media/full_logo.png"  # Set your URL!
+                logo_url="https://yourdomain.com/media/full_logo.png"  # Update with your actual URL
             )
 
-            # --- Save HTML for preview/download ---
+            # Save HTML for preview/download
             with open(insight_html_path, "w", encoding="utf-8") as f:
                 f.write(html_with_header)
 
-            # --- Generate PDF from HTML ---
+            # Generate PDF from HTML
             insight_pdf_filename = f"insight_{pdf_stub}.pdf"
             insight_pdf_path = os.path.join(os.path.dirname(pdf_path), insight_pdf_filename)
+
             try:
                 WeasyHTML(insight_html_path).write_pdf(insight_pdf_path)
+                print(f"PDF generated successfully: {insight_pdf_path}")
             except Exception as e:
-                print("PDF generation from insight HTML failed:", e)
+                print(f"PDF generation from insight HTML failed: {e}")
                 insight_pdf_path = None
 
-            # --- Report status and links as before ---
-            download_url = f"/output/{os.path.basename(os.path.dirname(pdf_path))}/{insight_html_filename}"
+            # Build download URLs
+            # Get the relative path from OUTPUT_DIR
+            rel_dir = os.path.relpath(os.path.dirname(pdf_path), OUTPUT_DIR)
+            download_url = f"/output/{rel_dir}/{insight_html_filename}".replace("\\", "/")
+
             insight_pdf_url = None
             if insight_pdf_path and os.path.exists(insight_pdf_path):
-                insight_pdf_url = f"/output/{os.path.basename(os.path.dirname(pdf_path))}/{insight_pdf_filename}"
+                insight_pdf_url = f"/output/{rel_dir}/{insight_pdf_filename}".replace("\\", "/")
 
+            # Update task status with completion
             task_storage[task_id].status = "completed"
             task_storage[task_id].message = "Insight generated successfully."
             task_storage[task_id].download_url = download_url
@@ -500,12 +601,16 @@ async def insight_background(task_id: str, pdf_path: str, relationship_type: str
             if insight_pdf_url:
                 task_storage[task_id].insight_pdf_url = insight_pdf_url
 
+            print(f"Insight generated successfully. HTML: {download_url}, PDF: {insight_pdf_url}")
+
         else:
             update_task_status(
                 task_id, "failed",
                 f"Insight generation failed: {result.get('reason', 'Unknown error')}"
             )
     except Exception as e:
+        print(f"Error in insight_background: {str(e)}")
+        traceback.print_exc()
         update_task_status(task_id, "failed", f"Insight error: {str(e)}")
 
 
@@ -515,14 +620,14 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
         update_task_status(task_id, "processing", "Translating PDF...")
 
         # Create a directory for the PDF if it doesn't exist
-        person_name = os.path.basename(pdf_path).replace(" ", "_").replace("-", "_").replace(".pdf", "")
+        person_name = sanitize_filename(os.path.basename(pdf_path).replace(".pdf", ""))
         person_dir = os.path.join(OUTPUT_DIR, person_name)
         os.makedirs(person_dir, exist_ok=True)
 
         # Await the create_translated_pdf function
         output_pdf_path = await create_translated_pdf(pdf_path, person_dir)
 
-        download_url = f"/output/{person_name}/{os.path.basename(output_pdf_path)}"
+        download_url = f"/output/{os.path.basename(output_pdf_path)}"
         update_task_status(task_id, "completed", "Translation completed successfully", download_url)
 
     except Exception as e:
@@ -533,32 +638,67 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
         
 # Background task functions
 
-async def create_group_report_background(task_id: str, folder_path: str):
+async def create_group_report_background_simple_fix(task_id: str, folder_path: str):
+    """Simple fixed version of group report background task"""
     try:
-        update_task_status(task_id, "processing", "Creating group report...")
+        update_task_status(task_id, "processing", "Creating group report (with fixes)...")
+
         folder_name = os.path.basename(os.path.normpath(folder_path))
-        textfiles_dir = os.path.join(OUTPUT_DIR, "textfiles")
-        os.makedirs(textfiles_dir, exist_ok=True)
         output_filename = f"group_report_{folder_name}.xlsx"
         output_path = os.path.join(OUTPUT_DIR, output_filename)
 
+        # Remove existing file if present
         if os.path.exists(output_path):
-            os.remove(output_path)
+            try:
+                os.remove(output_path)
+                print(f"Removed existing: {output_path}")
+            except PermissionError:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                output_filename = f"group_report_{folder_name}_{timestamp}.xlsx"
+                output_path = os.path.join(OUTPUT_DIR, output_filename)
 
-        workbook = process_group_report(folder_path, OUTPUT_DIR, output_filename)
-        download_url = f"/output/{output_filename}"
+        # Debug: List PDF files before processing
+        pdf_files = [f for f in os.listdir(folder_path) if f.lower().endswith('.pdf')]
+        print(f"📄 About to process {len(pdf_files)} PDF files:")
+        for i, pdf in enumerate(pdf_files[:5]):  # Show first 5
+            print(f"  {i + 1}. {pdf}")
+        if len(pdf_files) > 5:
+            print(f"  ... and {len(pdf_files) - 5} more")
 
-        # Here, directly assign excel_path to the task object:
-        if task_id in task_storage:
-            task_storage[task_id].status = "completed"
-            task_storage[task_id].message = "Group report created successfully"
-            task_storage[task_id].download_url = download_url
-            task_storage[task_id].excel_path = output_path  # <-- FIXED HERE
+        # Use the fixed processing function
+        workbook = process_group_report_fixed(folder_path, OUTPUT_DIR, output_filename)
+
+        if workbook and hasattr(workbook, 'close'):
+            workbook.close()
+
+        # Verify the output file exists
+        if os.path.exists(output_path):
+            download_url = f"/output/{output_filename}"
+            print(f"✅ Excel file created successfully: {output_path}")
+
+            # Update task status with excel_path stored properly
+            if task_id in task_storage:
+                task_storage[task_id] = TaskStatus(
+                    task_id=task_id,
+                    status="completed",
+                    message="Group report created successfully",
+                    download_url=download_url,
+                    excel_path=output_path,  # Store the full path
+                    created_at=task_storage[task_id].created_at,
+                    file_type="xlsx"
+                )
         else:
-            update_task_status(task_id, "completed", "Group report created successfully", download_url)
+            # File wasn't created - this is a failure
+            error_msg = f"Excel file was not created at {output_path}. Check PDF processing logs."
+            print(f"❌ {error_msg}")
+            update_task_status(task_id, "failed", error_msg)
 
     except Exception as e:
-        update_task_status(task_id, "failed", f"Group report creation failed: {str(e)}")
+        error_msg = f"Group report creation failed: {str(e)}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        update_task_status(task_id, "failed", error_msg)
 
 
 async def create_personal_report_background(task_id: str, pdf_path: str):
@@ -582,7 +722,7 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
 
         update_task_status(task_id, "processing", "Generating personal report...")
         person_name = os.path.basename(pdf_path)
-        person_name = person_name.replace(" ", "_").replace("-", "_").replace(".pdf", "")
+        person_name = sanitize_filename(person_name.replace(".pdf", ""))
 
         # Create a directory for the PDF if it doesn't exist
         person_dir = os.path.join(OUTPUT_DIR, person_name)
@@ -614,8 +754,8 @@ async def create_dual_report_background(task_id: str, pdf1_path: str, pdf2_path:
 
         # Simulate some processing time
         await asyncio.sleep(2)
-        first_name_part = os.path.basename(pdf1_path)[:6]
-        second_name_part = os.path.basename(pdf2_path)[:6]
+        first_name_part = sanitize_path_component(os.path.basename(pdf1_path)[:6])
+        second_name_part = sanitize_path_component(os.path.basename(pdf2_path)[:6])
         identifier = f"{first_name_part}_{second_name_part}"
         # For now, just create a placeholder message in fixed output directory
         output_dir = os.path.join(OUTPUT_DIR, identifier)
@@ -742,7 +882,7 @@ async def upload_zip_group_report(
         message="Group report queued from archive",
         created_at=datetime.now()
     )
-    background_tasks.add_task(create_group_report_background, task_id, flat_pdf_dir)
+    background_tasks.add_task(create_group_report_background_simple_fix, task_id, flat_pdf_dir)
 
     return TaskResponse(
         task_id=task_id,
@@ -752,35 +892,63 @@ async def upload_zip_group_report(
 
 
 @app.post("/insight-by-download-url", response_model=TaskResponse)
-async def get_mbti_insight_by_download_url(background_tasks: BackgroundTasks, download_url: str = Form(...), relationship_type: str = Form(None), relationship_goals: str = Form(None)):
-    # Example: "/output/PersonName/filename.pdf"
-    parts = download_url.strip("/").split("/")
-    if len(parts) < 3:
-        raise HTTPException(status_code=400, detail="Invalid download_url format")
-    person_name = parts[-2]
-    filename = parts[-1]
-    file_path = os.path.join(OUTPUT_DIR, person_name, filename)
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-    task_id = create_task_id()
-    task_storage[task_id] = TaskStatus(
-        task_id=task_id,
-        status="pending",
-        message="MBTI Insight queued",
-        created_at=datetime.now()
-    )
-    background_tasks.add_task(
-        insight_background,
-        task_id,
-        file_path,
-        relationship_type,
-        relationship_goals
-    )
-    return TaskResponse(
-        task_id=task_id,
-        status="pending",
-        message=f"MBTI Insight processing started for {filename}"
-    )
+async def get_mbti_insight_by_download_url(
+        background_tasks: BackgroundTasks,
+        download_url: str = Form(...),
+        relationship_type: str = Form(None),
+        relationship_goals: str = Form(None)
+):
+    """Generate MBTI insight from a downloaded report file"""
+    try:
+        print(f"Received insight request for URL: {download_url}")
+        print(f"Relationship type: {relationship_type}")
+        print(f"Relationship goals: {relationship_goals}")
+
+        # Parse the download URL to find the file
+        # Example: "/output/PersonName/filename.pdf"
+        parts = download_url.strip("/").split("/")
+        if len(parts) < 3:
+            raise HTTPException(status_code=400, detail="Invalid download_url format")
+
+        person_name = parts[-2]
+        filename = parts[-1]
+        file_path = os.path.join(OUTPUT_DIR, person_name, filename)
+
+        print(f"Looking for file at: {file_path}")
+
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+
+        # Create new task for insight generation
+        task_id = create_task_id()
+        task_storage[task_id] = TaskStatus(
+            task_id=task_id,
+            status="pending",
+            message="MBTI Insight queued",
+            created_at=datetime.now()
+        )
+
+        # Start background task with the correct function name
+        background_tasks.add_task(
+            insight_background,  # This is the function we just defined
+            task_id,
+            file_path,
+            relationship_type,
+            relationship_goals
+        )
+
+        return TaskResponse(
+            task_id=task_id,
+            status="pending",
+            message=f"MBTI Insight processing started for {filename}"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in get_mbti_insight_by_download_url: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.post("/create-group-report", response_model=TaskResponse)
@@ -903,95 +1071,133 @@ class GroupInsightRequest(BaseModel):
     group_name: str
     industry: str
     team_type: str
-    number_of_members: str
-    duration_together: str
     analysis_goal: str
     roles: Optional[str] = None
     existing_challenges: Optional[str] = None
-    communication_style: Optional[str] = None
-    upcoming_context: Optional[str] = None
 
 
 @app.post("/group-insight", response_model=TaskResponse)
-async def group_insight(req: GroupInsightRequest):
+async def group_insight(background_tasks: BackgroundTasks, req: GroupInsightRequest):
     try:
+        print(f"Received group insight request: {req}")
+
         # 1. Look up the Excel file for this group task
         group_task = task_storage.get(req.group_task_id)
-        if not group_task or not hasattr(group_task, 'download_url'):
-            raise HTTPException(status_code=400, detail="Invalid or unknown group report task ID.")
+        if not group_task:
+            raise HTTPException(status_code=400, detail="Invalid group task ID - task not found")
 
-        # Extract Excel path from download_url or your new excel_path property
-        # If using download_url:
-        if Path(group_task.download_url).suffix == ".xlsx":
-            excel_path = os.path.join(OUTPUT_DIR, group_task.download_url.split("/")[-1])
-        elif hasattr(group_task, 'excel_path'):
+        print(f"Found group task: {group_task}")
+
+        if group_task.status != "completed":
+            raise HTTPException(status_code=400, detail="Group report is not completed yet")
+
+        # 2. Get Excel path from the task - IMPROVED VERSION
+        excel_path = None
+
+        # Try to get from excel_path attribute first
+        if hasattr(group_task, 'excel_path') and group_task.excel_path:
             excel_path = group_task.excel_path
-        else:
-            raise HTTPException(status_code=400, detail="Excel file not found for this group report task.")
+            print(f"Got excel_path from task attribute: {excel_path}")
+        # Fallback to constructing from download_url
+        elif group_task.download_url:
+            filename = group_task.download_url.split("/")[-1]
+            if filename.endswith('.xlsx'):
+                excel_path = os.path.join(OUTPUT_DIR, filename)
+                print(f"Constructed excel_path from download_url: {excel_path}")
 
-        # Step 1: Extract data from Excel (convert to PDF and HTML table)
-        table_pdf_path = extract_data_from_excel(excel_path)
-        print(f"Data table PDF generated at: {table_pdf_path}")
+        # Additional fallback - search for recent Excel files
+        if not excel_path or not os.path.exists(excel_path):
+            print(f"Excel path not found or doesn't exist: {excel_path}")
+            # Search for Excel files in OUTPUT_DIR that might match
+            excel_files = glob.glob(os.path.join(OUTPUT_DIR, "group_report_*.xlsx"))
+            if excel_files:
+                # Get the most recent one
+                excel_path = max(excel_files, key=os.path.getctime)
+                print(f"Using most recent Excel file: {excel_path}")
 
-        # Step 2: Build the prompt
-        user_prompt = group_user_prompt(
-            req.group_name,
-            req.industry,
-            req.team_type,
-            req.number_of_members,
-            req.duration_together,
-            req.analysis_goal,
-            req.roles,
-            req.existing_challenges,
-            req.communication_style,
-            req.upcoming_context
-        )
-        print("GROUP USER PROMPT:", user_prompt)
+        if not excel_path or not os.path.exists(excel_path):
+            # Try to list what files are available for debugging
+            try:
+                available_files = os.listdir(OUTPUT_DIR)
+                excel_files = [f for f in available_files if f.endswith('.xlsx')]
+                print(f"Available Excel files in output directory: {excel_files}")
+            except:
+                pass
 
-        # Step 3: Prepare Excel data as an HTML table block (you could also add as image if needed)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Excel file not found for this group report. Expected: {excel_path}"
+            )
 
-        df = pd.read_excel(excel_path, sheet_name="Data")
-        html_table = df.to_html(index=False)
-        content_blocks = [
-            {"type": "text", "text": user_prompt},
-            {"type": "text", "text": html_table}
-        ]
+        print(f"Using Excel file: {excel_path}")
 
-        # Step 4: Call GPT (with system prompt = group prompt, user content = data table)
-
-        ai_result = process_pdf_with_gpt(table_pdf_path, content_blocks)
-        print("AI RESULT:", ai_result)
-
-        # Step 5: Save result as HTML (optional)
+        # 3. Create new task for insight generation
         task_id = create_task_id()
-        output_dir = os.path.join(OUTPUT_DIR, "insights")
-        os.makedirs(output_dir, exist_ok=True)
-        insight_filename = f"group_insight_{task_id[:8]}.html"
-        insight_path = os.path.join(output_dir, insight_filename)
-        with open(insight_path, "w", encoding="utf-8") as f:
-            f.write(ai_result["insight"])
-        download_url = f"/output/insights/{insight_filename}"
-
-        # Register in task storage if you want progress/status
         task_storage[task_id] = TaskStatus(
             task_id=task_id,
-            status="completed",
-            message="Group insight generated",
-            download_url=download_url,
-            file_type="html",
+            status="pending",
+            message="Group insight queued",
             created_at=datetime.now()
         )
 
+        # 4. Convert request to dict for background task
+        req_data = {
+            'group_name': req.group_name,
+            'industry': req.industry,
+            'team_type': req.team_type,
+            'analysis_goal': req.analysis_goal,
+            'roles': req.roles,
+            'existing_challenges': req.existing_challenges,
+        }
+
+        # 5. Start background processing
+        background_tasks.add_task(group_insight_background, task_id, excel_path, req_data)
+
         return TaskResponse(
             task_id=task_id,
-            status="completed",
-            message="Group insight generated successfully."
+            status="pending",
+            message="Group insight processing started"
         )
+
+    except HTTPException:
+        raise
     except Exception as e:
-        print("Error in /group-insight:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error in /group-insight: {str(e)}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
+@app.get("/debug/task/{task_id}")
+async def debug_task(task_id: str):
+    """Debug endpoint to see task details"""
+    if task_id not in task_storage:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = task_storage[task_id]
+
+    # Convert to dict to see all attributes
+    task_dict = task.dict() if hasattr(task, 'dict') else {
+        'task_id': task.task_id,
+        'status': task.status,
+        'message': task.message,
+        'download_url': getattr(task, 'download_url', None),
+        'excel_path': getattr(task, 'excel_path', None),
+        'file_type': getattr(task, 'file_type', None),
+        'created_at': str(task.created_at),
+    }
+
+    # Add file existence check if excel_path is present
+    if 'excel_path' in task_dict and task_dict['excel_path']:
+        task_dict['excel_file_exists'] = os.path.exists(task_dict['excel_path'])
+
+    # List available Excel files for reference
+    try:
+        excel_files = glob.glob(os.path.join(OUTPUT_DIR, "*.xlsx"))
+        task_dict['available_excel_files'] = [os.path.basename(f) for f in excel_files]
+    except:
+        task_dict['available_excel_files'] = []
+
+    return task_dict
 @app.post("/translate", response_model=TaskResponse)
 async def translate_pdf(
         background_tasks: BackgroundTasks,

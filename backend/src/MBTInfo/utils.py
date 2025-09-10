@@ -955,6 +955,30 @@ def extract_charts_from_excel(excel_path, sheet_name="Dashboard", output_dir=r"F
     app.quit()
 
 
+def sanitize_filename(filename: str) -> str:
+    name, ext = os.path.splitext(filename)
+    sanitized = name.replace(" ", "-").replace("_", "-")
+    while "--" in sanitized:
+        sanitized = sanitized.replace("--", "-")
+    sanitized = sanitized.strip("-")
+    return sanitized + ext
+
+
+def sanitize_path_component(path_component):
+    """
+    Sanitize a path component (folder or file name) by replacing spaces with hyphens
+    """
+    return path_component.replace(" ", "-").replace("_", "-")
+
+
+def safe_makedirs(path, exist_ok=True):
+    os.makedirs(sanitize_path_component(path), exist_ok=exist_ok)
+
+
+def safe_open(filename, mode="r", *args, **kwargs):
+    return builtins.open(sanitize_filename(filename), mode, *args, **kwargs)
+
+
 if __name__ == "__main__":
     # # test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
     # test_file_path = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
