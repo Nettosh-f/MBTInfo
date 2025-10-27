@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Add the favicon link tag right after the opening head tag -->
+    <link rel="shortcut icon" href="media/favicon.jpeg" type="image/jpeg">
+    <link rel="icon" href="media/favicon.jpeg" type="image/jpeg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Processing Service - Professional Report Generation</title>
+    <link rel="icon" type="image/png" href="/media/full_logo.png">
+    <link rel="shortcut icon" type="image/png" href="/media/full_logo.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="header-text">
+                    <img src="media/full_logo.png" alt="Logo" class="logo">
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('overview')">
+                <span>Overview</span>
+            </button>
+            <button class="tab" onclick="showTab('personal')">
+                <span>Personal Report</span>
+            </button>
+            <button class="tab" onclick="showTab('dual')">
+                <span>Couple Report</span>
+            </button>
+            <button class="tab" onclick="showTab('group')">
+                <span>Group Report</span>
+            </button>
+            <button class="tab" onclick="showTab('translate')">
+                <span>Translate</span>
+            </button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div id="overview" class="tab-content active">
+            <div class="description-content">
+                <div class="hero-section">
+                    <h2>Advanced MBTI Report Processing Platform</h2>
+                    <p>Transform your MBTI assessments into comprehensive, professional reports with our automated processing suite.</p>
+                </div>
+                <div class="features-grid">
+
+                    <div class="feature-card">
+                        <h3>Personal Reports</h3>
+                        <p>Create a personal report, based on your MBTI report, that will help you with your personal development in a focused and precise way.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Couple Analysis</h3>
+                        <p>Create a couple report between two MBTI profiles to improve dynamics between two people at work, at home, and in general.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Group Analysis</h3>
+                        <p>Process multiple MBTI assessments simultaneously to generate comprehensive team dynamics reports with interactive charts and statistical analysis.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Hebrew Support</h3>
+                        <p>Translate MBTI reports into Hebrew while maintaining psychological accuracy and cultural relevance in interpretations.</p>
+                    </div>
+                </div>
+
+                <div class="steps-section">
+                    <h3>How to Use This Platform</h3>
+                    <div class="steps-list">
+                        <div class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Choose Your Report Type</h4>
+                                <p>Select from Group Reports (team analysis), Personal Reports (individual insights), Dual Reports (comparison analysis), or Translation services.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>Upload Your Files</h4>
+                                <p>Upload the relevant MBTI assessment PDF files. For group reports, Upload a .ZIP file containing your pdf files. For individual reports, upload single PDF files.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Download Results</h4>
+                                <p>Once processing is complete, download your professionally formatted reports in Excel or PDF format with one click.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <h4>Get Insight</h4>
+                                <p>Once your Report is generated, you can get specialized insight depending on the type of report generated.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tech-specs">
+                    <h3>Technical Specifications</h3>
+                    <div class="tech-grid">
+                        <div class="tech-item">
+                            <h4>High Performance</h4>
+                            <p>Asynchronous processing for optimal speed and efficiency</p>
+                        </div>
+                        <div class="tech-item">
+                            <h4>Secure Processing</h4>
+                            <p>Files processed remotely with automatic cleanup</p>
+                        </div>
+                        <div class="tech-item">
+                            <h4>Advanced Analytics</h4>
+                            <p>Statistical analysis and data visualization</p>
+                        </div>
+                        <div class="tech-item">
+                            <h4>Professional Output</h4>
+                            <p>Publication-ready reports and charts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Group Report Tab -->
+        <div id="group" class="tab-content">
+            <div class="content-wrapper">
+                <div class="form-section">
+                    <h3>
+                        Group MBTI Analysis
+                    </h3>
+                    <div class="info-card">
+                        <h4>Create Team Dynamics Reports</h4>
+                        <p>Process multiple MBTI assessments from a defined folder to create comprehensive team analysis reports, including an in-depth dashboard, and a large and detailed database.</p>
+                        <p><strong>Output:</strong> Excel workbook with multiple sheets containing charts, statistics, and detailed analysis.</p>
+                        <p><strong>Insight:</strong> Get curated AI insight into your group's strengths and weaknesses</p>
+                    </div>
+
+                    <form id="groupZipForm">
+                        <div class="form-group">
+                            <label for="groupZipFile">Upload ZIP File with all MBTI PDFs</label>
+                            <input type="file" id="groupZipFile" name="file" accept=".zip" required placeholder="upload folder (.zip)">
+                            <div class="file-info">
+                                <strong>Format:</strong> ZIP only • <strong>Contents:</strong> Must contain valid MBTI PDF files
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <div class="dual-btn-shadow">
+                                <button type="submit" class="btn" id="groupGenerateBtn">Generate Group Report</button>
+                                <button type="button" class="btn download-btn" id="groupDownloadBtn" style="display:none;">Download Report</button>
+                            </div>
+                            <button type="button" class="btn" onclick="openGroupInsightModal()">Show Insight</button>
+                        </div>
+                    </form>
+
+                    <div id="groupStatus" class="status"></div>
+
+                    <!-- THIS IS THE IMPORTANT PART - Make sure this div exists -->
+                    <div id="groupInsightPreview" class="insight-preview" style="display:none;"></div>
+
+                    <!-- Group Insight Modal -->
+                    <div id="groupInsightModal" class="modal" style="display:none;">
+                        <div class="modal-content">
+                            <h3>Get Group Insight</h3>
+                            <form id="groupInsightForm">
+                                <div class="form-group">
+                                    <label>Group Name <span style="color:red;">*</span></label>
+                                    <input type="text" name="group_name" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Industry <span style="color:red;">*</span></label>
+                                    <input type="text" name="industry" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Team Type <span style="color:red;">*</span></label>
+                                    <input type="text" name="team_type" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Analysis Goal <span style="color:red;">*</span></label>
+                                    <input type="text" name="analysis_goal" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Roles <span style="color:#aaa;">(optional)</span></label>
+                                    <input type="text" name="roles" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Existing Challenges <span style="color:#aaa;">(optional)</span></label>
+                                    <input type="text" name="existing_challenges" />
+                                </div>
+                                <div class="button-group">
+                                    <button type="submit" class="btn">Submit Insight Request</button>
+                                    <button type="button" class="btn" onclick="closeGroupInsightModal()">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal Report Tab -->
+        <div id="personal" class="tab-content">
+            <div class="content-wrapper">
+                <div class="form-section">
+                    <h3>
+                        Personal MBTI Report
+                    </h3>
+                    <div class="info-card">
+                        <h4>Focused Personal Assessment</h4>
+                        <p>Create a personalized, focused report from a single PDF assessment file. The system extracts elements from your original report and creates a detailed, customized analysis document.</p>
+                        <p><strong>Output:</strong> A professional PDF report with charts, personalized insights, and development recommendations.</p>
+                        <p><strong>Insight:</strong> Get curated AI insight into your personal and professional life.</p>
+
+                    </div>
+                    <form id="personalForm">
+                        <div class="form-group">
+                            <label for="personalFile">MBTI Assessment File</label>
+                            <input type="file" id="personalFile" name="file" accept=".pdf" required>
+                            <div class="file-info">
+                                <strong>Format:</strong> PDF only • <strong>Size Limit:</strong> 50MB • <strong>Processing:</strong> Images and text extracted automatically
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <div class="dual-btn-shadow">
+                                <button type="submit" class="btn" id="personalGenerateBtn">Create Personal Report</button>
+                                <button type="button" class="btn download-btn" id="personalDownloadBtn" style="display:none;">Download Report</button>
+                            </div>
+                            <button type="button" class="btn get-insight-btn" disabled>Get Insight</button>
+                        </div>
+                    </form>
+                    <div id="personalStatus" class="status"></div>
+                    <div id="personalInsightPreview" class="insight-preview"></div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Dual Report Tab -->
+        <div id="dual" class="tab-content">
+            <div class="content-wrapper">
+                <div class="form-section">
+                    <h3>
+                        Comparative MBTI Analysis
+                    </h3>
+                    <div class="info-card">
+                        <h4>Two-Person Compatibility Report</h4>
+                        <p>Compare two MBTI profiles to analyze compatibility, communication patterns, and collaborative potential. Ideal for relationship counseling, team pairing, or partnership analysis.</p>
+                        <p><strong>Output:</strong> Professional PDF report with relationship insights and recommendations for personal and shared team development.</p>
+                        <p><strong>Insight:</strong> Get curated AI insight into you and your partner's compatibility and conflict points.</p>
+                    </div>
+                    <form id="dualForm">
+                        <div class="form-group">
+                            <label for="dualFile1">First MBTI Assessment</label>
+                            <input type="file" id="dualFile1" name="file1" accept=".pdf" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="dualFile2">Second MBTI Assessment</label>
+                            <input type="file" id="dualFile2" name="file2" accept=".pdf" required>
+                        </div>
+                        <div class="button-group">
+                        <div class="dual-btn-shadow">
+                          <button type="submit" class="btn" id="dualGenerateBtn">Generate Comparison Report</button>
+                          <button type="button" class="btn download-btn" id="dualDownloadBtn" style="display:none;">Download Report</button>
+                        </div>
+                            <button type="button" class="btn get-insight-btn" disabled>Get Insight</button>
+                        </div>
+
+
+                    </form>
+                    <div id="dualInsightPreview" class="insight-preview"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Translate Tab -->
+        <div id="translate" class="tab-content">
+            <div class="content-wrapper">
+                <div class="form-section">
+                    <h3>
+                        Multi-language Translation
+                    </h3>
+                    <div class="info-card">
+                        <h4>MBTI Report Translation Service</h4>
+                        <p>Translate MBTI assessment reports while preserving psychological terminology accuracy and cultural context. Supports hebrew languages only with specialized psychological vocabulary.</p>
+                    </div>
+                    <form id="translateForm">
+                        <div class="form-group">
+                            <label for="translateFile">MBTI Report to Translate</label>
+                            <input type="file" id="translateFile" name="file" accept=".pdf" required>
+                            <div class="file-info">
+                                <strong>Languages:</strong> Hebrew <strong>Accuracy:</strong> Psychological terminology preserved • <strong>Output:</strong> Translated PDF report
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <button type="submit" class="btn">
+                                Translate Report
+                            </button>
+                            <button type="button" class="btn" onclick="getInsight()">
+                                Get Insight
+                            </button>
+                        </div>
+                    </form>
+                    <div id="translateStatus" class="status"></div>
+                    <div id="translateInsightPreview" class="insight-preview"></div>
+                </div>
+            </div>
+        </div>
+    <div id="dualInsightChoiceModal" class="modal">
+      <div class="modal-content">
+        <h3>Choose Insight Type</h3>
+        <div id="dualChoicebox" >
+          <button id="btnDualGenericInsight" class="btn">Generic Insight</button>
+          <button id="btnDualSpecificInsight" class="btn">Specific Insight</button>
+        </div>
+        <button onclick="closeDualInsightChoiceModal()" class="btn" id="closeInsightChoice">Cancel</button>
+      </div>
+    </div>
+    <div id="dualSpecificInsightModal" class="modal" style="display:none;">
+      <div class="modal-content" style="text-align:center;max-width:400px;margin:auto;">
+        <h3>Specific Insight Request</h3>
+        <form id="dualSpecificInsightForm" autocomplete="off">
+          <div class="form-group" style="margin-bottom:1.2rem;text-align:left;">
+            <label for="relationshipType">Relationship type</label>
+            <select id="relationshipType" name="relationshipType" style="width:100%;margin-top:0.3rem;">
+              <option value="" disabled selected>Select type</option>
+              <option value="Marriage">Marriage</option>
+              <option value="Friends">Friends</option>
+              <option value="colleagues">Colleagues</option>
+              <option value="employee/manager">Employee/Manager</option>
+              <option value="aircrew">Aircrew</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div id="relationshipTypeOtherDiv" class="form-group" style="margin-bottom:1.2rem; display:none; text-align:left;">
+            <label for="relationshipTypeOther">Please specify relationship type</label>
+            <input id="relationshipTypeOther" name="relationshipTypeOther" type="text" style="width:100%;margin-top:0.3rem;" autocomplete="off" required/>
+          </div>
+          <div class="form-group" style="margin-bottom:1.2rem;text-align:left;">
+            <label for="relationshipGoals">Relationship goals</label>
+            <input id="relationshipGoals" name="relationshipGoals" type="text" style="width:100%;margin-top:0.3rem;" autocomplete="off"/>
+          </div>
+          <div class="button-group" style="margin-top:2rem;">
+            <button type="submit" class="btn" style="width:100%;">Submit</button>
+            <button type="button" class="btn" onclick="closeDualSpecificInsightModal()" style="width:100%;background:#aaa;margin-top:1rem;">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+        <script src="index.js"></script>
+</body>
+</html>
