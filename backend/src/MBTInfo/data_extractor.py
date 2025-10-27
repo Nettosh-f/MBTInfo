@@ -1,6 +1,8 @@
-import PyPDF2
 import os
-from utils import sanitize_filename, safe_makedirs
+
+import PyPDF2
+
+from .utils import sanitize_filename
 
 
 def extract_and_save_text(filepath: str, output_folder: str) -> str:
@@ -12,7 +14,9 @@ def extract_and_save_text(filepath: str, output_folder: str) -> str:
         # Create output filename
         filename = os.path.basename(filepath)
         base_name = os.path.splitext(filename)[0]
-        sanitized_base_name = sanitize_filename(base_name + ".dummy").replace(".dummy", "")
+        sanitized_base_name = sanitize_filename(base_name + ".dummy").replace(
+            ".dummy", ""
+        )
         output_filename = f"{sanitized_base_name}_text.txt"
         output_path = os.path.join(output_folder, output_filename)
 
@@ -23,7 +27,7 @@ def extract_and_save_text(filepath: str, output_folder: str) -> str:
 
         # Method 1: Try PyPDF2 (your current method)
         try:
-            with open(filepath, 'rb') as file:
+            with open(filepath, "rb") as file:
                 reader = PyPDF2.PdfReader(file)
                 for page in reader.pages:
                     page_text = page.extract_text()
@@ -33,7 +37,7 @@ def extract_and_save_text(filepath: str, output_folder: str) -> str:
             if text.strip():
                 print(f"✅ PyPDF2 extraction successful - {len(text)} characters")
             else:
-                print(f"⚠️ PyPDF2 extracted no text, trying alternatives...")
+                print("⚠️ PyPDF2 extracted no text, trying alternatives...")
 
         except Exception as e:
             print(f"❌ PyPDF2 failed: {e}")
@@ -42,6 +46,7 @@ def extract_and_save_text(filepath: str, output_folder: str) -> str:
         if not text.strip():
             try:
                 from pypdf import PdfReader
+
                 print("🔄 Trying pypdf...")
                 reader = PdfReader(filepath)
                 for page in reader.pages:
@@ -61,6 +66,7 @@ def extract_and_save_text(filepath: str, output_folder: str) -> str:
         if not text.strip():
             try:
                 import fitz  # PyMuPDF
+
                 print("🔄 Trying PyMuPDF...")
                 doc = fitz.open(filepath)
                 for page in doc:
@@ -79,7 +85,7 @@ def extract_and_save_text(filepath: str, output_folder: str) -> str:
 
         # Save the text if we got any
         if text.strip():
-            with open(output_path, 'w', encoding='utf-8') as output_file:
+            with open(output_path, "w", encoding="utf-8") as output_file:
                 output_file.write(text)
             print(f"💾 Text saved to: {output_path}")
             return output_path

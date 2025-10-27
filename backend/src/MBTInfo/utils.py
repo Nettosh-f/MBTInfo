@@ -1,38 +1,41 @@
-import re
 import os
-import fitz
+import re
 from datetime import datetime
-import openpyxl
-import xlwings as xw
-from typing import Dict, Optional, List, Tuple
-# local imports
-from consts import MBTI_TYPES, FACETS, MIDZONE_FACETS, dominant_functions, All_Facets
+from typing import Optional
 
-lowercase_facets = [facet.lower() for facet in All_Facets]
+import fitz
+import openpyxl
+
+# local imports
+from .consts import ALL_FACETS, DOMINANT_FUNCTIONS, FACETS, MBTI_TYPES, MIDZONE_FACETS
+
+lowercase_facets = [facet.lower() for facet in ALL_FACETS]
 
 
 def parse_mbti_scores(line: str) -> dict:
     # Use regex to find all pairs of MBTI dimension and score
-    pairs = re.findall(r'(\w+)\s+\|\s+(\d+)', line)
+    pairs = re.findall(r"(\w+)\s+\|\s+(\d+)", line)
 
     # Create a dictionary from the pairs, converting scores to integers
     return {dimension.lower(): int(score) for dimension, score in pairs}
 
 
 def find_and_parse_mbti_scores(file_path: str) -> dict:
-    pattern = r'\b(EXTRAVERSION|INTUITION|THINKING|PERCEIVING)\s+\|\s+\d+'
+    pattern = r"\b(EXTRAVERSION|INTUITION|THINKING|PERCEIVING)\s+\|\s+\d+"
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             for line in file:
                 if re.search(pattern, line):
                     return parse_mbti_scores(line)
-    except IOError as e:
+    except OSError as e:
         print(f"Error reading file: {e}")
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
-    return {}  # Return empty dictionary if no matching line is found or if there's an error
+    return (
+        {}
+    )  # Return empty dictionary if no matching line is found or if there's an error
 
 
 def get_mbti_type_from_pdf(file_path: str) -> Optional[str]:
@@ -50,7 +53,7 @@ def get_mbti_type_from_pdf(file_path: str) -> Optional[str]:
 
 
 def find_type(file_path: str) -> Optional[str]:
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, encoding="utf-8") as file:
         content = file.read()
     for mbti_type in MBTI_TYPES:
         if mbti_type in content:
@@ -60,13 +63,13 @@ def find_type(file_path: str) -> Optional[str]:
 
 def get_name(file_path: str) -> Optional[str]:
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             # Skip the first 9 lines
             for _ in range(8):
                 next(file, None)
 
             # Read the 10th line
-            tenth_line = next(file, '').strip()
+            tenth_line = next(file, "").strip()
             return tenth_line if tenth_line else None
     except Exception as e:
         print(f"Error reading file: {e}")
@@ -75,13 +78,13 @@ def get_name(file_path: str) -> Optional[str]:
 
 def get_date(file_path: str) -> Optional[str]:
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             # Skip the first 10 lines
             for _ in range(9):
                 next(file, None)
 
             # Read the 11th line
-            eleventh_line = next(file, '').strip()
+            eleventh_line = next(file, "").strip()
             return eleventh_line if eleventh_line else None
     except Exception as e:
         print(f"Error reading file: {e}")
@@ -90,22 +93,22 @@ def get_date(file_path: str) -> Optional[str]:
 
 def get_dominant(file_path: str) -> Optional[str]:
     mbti_type = find_type(file_path)
-    if mbti_type and mbti_type in dominant_functions:
-        return dominant_functions[mbti_type]
+    if mbti_type and mbti_type in DOMINANT_FUNCTIONS:
+        return DOMINANT_FUNCTIONS[mbti_type]
     return None
 
 
-def get_all_info(file_path: str) -> Dict[str, Optional[str]]:
+def get_all_info(file_path: str) -> dict[str, Optional[str]]:
     info = {
-        'name': get_name(file_path),
-        'date': get_date(file_path),
-        'type': find_type(file_path),
-        'dominant': get_dominant(file_path)
+        "name": get_name(file_path),
+        "date": get_date(file_path),
+        "type": find_type(file_path),
+        "dominant": get_dominant(file_path),
     }
     return info
 
 
-def convert_scores_to_mbti_dict(scores: Dict[str, int]) -> Dict[str, int]:
+def convert_scores_to_mbti_dict(scores: dict[str, int]) -> dict[str, int]:
     """
     Convert a dictionary of MBTI scores to a dictionary with MBTI letters as keys.
 
@@ -115,31 +118,33 @@ def convert_scores_to_mbti_dict(scores: Dict[str, int]) -> Dict[str, int]:
     Returns:
     Dict[str, int]: A dictionary with MBTI letters as keys and scores as values.
     """
-    mbti_dict = {'E': 0, 'I': 0, 'S': 0, 'N': 0, 'T': 0, 'F': 0, 'J': 0, 'P': 0}
+    mbti_dict = {"E": 0, "I": 0, "S": 0, "N": 0, "T": 0, "F": 0, "J": 0, "P": 0}
 
     for dimension, score in scores.items():
-        if dimension == 'extraversion':
-            mbti_dict['E'] = score
-        elif dimension == 'introversion':
-            mbti_dict['I'] = score
-        elif dimension == 'sensing':
-            mbti_dict['S'] = score
-        elif dimension == 'intuition':
-            mbti_dict['N'] = score
-        elif dimension == 'thinking':
-            mbti_dict['T'] = score
-        elif dimension == 'feeling':
-            mbti_dict['F'] = score
-        elif dimension == 'judging':
-            mbti_dict['J'] = score
-        elif dimension == 'perceiving':
-            mbti_dict['P'] = score
+        if dimension == "extraversion":
+            mbti_dict["E"] = score
+        elif dimension == "introversion":
+            mbti_dict["I"] = score
+        elif dimension == "sensing":
+            mbti_dict["S"] = score
+        elif dimension == "intuition":
+            mbti_dict["N"] = score
+        elif dimension == "thinking":
+            mbti_dict["T"] = score
+        elif dimension == "feeling":
+            mbti_dict["F"] = score
+        elif dimension == "judging":
+            mbti_dict["J"] = score
+        elif dimension == "perceiving":
+            mbti_dict["P"] = score
 
     return mbti_dict
 
 
 def get_input_files(directory):
-    return [os.path.join(directory, f) for f in os.listdir(directory) if f.endswith('.pdf')]
+    return [
+        os.path.join(directory, f) for f in os.listdir(directory) if f.endswith(".pdf")
+    ]
 
 
 def create_output_directory():
@@ -150,15 +155,15 @@ def create_output_directory():
     return output_dir
 
 
-def collect_preferred_qualities(file_path: str) -> List[str]:
+def collect_preferred_qualities(file_path: str) -> list[str]:
     preferred_qualities = []
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             lines = file.readlines()
 
         for i, line in enumerate(lines):
-            if 'in-preference' in line.lower():
+            if "in-preference" in line.lower():
                 if i > 0:
                     # Get the previous line and split it into words
                     prev_line = lines[i - 1].strip()
@@ -166,8 +171,22 @@ def collect_preferred_qualities(file_path: str) -> List[str]:
                     if words:
                         # Add the last word from the previous line
                         preferred_qualities.append(words[-1])
-        words_to_remove = {'and', 'I', '|5', '|6', 'harmony', 'spontaneity', 'pole.', 'to', 'your'}
-        filtered_qualities = [quality for quality in preferred_qualities if quality.lower() not in words_to_remove]
+        words_to_remove = {
+            "and",
+            "I",
+            "|5",
+            "|6",
+            "harmony",
+            "spontaneity",
+            "pole.",
+            "to",
+            "your",
+        }
+        filtered_qualities = [
+            quality
+            for quality in preferred_qualities
+            if quality.lower() not in words_to_remove
+        ]
         filtered_qualities.pop(0)
 
         preferred_qualities = filtered_qualities
@@ -178,15 +197,15 @@ def collect_preferred_qualities(file_path: str) -> List[str]:
     return preferred_qualities
 
 
-def collect_midzone_qualities(file_path: str) -> List[str]:
+def collect_midzone_qualities(file_path: str) -> list[str]:
     midzone_qualities = []
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             lines = file.readlines()
 
         for i, line in enumerate(lines):
-            if 'midzone' in line.lower():
+            if "midzone" in line.lower():
                 if i > 0:
                     # Get the previous line and split it into words
                     prev_line = lines[i - 1].strip()
@@ -194,13 +213,32 @@ def collect_midzone_qualities(file_path: str) -> List[str]:
                     if words:
                         # Add the last word from the previous line
                         midzone_qualities.append(words[-1])
-        words_to_remove = {'and', 'would', '|5', '|6', 'cause-and-eﬀect,', 'the', 'with', 'facets.', 'distractions.',
-                           'preference', 'many'}
-        filtered_qualities = [quality for quality in midzone_qualities if quality.lower() not in words_to_remove]
+        words_to_remove = {
+            "and",
+            "would",
+            "|5",
+            "|6",
+            "cause-and-eﬀect,",
+            "the",
+            "with",
+            "facets.",
+            "distractions.",
+            "preference",
+            "many",
+        }
+        filtered_qualities = [
+            quality
+            for quality in midzone_qualities
+            if quality.lower() not in words_to_remove
+        ]
         filtered_qualities.pop(0)
 
         # Split qualities based on "-" and flatten the list
-        split_qualities = [item.strip() for quality in filtered_qualities for item in quality.split('–')]
+        split_qualities = [
+            item.strip()
+            for quality in filtered_qualities
+            for item in quality.split("–")
+        ]
         # Remove duplicates while preserving order, case-insensitive
         seen = set()
         midzone_qualities = []
@@ -216,15 +254,15 @@ def collect_midzone_qualities(file_path: str) -> List[str]:
     return midzone_qualities
 
 
-def collect_out_qualities(file_path: str) -> List[str]:
+def collect_out_qualities(file_path: str) -> list[str]:
     out_qualities = []
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             lines = file.readlines()
 
         for i, line in enumerate(lines):
-            if 'out-of-preference' in line.lower():
+            if "out-of-preference" in line.lower():
                 if i > 0:
                     # Get the previous line and split it into words
                     prev_line = lines[i - 1].strip()
@@ -232,8 +270,12 @@ def collect_out_qualities(file_path: str) -> List[str]:
                     if words:
                         # Add the last word from the previous line
                         out_qualities.append(words[-1])
-        words_to_remove = {'and', '|5', '|6', 'use.', 'spontaneity', 'preference'}
-        filtered_qualities = [quality for quality in out_qualities if quality.lower() not in words_to_remove]
+        words_to_remove = {"and", "|5", "|6", "use.", "spontaneity", "preference"}
+        filtered_qualities = [
+            quality
+            for quality in out_qualities
+            if quality.lower() not in words_to_remove
+        ]
         filtered_qualities.pop(0)
 
         # Remove duplicates while preserving order
@@ -245,7 +287,7 @@ def collect_out_qualities(file_path: str) -> List[str]:
     return out_qualities
 
 
-def collect_qualities(file_path: str) -> Tuple[List[str], List[str], List[str]]:
+def collect_qualities(file_path: str) -> tuple[list[str], list[str], list[str]]:
     preferred_qualities = collect_preferred_qualities(file_path)
     midzone_qualities = collect_midzone_qualities(file_path)
     out_qualities = collect_out_qualities(file_path)
@@ -254,7 +296,7 @@ def collect_qualities(file_path: str) -> Tuple[List[str], List[str], List[str]]:
 
 def check_communication(file_path: str) -> list[str]:
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             content = file.read()
             start_marker = "YOUR FACET RESULT COMMUNICATION STYLE ENHANCING YOUR STYLE"
             end_marker = "|10"
@@ -264,8 +306,10 @@ def check_communication(file_path: str) -> list[str]:
             end_index = content.find(end_marker, start_index)
 
             if start_index != -1 and end_index != -1:
-                communication_content = content[start_index + len(start_marker):end_index]
-                lines = communication_content.split('\n')
+                communication_content = content[
+                    start_index + len(start_marker) : end_index
+                ]
+                lines = communication_content.split("\n")
                 facets_lower = [facet.lower() for facet in FACETS]
                 midzone_lower = [facet.lower() for facet in MIDZONE_FACETS]
                 for line in lines:
@@ -275,7 +319,10 @@ def check_communication(file_path: str) -> list[str]:
 
             filtered_facets = []
             for facet in communication_facets:
-                if not any(facet in other_facet and facet != other_facet for other_facet in communication_facets):
+                if not any(
+                    facet in other_facet and facet != other_facet
+                    for other_facet in communication_facets
+                ):
                     filtered_facets.append(facet)
 
             return filtered_facets
@@ -286,9 +333,11 @@ def check_communication(file_path: str) -> list[str]:
 
 def check_managing_conflict(file_path: str) -> list[str]:
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             content = file.read()
-            start_marker = "YOUR FACET RESULT CONFLICT MANAGEMENT STYLE ENHANCING YOUR STYLE"
+            start_marker = (
+                "YOUR FACET RESULT CONFLICT MANAGEMENT STYLE ENHANCING YOUR STYLE"
+            )
             end_marker = "|13"
             decision_facets = []
 
@@ -296,8 +345,8 @@ def check_managing_conflict(file_path: str) -> list[str]:
             end_index = content.find(end_marker, start_index)
 
             if start_index != -1 and end_index != -1:
-                decision_content = content[start_index + len(start_marker):end_index]
-                lines = decision_content.split('\n')
+                decision_content = content[start_index + len(start_marker) : end_index]
+                lines = decision_content.split("\n")
                 facets_lower = [facet.lower() for facet in FACETS]
                 midzone_lower = [facet.lower() for facet in MIDZONE_FACETS]
                 for line in lines:
@@ -307,7 +356,10 @@ def check_managing_conflict(file_path: str) -> list[str]:
 
             filtered_facets = []
             for facet in decision_facets:
-                if not any(facet in other_facet and facet != other_facet for other_facet in decision_facets):
+                if not any(
+                    facet in other_facet and facet != other_facet
+                    for other_facet in decision_facets
+                ):
                     filtered_facets.append(facet)
 
             return filtered_facets
@@ -318,9 +370,11 @@ def check_managing_conflict(file_path: str) -> list[str]:
 
 def check_managing_change(file_path: str) -> list[str]:
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             content = file.read()
-            start_marker = "YOUR FACET RESULT CHANGE MANAGEMENT STYLE ENHANCING YOUR STYLE"
+            start_marker = (
+                "YOUR FACET RESULT CHANGE MANAGEMENT STYLE ENHANCING YOUR STYLE"
+            )
             end_marker = "|12"
             change_facets = []
 
@@ -328,8 +382,8 @@ def check_managing_change(file_path: str) -> list[str]:
             end_index = content.find(end_marker, start_index)
 
             if start_index != -1 and end_index != -1:
-                change_content = content[start_index + len(start_marker):end_index]
-                lines = change_content.split('\n')
+                change_content = content[start_index + len(start_marker) : end_index]
+                lines = change_content.split("\n")
                 facets_lower = [facet.lower() for facet in FACETS]
                 midzone_lower = [facet.lower() for facet in MIDZONE_FACETS]
                 for line in lines:
@@ -339,7 +393,10 @@ def check_managing_change(file_path: str) -> list[str]:
 
             filtered_facets = []
             for facet in change_facets:
-                if not any(facet in other_facet and facet != other_facet for other_facet in change_facets):
+                if not any(
+                    facet in other_facet and facet != other_facet
+                    for other_facet in change_facets
+                ):
                     filtered_facets.append(facet)
 
             return filtered_facets
@@ -369,12 +426,12 @@ def reorder_sheets(workbook):
     desired_order = []
 
     # Add Dashboard if it exists
-    if 'Dashboard' in sheet_names:
-        desired_order.append('Dashboard')
+    if "Dashboard" in sheet_names:
+        desired_order.append("Dashboard")
 
     # Add Data if it exists
-    if 'Data' in sheet_names:
-        desired_order.append('Data')
+    if "Data" in sheet_names:
+        desired_order.append("Data")
 
     # Add any other sheets in their original order
     for sheet_name in sheet_names:
@@ -408,7 +465,9 @@ def load_and_reorder_workbook(file_path: str):
         print(f"Error loading or processing workbook: {e}")
 
 
-def count_first_words_on_page(file_path: str, word_list: List[str], page_number: int) -> Dict[str, int]:
+def count_first_words_on_page(
+    file_path: str, word_list: list[str], page_number: int
+) -> dict[str, int]:
     """
     Count occurrences of words from a list when they appear as the first word in a line
     on a specific page of a text file. Only counts if the word starts with a capital letter.
@@ -424,7 +483,7 @@ def count_first_words_on_page(file_path: str, word_list: List[str], page_number:
     word_counts = {word.lower(): 0 for word in word_list}
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             content = file.read()
 
             # Find the page content using page markers
@@ -449,17 +508,17 @@ def count_first_words_on_page(file_path: str, word_list: List[str], page_number:
             page_content = content[start_index:end_index]
 
             # Split into lines and check first word of each line
-            lines = page_content.split('\n')
+            lines = page_content.split("\n")
             for line in lines:
                 line = line.strip()
                 if line and line.split():
                     # Get the first word of the line
                     first_word = line.split()[0]
-                    
+
                     # Check if the first word starts with a capital letter
                     if not first_word[0].isupper():
                         continue
-                    
+
                     # Check if the lowercase version of the first word is in our word list
                     first_word_lower = first_word.lower()
                     for word in word_list:
@@ -474,8 +533,12 @@ def count_first_words_on_page(file_path: str, word_list: List[str], page_number:
         return word_counts
 
 
-def count_first_words_across_pages(file_path: str, word_list: List[str], page_numbers: List[int],
-                                   only_non_zero: bool = False) -> Dict[str, int]:
+def count_first_words_across_pages(
+    file_path: str,
+    word_list: list[str],
+    page_numbers: list[int],
+    only_non_zero: bool = False,
+) -> dict[str, int]:
     """
     Count occurrences of words from a list when they appear as the first word in a line
     across multiple pages of a text file. Only counts if the word starts with a capital letter.
@@ -500,13 +563,20 @@ def count_first_words_across_pages(file_path: str, word_list: List[str], page_nu
 
     # Filter out zero counts if requested
     if only_non_zero:
-        combined_counts = {word: count for word, count in combined_counts.items() if count > 0}
+        combined_counts = {
+            word: count for word, count in combined_counts.items() if count > 0
+        }
 
     return combined_counts
 
 
-def extract_sections_between_marker(file_path: str, start_markers: List[str], end_markers: List[str],
-                                    page_list: List[int], occurrence_number: int = 0) -> Dict[str, List[str]]:
+def extract_sections_between_marker(
+    file_path: str,
+    start_markers: list[str],
+    end_markers: list[str],
+    page_list: list[int],
+    occurrence_number: int = 0,
+) -> dict[str, list[str]]:
     """
     For each item in start_markers, find its occurrence as the first word in a line on each page in page_list
     and extract text until the first occurrence of any item from end_markers that appears as the first word on a line.
@@ -526,7 +596,7 @@ def extract_sections_between_marker(file_path: str, start_markers: List[str], en
     results = {marker.lower(): [] for marker in start_markers}
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, encoding="utf-8") as file:
             content = file.read()
 
             # Process each page in the list
@@ -550,7 +620,7 @@ def extract_sections_between_marker(file_path: str, start_markers: List[str], en
                 page_content = content[start_page_index:end_page_index]
 
                 # Split the page content into lines for easier processing
-                page_lines = page_content.split('\n')
+                page_lines = page_content.split("\n")
 
                 # Process each start marker
                 for start_marker in start_markers:
@@ -560,19 +630,29 @@ def extract_sections_between_marker(file_path: str, start_markers: List[str], en
                     marker_occurrences = []
                     for i, line in enumerate(page_lines):
                         line = line.strip()
-                        if line and line.split() and line.split()[0].lower() == start_marker_lower:
+                        if (
+                            line
+                            and line.split()
+                            and line.split()[0].lower() == start_marker_lower
+                        ):
                             marker_occurrences.append(i)
 
                     # If we're looking for a specific occurrence and it doesn't exist, skip
-                    if occurrence_number > 0 and (len(marker_occurrences) < occurrence_number):
+                    if occurrence_number > 0 and (
+                        len(marker_occurrences) < occurrence_number
+                    ):
                         continue
 
                     # Determine which occurrences to process
                     occurrences_to_process = []
                     if occurrence_number == 0:  # Process all occurrences
                         occurrences_to_process = marker_occurrences
-                    elif occurrence_number <= len(marker_occurrences):  # Process specific occurrence
-                        occurrences_to_process = [marker_occurrences[occurrence_number - 1]]
+                    elif occurrence_number <= len(
+                        marker_occurrences
+                    ):  # Process specific occurrence
+                        occurrences_to_process = [
+                            marker_occurrences[occurrence_number - 1]
+                        ]
 
                     # Process each selected occurrence
                     for start_line_idx in occurrences_to_process:
@@ -583,17 +663,18 @@ def extract_sections_between_marker(file_path: str, start_markers: List[str], en
                         start_line = page_lines[start_line_idx].strip()
                         words = start_line.split()
                         if len(words) > 1:  # If there's text after the marker
-                            extracted_text.append(' '.join(words[1:]))
+                            extracted_text.append(" ".join(words[1:]))
 
                         # Process subsequent lines until we find an end marker at the beginning of a line
-                        end_found = False
                         for i in range(start_line_idx + 1, len(page_lines)):
                             line = page_lines[i].strip()
                             if line and line.split():
                                 # Check if the line starts with any end marker
                                 first_word = line.split()[0].lower()
-                                if any(first_word == end_marker.lower() for end_marker in end_markers):
-                                    end_found = True
+                                if any(
+                                    first_word == end_marker.lower()
+                                    for end_marker in end_markers
+                                ):
                                     break
                                 extracted_text.append(line)
 
@@ -604,9 +685,13 @@ def extract_sections_between_marker(file_path: str, start_markers: List[str], en
                             # Remove the word "midzone" (case-insensitive) with proper word boundaries
                             section_text = section_text.replace("midzone", "")
                             # Normalize spaces (replace multiple spaces with a single space)
-                            section_text = re.sub(r'\s+', ' ', section_text).strip()
-                            section_text = re.sub(r'\bin-preference\b', '', section_text, flags=re.IGNORECASE)
-
+                            section_text = re.sub(r"\s+", " ", section_text).strip()
+                            section_text = re.sub(
+                                r"\bin-preference\b",
+                                "",
+                                section_text,
+                                flags=re.IGNORECASE,
+                            )
 
                             # Add the extracted text to the results for this marker
                             results[start_marker_lower].append(section_text)
@@ -627,13 +712,18 @@ def extract_sections_between_marker(file_path: str, start_markers: List[str], en
 
 def get_facet_explanations(file_path: str, facet: str) -> str:
     facets = [facet]
-    lowercase_facets = [facet.lower() for facet in All_Facets]
+    lowercase_facets = [facet.lower() for facet in ALL_FACETS]
 
-    result = extract_sections_between_marker(file_path, facets, lowercase_facets, [5, 6, 7, 8], 2)
+    result = extract_sections_between_marker(
+        file_path, facets, lowercase_facets, [5, 6, 7, 8], 2
+    )
     print(f"Explanation for '{facet}'")
     result = result[facet][0]
     result = result.replace("in-preference", "")
-    result = result.replace("INTERPRETIVE REPORT MYERS-BRIGGS TYPE INDICATOR® | STEP II™ ADAM POMERANTZ ESTJ", "")
+    result = result.replace(
+        "INTERPRETIVE REPORT MYERS-BRIGGS TYPE INDICATOR® | STEP II™ ADAM POMERANTZ ESTJ",
+        "",
+    )
     if result:
         return result
     else:
@@ -642,7 +732,9 @@ def get_facet_explanations(file_path: str, facet: str) -> str:
 
 def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
     page_range = [9, 11, 12]
-    non_zero_counts = count_first_words_across_pages(file_path, All_Facets, page_range, only_non_zero=True)
+    non_zero_counts = count_first_words_across_pages(
+        file_path, ALL_FACETS, page_range, only_non_zero=True
+    )
     three_letter_list = []
     two_letter_list = []
     one_letter_list = []
@@ -653,13 +745,15 @@ def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
             two_letter_list.append(item)
         if key == 1:
             one_letter_list.append(item)
-            
+
     # Create a modified version of extract_sections_between_marker for the special case
-    def extract_sections_with_special_handling(file_path, start_markers, end_markers, page_list):
+    def extract_sections_with_special_handling(
+        file_path, start_markers, end_markers, page_list
+    ):
         results = {marker.lower(): [] for marker in start_markers}
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as file:
+            with open(file_path, encoding="utf-8") as file:
                 content = file.read()
 
                 # Process each page in the list
@@ -683,7 +777,7 @@ def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
                     page_content = content[start_page_index:end_page_index]
 
                     # Split the page content into lines for easier processing
-                    page_lines = page_content.split('\n')
+                    page_lines = page_content.split("\n")
 
                     # Process each start marker
                     for start_marker in start_markers:
@@ -693,7 +787,11 @@ def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
                         marker_occurrences = []
                         for i, line in enumerate(page_lines):
                             line = line.strip()
-                            if line and line.split() and line.split()[0].lower() == start_marker_lower:
+                            if (
+                                line
+                                and line.split()
+                                and line.split()[0].lower() == start_marker_lower
+                            ):
                                 marker_occurrences.append(i)
 
                         # Process each occurrence
@@ -705,26 +803,30 @@ def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
                             start_line = page_lines[start_line_idx].strip()
                             words = start_line.split()
                             if len(words) > 1:  # If there's text after the marker
-                                extracted_text.append(' '.join(words[1:]))
+                                extracted_text.append(" ".join(words[1:]))
 
                             # Process subsequent lines until we find an end marker at the beginning of a line
-                            end_found = False
                             for i in range(start_line_idx + 1, len(page_lines)):
                                 line = page_lines[i].strip()
                                 if line and line.split():
                                     # Check if the line starts with any end marker
                                     first_word = line.split()[0].lower()
-                                    
+
                                     # Special handling for "tough-tender"
-                                    if start_marker_lower == "tough-tender" or start_marker_lower == "tough–tender":
+                                    if (
+                                        start_marker_lower == "tough-tender"
+                                        or start_marker_lower == "tough–tender"
+                                    ):
                                         # If the first word is "tough" or "tender", don't consider it an end marker
                                         if first_word in ["tough", "tender"]:
                                             extracted_text.append(line)
                                             continue
-                                    
+
                                     # For all other cases, check if it's an end marker
-                                    if any(first_word == end_marker.lower() for end_marker in end_markers):
-                                        end_found = True
+                                    if any(
+                                        first_word == end_marker.lower()
+                                        for end_marker in end_markers
+                                    ):
                                         break
                                     extracted_text.append(line)
 
@@ -735,8 +837,13 @@ def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
                                 # Remove the word "midzone" (case-insensitive) with proper word boundaries
                                 section_text = section_text.replace("midzone", "")
                                 # Normalize spaces (replace multiple spaces with a single space)
-                                section_text = re.sub(r'\s+', ' ', section_text).strip()
-                                section_text = re.sub(r'\bin-preference\b', '', section_text, flags=re.IGNORECASE)
+                                section_text = re.sub(r"\s+", " ", section_text).strip()
+                                section_text = re.sub(
+                                    r"\bin-preference\b",
+                                    "",
+                                    section_text,
+                                    flags=re.IGNORECASE,
+                                )
 
                                 # Add the extracted text to the results for this marker
                                 results[start_marker_lower].append(section_text)
@@ -753,9 +860,11 @@ def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
         except Exception as e:
             print(f"Error processing {file_path}: {str(e)}")
             return {}
-    
+
     # Use the special handling function instead of the standard one
-    three_repeating_explanation = extract_sections_with_special_handling(file_path, three_letter_list, All_Facets, page_range)
+    three_repeating_explanation = extract_sections_with_special_handling(
+        file_path, three_letter_list, ALL_FACETS, page_range
+    )
 
     # Additional cleanup to ensure all instances of "midzone" are removed
     # and handle facets with spaces like "Early Starting"
@@ -763,41 +872,43 @@ def get_three_repeating_explanations(file_path: str) -> dict[str, list[str]]:
         cleaned_texts = []
         for text in texts:
             # Remove "midzone" with proper word boundaries and normalize spaces
-            cleaned_text = re.sub(r'\bmidzone\b', '', text, flags=re.IGNORECASE)
-            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
-            
+            cleaned_text = re.sub(r"\bmidzone\b", "", text, flags=re.IGNORECASE)
+            cleaned_text = re.sub(r"\s+", " ", cleaned_text).strip()
+
             # Check for other facet names in the text and truncate
-            for facet in All_Facets:
+            for facet in ALL_FACETS:
                 # Skip the current marker to avoid truncating at itself
                 if facet.lower() == marker.lower():
                     continue
-                
+
                 # Skip if the facet is part of the current marker (for compound markers)
                 # For example, if marker is "tough-tender", skip both "tough" and "tender"
                 if "-" in marker.lower() or "–" in marker.lower():
-                    marker_parts = re.split(r'[-–]', marker.lower())
+                    marker_parts = re.split(r"[-–]", marker.lower())
                     if facet.lower() in marker_parts:
                         continue
-                
+
                 # Special handling for "tough-tender"
                 if marker.lower() == "tough-tender" or marker.lower() == "tough–tender":
                     # Don't truncate at "tough" or "tender"
                     if facet.lower() in ["tough", "tender"]:
                         continue
-                    
+
                 # Look for facet names that might appear in the text
                 # Handle both capitalized and all-caps versions
-                facet_pattern = re.compile(r'\b' + re.escape(facet) + r'\b', re.IGNORECASE)
+                facet_pattern = re.compile(
+                    r"\b" + re.escape(facet) + r"\b", re.IGNORECASE
+                )
                 match = facet_pattern.search(cleaned_text)
                 if match:
                     # Truncate the text at the facet name
-                    cleaned_text = cleaned_text[:match.start()].strip()
-            
+                    cleaned_text = cleaned_text[: match.start()].strip()
+
             # Ensure there's a space after each period
-            cleaned_text = re.sub(r'\.(?=[^\s])', '. ', cleaned_text)
-            
+            cleaned_text = re.sub(r"\.(?=[^\s])", ". ", cleaned_text)
+
             cleaned_texts.append(cleaned_text)
-        
+
         three_repeating_explanation[marker] = cleaned_texts
 
     return three_repeating_explanation
@@ -812,10 +923,10 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
     """
     facet = facet.lower()
     print("facet is:", facet)
-    
+
     # Normalize the facet name by replacing hyphens and en dashes with a standard form
-    normalized_facet = facet.replace('-', '').replace('–', '').replace(' ', '')
-    
+    normalized_facet = facet.replace("-", "").replace("–", "").replace(" ", "")
+
     FACET_TITLES = {
         "tough": "TOUGH",
         "expressivecontained": "EXPRESSIVE–CONTAINED",  # Using normalized key
@@ -823,7 +934,7 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
         "contained": "CONTAINED",
         "questioning": "QUESTIONING",
         "toughtender": "TOUGH–TENDER",
-        "tender": "TENDER"
+        "tender": "TENDER",
     }
 
     if normalized_facet not in FACET_TITLES:
@@ -832,14 +943,16 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
     target_facet = FACET_TITLES[normalized_facet]
 
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
         return f"[Error] Could not read file: {e}"
 
     # Extract content only from pages 5-9
     page_content = ""
-    for page_num in range(5, 9):  # Pages 5-9 inclusive (note: range is exclusive at the end)
+    for page_num in range(
+        5, 9
+    ):  # Pages 5-9 inclusive (note: range is exclusive at the end)
         page_marker = f"|{page_num}"
         next_page_marker = f"|{page_num + 1}"
 
@@ -860,7 +973,7 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
         page_content += content[start_index:end_index] + "\n"
 
     # Split into lines for processing
-    lines = page_content.split('\n')
+    lines = page_content.split("\n")
 
     # Step 1: Find the last index of the facet title in ALL CAPS
     last_index = None
@@ -873,19 +986,19 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
 
     # Step 2: Capture lines following the last occurrence
     descriptor_lines = []
-    for line in lines[last_index + 1:]:
+    for line in lines[last_index + 1 :]:
         clean = line.strip()
 
         # Stop if we hit a new all-caps section/facet
-        if re.fullmatch(r'[A-Z ()–\-]{4,}', clean):
+        if re.fullmatch(r"[A-Z ()–\-]{4,}", clean):
             break
 
         # Skip meta-labels and short attribute lines
-        clean = clean.replace('in-preference', '')
-        clean = clean.replace('midzone', '')
-        clean = clean.replace('out-of-preference', '')
-        clean = clean.replace("Communicating about disagreements.", '')
-        clean = re.sub(r'\.(?=[^\s])', '. ', clean)
+        clean = clean.replace("in-preference", "")
+        clean = clean.replace("midzone", "")
+        clean = clean.replace("out-of-preference", "")
+        clean = clean.replace("Communicating about disagreements.", "")
+        clean = re.sub(r"\.(?=[^\s])", ". ", clean)
 
         # Accept prose lines
         if clean:
@@ -895,20 +1008,24 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
         return "[Error] No descriptor paragraph found after facet."
 
     # Step 3: Normalize the paragraph
-    full_text = ' '.join(descriptor_lines)
-    full_text = re.sub(r'\s+', ' ', full_text).strip()
+    full_text = " ".join(descriptor_lines)
+    full_text = re.sub(r"\s+", " ", full_text).strip()
 
     # Remove specific phrases from the full text
     full_text = full_text.replace("Communicating about disagreements.", "")
-    full_text = re.sub(r'\s+', ' ', full_text).strip()  # Normalize spaces again after removal
+    full_text = re.sub(
+        r"\s+", " ", full_text
+    ).strip()  # Normalize spaces again after removal
 
     # Remove the "INTERPRETIVE REPORT" line if present, or the last line
-    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', full_text)
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", full_text)
     if sentences:
         last_sentence = sentences[-1]
         if "INTERPRETIVE REPORT MYERS-BRIGGS TYPE INDICATOR" in last_sentence:
             # Remove the "INTERPRETIVE REPORT" text and anything after it from the last sentence
-            last_sentence = last_sentence.split("INTERPRETIVE REPORT MYERS-BRIGGS TYPE INDICATOR")[0].strip()
+            last_sentence = last_sentence.split(
+                "INTERPRETIVE REPORT MYERS-BRIGGS TYPE INDICATOR"
+            )[0].strip()
             if last_sentence:  # Only keep the sentence if there's content left
                 sentences[-1] = last_sentence
             else:
@@ -919,40 +1036,15 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
             sentences.pop()
     # Special handling for "Questioning" facet - remove the last 3 words
 
-
     # Join sentences and ensure proper ending
-    result = '\n'.join(s.strip() for s in sentences if s.strip())
-    if result and not result.endswith('.'):
-        result += '.'
+    result = "\n".join(s.strip() for s in sentences if s.strip())
+    if result and not result.endswith("."):
+        result += "."
     if facet.lower() == "questioning":
         words = result.split()
         if len(words) > 3:
-            result = ' '.join(words[:-3])
+            result = " ".join(words[:-3])
     return result
-
-
-def extract_charts_from_excel(excel_path, sheet_name="Dashboard", output_dir=r"F:\projects\MBTInfo\backend\media\tmp"):
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Open Excel workbook
-    app = xw.App(visible=False)
-    wb = app.books.open(excel_path)
-    sht = wb.sheets[sheet_name]
-
-    charts = sht.api.ChartObjects()  # Access charts on the sheet
-
-    # Loop through each chart, export as image
-    for i, chart_obj in enumerate(charts):
-        chart = chart_obj.Chart
-        image_path = os.path.join(output_dir, f"chart_{i + 1}.png")
-        chart.Export(image_path)
-        print(f"Exported chart {i + 1} to {image_path}")
-        print(f"File size: {os.path.getsize(image_path)} bytes")
-
-    # Cleanup
-    wb.close()
-    app.quit()
 
 
 def sanitize_filename(filename: str) -> str:
@@ -971,27 +1063,15 @@ def sanitize_path_component(path_component):
     return path_component.replace(" ", "-").replace("_", "-")
 
 
-def safe_makedirs(path, exist_ok=True):
-    os.makedirs(sanitize_path_component(path), exist_ok=exist_ok)
-
-
-def safe_open(filename, mode="r", *args, **kwargs):
-    return builtins.open(sanitize_filename(filename), mode, *args, **kwargs)
-
-
 if __name__ == "__main__":
     # # test_file_path = r"F:\projects\MBTInfo\output\textfiles\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a_text.txt"
     # test_file_path = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
     # print(get_mbti_type_from_pdf(test_file_path))
     excel_path = r"F:\projects\MBTInfo\output\group_report_all_pdfs (11).xlsx"
-    # extract_charts_from_excel(excel_path, "Dashboard")
     import pandas as pd
 
-    df = pd.read_excel(excel_path, sheet_name='Data')
-    df = df.fillna('')
+    df = pd.read_excel(excel_path, sheet_name="Data")
+    df = df.fillna("")
     df = df.astype(str)
     print(df.head())  # See what's actually being imported
-    df.to_html('output.html', index=False)
-
-
-
+    df.to_html("output.html", index=False)

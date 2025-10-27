@@ -1,25 +1,27 @@
 # File: group_report.py - Fixed version
 import os
+
 import openpyxl as xl
-from data_to_excel import process_pdf_to_xl
-from data_extractor import extract_and_save_text
-from chart_creator import create_distribution_charts
-from formatting import format_xl
-from create_section_sheets import create_section_sheets
-from create_facet_table import create_facet_table
-from utils import reorder_sheets
+
+from .chart_creator import create_distribution_charts
+from .create_facet_table import create_facet_table
+from .create_section_sheets import create_section_sheets
+from .data_extractor import extract_and_save_text
+from .data_to_excel import process_pdf_to_xl
+from .formatting import format_xl
+from .utils import reorder_sheets
 
 
 def process_group_report_fixed(input_directory, output_directory, output_filename):
     """Fixed version of process_group_report with better error handling and file path management"""
 
-    print(f"\n🚀 Starting group report processing...")
+    print("\n🚀 Starting group report processing...")
     print(f"📁 Input: {input_directory}")
     print(f"📁 Output: {output_directory}")
     print(f"📄 File: {output_filename}")
 
     # Create directories
-    textfiles_directory = os.path.join(output_directory, 'textfiles')
+    textfiles_directory = os.path.join(output_directory, "textfiles")
     os.makedirs(output_directory, exist_ok=True)
     os.makedirs(textfiles_directory, exist_ok=True)
 
@@ -33,7 +35,7 @@ def process_group_report_fixed(input_directory, output_directory, output_filenam
     failed_files = []
 
     # Get list of PDF files
-    pdf_files = [f for f in os.listdir(input_directory) if f.lower().endswith('.pdf')]
+    pdf_files = [f for f in os.listdir(input_directory) if f.lower().endswith(".pdf")]
     print(f"📄 Found {len(pdf_files)} PDF files")
 
     if not pdf_files:
@@ -61,7 +63,7 @@ def process_group_report_fixed(input_directory, output_directory, output_filenam
 
             # Check if extraction was successful
             if not txt_path:
-                print(f'❌ Text extraction returned None for {file}')
+                print(f"❌ Text extraction returned None for {file}")
                 failed_files.append(f"{file} - Text extraction returned None")
                 continue
 
@@ -82,56 +84,80 @@ def process_group_report_fixed(input_directory, output_directory, output_filenam
 
                 if txt_size > 50:  # Require minimum content (more than just headers)
                     # Process to Excel - use the actual path
-                    process_pdf_to_xl(actual_txt_path, output_directory, 'MBTI Results', output_filename)
+                    process_pdf_to_xl(
+                        actual_txt_path,
+                        output_directory,
+                        "MBTI Results",
+                        output_filename,
+                    )
                     processed_files += 1
-                    print(f'✅ Successfully processed {file}')
+                    print(f"✅ Successfully processed {file}")
                 else:
-                    print(f'⚠️ Text file too small ({txt_size} bytes) for {file}')
-                    failed_files.append(f"{file} - Text file too small ({txt_size} bytes)")
+                    print(f"⚠️ Text file too small ({txt_size} bytes) for {file}")
+                    failed_files.append(
+                        f"{file} - Text file too small ({txt_size} bytes)"
+                    )
             else:
                 # Debug: List what files actually exist in textfiles directory
-                existing_files = os.listdir(textfiles_directory) if os.path.exists(textfiles_directory) else []
-                print(f'❌ Text file not found: {actual_txt_path}')
-                print(f'🔍 Files in textfiles directory: {existing_files}')
+                existing_files = (
+                    os.listdir(textfiles_directory)
+                    if os.path.exists(textfiles_directory)
+                    else []
+                )
+                print(f"❌ Text file not found: {actual_txt_path}")
+                print(f"🔍 Files in textfiles directory: {existing_files}")
 
                 # Try to find a similar file (in case of naming issues)
                 base_name = os.path.splitext(file)[0]  # Remove .pdf extension
-                possible_matches = [f for f in existing_files if
-                                    base_name in f or any(part in f for part in base_name.split('_'))]
+                possible_matches = [
+                    f
+                    for f in existing_files
+                    if base_name in f or any(part in f for part in base_name.split("_"))
+                ]
 
                 if possible_matches:
-                    print(f'🔍 Possible matches found: {possible_matches}')
+                    print(f"🔍 Possible matches found: {possible_matches}")
                     # Try using the first match
                     match_path = os.path.join(textfiles_directory, possible_matches[0])
                     if os.path.exists(match_path) and os.path.getsize(match_path) > 50:
-                        print(f'✅ Using matched file: {possible_matches[0]}')
-                        process_pdf_to_xl(match_path, output_directory, 'MBTI Results', output_filename)
+                        print(f"✅ Using matched file: {possible_matches[0]}")
+                        process_pdf_to_xl(
+                            match_path,
+                            output_directory,
+                            "MBTI Results",
+                            output_filename,
+                        )
                         processed_files += 1
-                        print(f'✅ Successfully processed {file} (using matched text file)')
+                        print(
+                            f"✅ Successfully processed {file} (using matched text file)"
+                        )
                         continue
 
-                failed_files.append(f"{file} - Text file not found at {actual_txt_path}")
+                failed_files.append(
+                    f"{file} - Text file not found at {actual_txt_path}"
+                )
 
         except Exception as e:
-            print(f'❌ Error processing {file}: {e}')
+            print(f"❌ Error processing {file}: {e}")
             import traceback
+
             traceback.print_exc()
             failed_files.append(f"{file} - {str(e)}")
 
     # Print summary
-    print(f"\n📊 PROCESSING SUMMARY:")
+    print("\n📊 PROCESSING SUMMARY:")
     print(f"✅ Successfully processed: {processed_files} files")
     print(f"❌ Failed: {len(failed_files)} files")
 
     if failed_files:
-        print(f"\n❌ FAILED FILES:")
+        print("\n❌ FAILED FILES:")
         for failure in failed_files:
             print(f"  - {failure}")
 
     # Only proceed with workbook operations if we processed files
     if processed_files > 0 and os.path.exists(excel_file):
         try:
-            print(f"\n📊 Creating charts and additional sheets...")
+            print("\n📊 Creating charts and additional sheets...")
 
             workbook = xl.load_workbook(excel_file)
 
@@ -159,10 +185,11 @@ def process_group_report_fixed(input_directory, output_directory, output_filenam
         except Exception as e:
             print(f"❌ Error finalizing workbook: {e}")
             import traceback
+
             traceback.print_exc()
             return False
     else:
-        print(f"❌ No valid files were processed successfully")
+        print("❌ No valid files were processed successfully")
         if not os.path.exists(excel_file):
             print(f"❌ Excel file was not created: {excel_file}")
         return False
@@ -199,6 +226,7 @@ def debug_text_extraction(pdf_path, textfiles_directory):
     except Exception as e:
         print(f"🔍 Exception during extraction: {e}")
         import traceback
+
         traceback.print_exc()
 
 

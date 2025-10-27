@@ -1,4 +1,4 @@
-const BASE_URL = 'https://desktop-sm21qic.tail63492a.ts.net';
+const BASE_URL = window.ENV?.API_URL || '/api';
 const insightUrlMap = {};
 let currentGroupTaskId = null;
 let lastInsightPdfFilename = null;

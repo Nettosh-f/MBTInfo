@@ -1,17 +1,19 @@
+import asyncio
 import os
 import time
-import asyncio
+
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
-from constsAI import SYSTEM_PROMPT
+
+from .constsAI import SYSTEM_PROMPT
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
 def read_text_file(file_path):
-    with open(file_path, 'r', encoding="utf-8") as file:
+    with open(file_path, encoding="utf-8") as file:
         return file.read()
 
 
@@ -21,18 +23,12 @@ async def translate_to_hebrew(text):
         response = await client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {
-                    "role": "system",
-                    "content": SYSTEM_PROMPT
-                },
-                {
-                    "role": "user",
-                    "content": text
-                }
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": text},
             ],
             temperature=0.0,
             top_p=1.0,
-            max_tokens=16384
+            max_tokens=16384,
         )
         end_time = time.time()
         response_time = end_time - start_time
@@ -61,7 +57,9 @@ async def main():
     if translated_text:
         # Save the Hebrew output without fixed text
         filename = os.path.splitext(os.path.basename(file_path))[0] + "-hebrew.txt"
-        output_path = os.path.join(r"F:\projects\MBTInteligence\MBTItranslated", filename)
+        output_path = os.path.join(
+            r"F:\projects\MBTInteligence\MBTItranslated", filename
+        )
         with open(output_path, "w", encoding="utf-8") as file:
             file.write(translated_text)
         print(f"Translated text saved to {output_path}")

@@ -1,13 +1,14 @@
-import fitz  # PyMuPDF
 import os
-import time
-import re
-from pathlib import Path
-from utilsAI import get_mbti_type_from_pdf
-from constsAI import MEDIA_PATH, OUTPUT_PATH, INPUT_PATH
+
+import fitz  # PyMuPDF
+
+from .constsAI import MEDIA_PATH
+from .utilsAI import get_mbti_type_from_pdf
 
 
-def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2):
+def extract_graph_from_pdf(
+    pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2
+):
     """
     Extract a graph or image from a PDF file.
 
@@ -54,7 +55,9 @@ def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=
     print(f"Graph extracted and saved to {output_image_path}")
 
 
-def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords_dict, zoom=2):
+def extract_multiple_graphs_from_pdf(
+    pdf_path, output_dir, page_num, rect_coords_dict, zoom=2
+):
     """
     Extract multiple graphs or images from a single PDF page.
 
@@ -81,7 +84,7 @@ def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords
     os.makedirs(specific_output_dir, exist_ok=True)
 
     # Create a dictionary to track filenames used in this run
-    if not hasattr(extract_multiple_graphs_from_pdf, 'used_filenames'):
+    if not hasattr(extract_multiple_graphs_from_pdf, "used_filenames"):
         extract_multiple_graphs_from_pdf.used_filenames = set()
 
     # Extract each graph based on provided coordinates
@@ -129,17 +132,14 @@ def extract_all_facet_graphs(pdf_path, output_dir):
         4: {"EIGraph": (0.1, 0.12, 0.9, 0.44)},
         5: {"SNgraph": (0.1, 0.12, 0.9, 0.44)},
         6: {"TFgraph": (0.1, 0.12, 0.9, 0.44)},
-        7: {"JPgraph": (0.1, 0.12, 0.9, 0.44)}}
+        7: {"JPgraph": (0.1, 0.12, 0.9, 0.44)},
+    }
     pages_list = [4, 5, 6, 7]
     for page_num in pages_list:
         # print(f"Extracting graphs from page {page_num + 1}")
         rect_coords_dict = page_rectangles.get(page_num)
         extract_multiple_graphs_from_pdf(
-            pdf_path,
-            output_dir,
-            page_num,
-            rect_coords_dict,
-            zoom=2
+            pdf_path, output_dir, page_num, rect_coords_dict, zoom=2
         )
 
 
@@ -164,10 +164,14 @@ def extract_first_graph(pdf_path, output_dir):
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
-    output_image_path = os.path.join(output_dir, f"{pdf_name_without_ext[:6]}_first_graph.png")
+    output_image_path = os.path.join(
+        output_dir, f"{pdf_name_without_ext[:6]}_first_graph.png"
+    )
 
     # Extract the graph from the PDF
-    extract_graph_from_pdf(pdf_path, output_image_path, page_num=2, rect_coords=rect_coords, zoom=2)
+    extract_graph_from_pdf(
+        pdf_path, output_image_path, page_num=2, rect_coords=rect_coords, zoom=2
+    )
 
     # print(f"First graph extracted and saved to {output_image_path}")
 
@@ -191,10 +195,14 @@ def extract_dominant_graph(pdf_path, output_dir):
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
-    output_image_path = os.path.join(output_dir, f"{pdf_name_without_ext[:6]}_dominant_graph.png")
+    output_image_path = os.path.join(
+        output_dir, f"{pdf_name_without_ext[:6]}_dominant_graph.png"
+    )
 
     # Extract the graph from the PDF
-    extract_graph_from_pdf(pdf_path, output_image_path, page_num=12, rect_coords=rect_coords, zoom=2)
+    extract_graph_from_pdf(
+        pdf_path, output_image_path, page_num=12, rect_coords=rect_coords, zoom=2
+    )
 
     # print(f"First graph extracted and saved to {output_image_path}")
 
@@ -210,10 +218,14 @@ def extract_last_graph(pdf_path, output_dir):
     # Define the output image path
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
-    output_image_path = os.path.join(output_dir, f"{pdf_name_without_ext[:6]}_step_II_results_graph.png")
+    output_image_path = os.path.join(
+        output_dir, f"{pdf_name_without_ext[:6]}_step_II_results_graph.png"
+    )
 
     # Extract the graph from the PDF
-    extract_graph_from_pdf(pdf_path, output_image_path, page_num=15, rect_coords=rect_coords, zoom=2)
+    extract_graph_from_pdf(
+        pdf_path, output_image_path, page_num=15, rect_coords=rect_coords, zoom=2
+    )
 
     # print(f"First graph extracted and saved to {output_image_path}")
 
@@ -223,20 +235,20 @@ def extract_last_graph(pdf_path, output_dir):
 def extract_all_graphs(pdf_path, output_dir):
     identifier = os.path.basename(pdf_path)[:6]
     extract_all_facet_graphs(pdf_path, output_dir)
-    all_graph_path = [extract_first_graph(pdf_path, output_dir),  # 0
-                      os.path.join(output_dir, f"{identifier}_EIGraph.png"),  # 1
-                      os.path.join(output_dir, f"{identifier}_TFgraph.png"),  # 2
-                      os.path.join(output_dir, f"{identifier}_JPgraph.png"),  # 3
-                      os.path.join(output_dir, f"{identifier}_SNgraph.png"),  # 4
-                      extract_dominant_graph(pdf_path, output_dir),  # 5
-                      extract_last_graph(pdf_path, output_dir)  # 6
-
-                      ]
+    all_graph_path = [
+        extract_first_graph(pdf_path, output_dir),  # 0
+        os.path.join(output_dir, f"{identifier}_EIGraph.png"),  # 1
+        os.path.join(output_dir, f"{identifier}_TFgraph.png"),  # 2
+        os.path.join(output_dir, f"{identifier}_JPgraph.png"),  # 3
+        os.path.join(output_dir, f"{identifier}_SNgraph.png"),  # 4
+        extract_dominant_graph(pdf_path, output_dir),  # 5
+        extract_last_graph(pdf_path, output_dir),  # 6
+    ]
     return all_graph_path
 
 
 if __name__ == "__main__":
     path_to_pdf = r"F:\projects\MBTInfo\input\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a.pdf"
-    name = os.path.basename(path_to_pdf).replace('.pdf', '')[:6]
+    name = os.path.basename(path_to_pdf).replace(".pdf", "")[:6]
     # Read and split text
     extract_all_graphs(path_to_pdf, MEDIA_PATH / "tmp" / name)

@@ -1,0 +1,62 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Frontend
+node_modules/
+frontend/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Test files
+*.rar
+*.zip
+test_*.py
+*_test.py
+input/
+input.rar
+
+# Documentation (will be updated)
+README.md
+notes.txt
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+*.tmp
+
+# Output (mounted as volume)
+output/
+
+# Virtual environment
+venv/
+ENV/
+
