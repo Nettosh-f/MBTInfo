@@ -28,11 +28,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     # Fonts for PDF generation
     fontconfig \
     libxrender1 \
+    # Required for pdf2image (PDF to image conversion)
+    poppler-utils \
+    # Required for health checks
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
-RUN useradd -m -u 1000 mbti && mkdir -p /app /app/output /app/input /app/backend/media && \
-    chown -R mbti:mbti /app
+RUN mkdir -p /app /app/output /app/backend/media /tmp/tmp_pdf
 
 # Set working directory
 WORKDIR /app
@@ -53,16 +56,13 @@ ENV PROJECT_BASE_DIR=/app \
     PYTHONPATH=/app/backend/src:/app/backend/src/MBTInfo:/app/backend/src/MBTInterpret \
     PYTHONUNBUFFERED=1
 
-# Switch to non-root user
-USER mbti
-
 # Expose port
 EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:3000/health')" || exit 1
+    CMD curl -f http://localhost:3000/health || exit 1
 
-# Run the application
-CMD ["uvicorn", "backend.src.MBTInfo.server:app", "--host", "0.0.0.0", "--port", "3000", "--reload"]
+# Run the application (production mode - no reload)
+CMD ["uvicorn", "backend.src.MBTInfo.server:app", "--host", "0.0.0.0", "--port", "3000"]
 

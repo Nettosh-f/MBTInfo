@@ -10,7 +10,7 @@ from .constsAI import (
     lines_to_remove,
 )
 from .data_extractorAI import process_pdf_file
-from .extract_imageAI import extract_all_graphs
+from .extract_imageAI import extract_all_graphs, get_pdf_identifier
 from .fixed_text import insert_fixed_text
 from .mbti_to_pdf import generate_mbti_report
 from .translation import translate_to_hebrew
@@ -27,12 +27,15 @@ parent_dir = os.path.abspath(
 sys.path.append(parent_dir)
 
 
-async def create_translated_pdf(input_file, output_file):
+async def create_translated_pdf(input_file, task_dir):
     # Extract text from the PDF file
-    output_dir = r"F:\projects\MBTInfo\output\textfiles"
-    save_path = r"F:\projects\MBTInfo\output"
-    base_name = os.path.splitext(os.path.basename(input_file))[0][:6]
-    media_dir = MEDIA_PATH / "tmp" / base_name
+    # Create subdirectories within task_dir for organization
+    output_dir = os.path.join(task_dir, "text")
+    save_path = task_dir
+    base_name = get_pdf_identifier(input_file)
+    media_dir = os.path.join(task_dir, "images")
+    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(media_dir, exist_ok=True)
     all_images_path = extract_all_graphs(input_file, media_dir)
     encoded_image_list = [
         encode_image_base64(all_images_path[0]),  # first graph
@@ -43,7 +46,7 @@ async def create_translated_pdf(input_file, output_file):
         encode_image_base64(all_images_path[5]),  # dominant graph
         encode_image_base64(all_images_path[6]),  # last graph
     ]
-    extracted_text_path = process_pdf_file(input_file, lines_to_remove)
+    extracted_text_path = process_pdf_file(input_file, lines_to_remove, output_dir)
     try:
         # read the translated text from the Hebrew file
         with open(extracted_text_path, encoding="utf-8") as f:
@@ -74,7 +77,7 @@ async def create_translated_pdf(input_file, output_file):
     print(f"Fixed text saved to {fixes_translated_text_path}")
     html_path = os.path.join(output_dir, f"{base_name}_translated.html")
     output_pdf = os.path.join(save_path, f"MBTI_translate_{base_name}.pdf")
-    logo_path = r"F:\projects\MBTInfo\backend\media\full_logo.png"
+    logo_path = f"{MEDIA_PATH}/full_logo.png"
     first_page_title = 'דו"ח MBTI בתרגום לעברית עבור: '
     if not os.path.exists(logo_path):
         raise FileNotFoundError(f"Logo file not found at {logo_path}")

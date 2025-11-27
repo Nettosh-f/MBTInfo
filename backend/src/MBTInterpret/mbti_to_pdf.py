@@ -1,9 +1,17 @@
 import base64
+import logging
 import os
 import pathlib
 import re
 
 from weasyprint import HTML
+
+# Suppress verbose logs from weasyprint and fontTools
+logging.getLogger("weasyprint").setLevel(logging.WARNING)
+logging.getLogger("fontTools").setLevel(logging.WARNING)
+logging.getLogger("fontTools.subset").setLevel(logging.WARNING)
+logging.getLogger("fontTools.ttLib").setLevel(logging.WARNING)
+logging.getLogger("fontTools.subset.timer").setLevel(logging.WARNING)
 
 
 def generate_mbti_report(

@@ -26,7 +26,11 @@ from weasyprint import HTML as WeasyHTML
 
 from MBTInterpret.main import create_translated_pdf
 
-from .consts import MEDIA_DIRECTORIES_TO_CHECK, MEDIA_DIRECTORY_KEEP_ITEMS
+from .consts import (
+    MEDIA_DIRECTORIES_TO_CHECK,
+    MEDIA_DIRECTORY_KEEP_ITEMS,
+    PROJECT_BASE_DIR,
+)
 from .dual_report import generate_dual_report
 from .extract_image import extract_multiple_graphs_from_pdf
 from .group_report import process_group_report_fixed
@@ -35,15 +39,14 @@ from .MBTInsight import (
     group_user_prompt,
     process_pdf_with_gpt,
 )
+from .personal_report import generate_personal_report
 from .utils import sanitize_filename, sanitize_path_component
 
-PROJECT_BASE_DIR = Path(os.getenv("PROJECT_BASE_DIR", "/app"))
-TEMP_DIR = tempfile.mkdtemp()
+TEMP_DIR = "/tmp/tmp_pdf"
+os.makedirs(TEMP_DIR, exist_ok=True)
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", str(PROJECT_BASE_DIR / "output"))
 INPUT_DIR = os.getenv("INPUT_DIR", str(PROJECT_BASE_DIR / "input"))
-OUTPUT_DIR_FACET_GRAPH = os.getenv(
-    "MEDIA_DIR", str(PROJECT_BASE_DIR / "backend" / "media")
-)
+MEDIA_DIR = os.getenv("MEDIA_DIR", str(PROJECT_BASE_DIR / "backend" / "media"))
 
 
 class ProcessingResponse(BaseModel):
@@ -72,15 +75,56 @@ app = FastAPI(
 )
 
 app.mount("/output", StaticFiles(directory=OUTPUT_DIR), name="output")
-app.mount("/media", StaticFiles(directory=OUTPUT_DIR_FACET_GRAPH), name="media")
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+
+# CORS configuration - allow specific origins in production
+cors_origins = os.getenv("CORS_ORIGINS", "*").split(",")
+if cors_origins == ["*"]:
+    # In production, you should set CORS_ORIGINS to specific domains
+    logger.warning("CORS is set to allow all origins. For production, set CORS_ORIGINS environment variable.")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+async def cleanup_old_temp_files():
+    """Periodically clean up temporary files older than 1 hour"""
+    while True:
+        try:
+            if not os.path.exists(TEMP_DIR):
+                await asyncio.sleep(1800)
+                continue
+
+            current_time = datetime.now().timestamp()
+            deleted_count = 0
+
+            for item in os.listdir(TEMP_DIR):
+                item_path = os.path.join(TEMP_DIR, item)
+                if os.path.isdir(item_path):
+                    try:
+                        mod_time = os.path.getmtime(item_path)
+                        age_hours = (current_time - mod_time) / 3600
+
+                        if age_hours > 1:
+                            shutil.rmtree(item_path, ignore_errors=True)
+                            deleted_count += 1
+                            logger.info(
+                                f"Deleted old temp directory: {item} (age: {age_hours:.1f} hours)"
+                            )
+                    except Exception as e:
+                        logger.warning(f"Error checking/deleting {item}: {e}")
+
+            if deleted_count > 0:
+                logger.info(f"Cleanup completed: {deleted_count} directories removed")
+        except Exception as e:
+            logger.error(f"Error during temp cleanup: {e}")
+
+        await asyncio.sleep(1800)
 
 
 @app.on_event("startup")
@@ -88,12 +132,11 @@ async def startup_event():
     """Initialize the application"""
     app.state.start_time = datetime.now()
 
-    os.makedirs(TEMP_DIR, exist_ok=True)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
     logger.info(f"FastAPI MBTI Service started at {app.state.start_time.isoformat()}")
     logger.info(f"Temp directory: {TEMP_DIR}")
     logger.info(f"Output directory: {OUTPUT_DIR}")
+
+    asyncio.create_task(cleanup_old_temp_files())
 
 
 # Pydantic models
@@ -101,17 +144,28 @@ class TaskStatus(BaseModel):
     task_id: str
     status: str  # "pending", "processing", "completed", "failed"
     message: str
-    download_url: Optional[str] = None
     file_type: Optional[str] = None  # "html", "pdf", "xlsx", etc.
     created_at: datetime
     excel_path: Optional[str] = None  # Add this as a proper field
     insight_pdf_url: Optional[str] = None
+    file_path: Optional[str] = None
 
 
 class TaskResponse(BaseModel):
     task_id: str
     status: str
     message: str
+
+
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    message: str
+    file_type: Optional[str] = None
+    created_at: datetime
+    excel_path: Optional[str] = None
+    insight_pdf_url: Optional[str] = None
+    file_path: Optional[str] = None
 
 
 # In-memory task storage
@@ -206,7 +260,7 @@ atexit.register(cleanup_on_exit)
 # Handle termination signals
 def signal_handler(signum, frame):
     """Handle termination signals"""
-    print(f"\n⚠️  Received signal {signum}, shutting down gracefully...")
+    print(f"⚠️ Received signal {signum}, shutting down gracefully...")
     cleanup_on_exit()
     sys.exit(0)
 
@@ -224,13 +278,13 @@ def create_task_id() -> str:
 
 
 def update_task_status(
-    task_id: str, status: str, message: str, download_url: Optional[str] = None
+    task_id: str, status: str, message: str, file_path: Optional[str] = None
 ):
     if task_id in task_storage:
         task_storage[task_id].status = status
         task_storage[task_id].message = message
-        if download_url:
-            task_storage[task_id].download_url = download_url
+        if file_path:
+            task_storage[task_id].file_path = file_path
 
 
 @app.get("/output/{filename}")
@@ -291,6 +345,222 @@ async def download_file(task_id: str, filename: str):
     )
 
 
+@app.get("/insight/{task_id}/html")
+async def download_insight_html(task_id: str):
+    """Download HTML insight file from a completed insight task"""
+    if task_id not in task_storage:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = task_storage[task_id]
+    if task.status != "completed":
+        raise HTTPException(status_code=400, detail="Task not completed")
+
+    if not hasattr(task, "file_path") or not task.file_path:
+        raise HTTPException(
+            status_code=404, detail="Insight file not found for this task"
+        )
+
+    file_path = task.file_path
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    filename = os.path.basename(file_path)
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="text/html",
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@app.get("/insight/{task_id}/pdf")
+async def download_insight_pdf(task_id: str):
+    """Download PDF insight file from a completed insight task"""
+    if task_id not in task_storage:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = task_storage[task_id]
+    if task.status != "completed":
+        raise HTTPException(status_code=400, detail="Task not completed")
+
+    if not hasattr(task, "insight_pdf_url") or not task.insight_pdf_url:
+        raise HTTPException(
+            status_code=404, detail="PDF insight not available for this task"
+        )
+
+    pdf_url = task.insight_pdf_url
+    if pdf_url.startswith("/output/"):
+        pdf_url = pdf_url[8:]
+    file_path = os.path.join(OUTPUT_DIR, pdf_url)
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="PDF file not found")
+
+    # Validate file is actually a PDF
+    if not file_path.lower().endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="File is not a PDF")
+
+    filename = os.path.basename(file_path)
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@app.get("/insight/{task_id}/excel")
+async def download_insight_excel(task_id: str):
+    """Download Excel insight file from a completed insight task"""
+    if task_id not in task_storage:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = task_storage[task_id]
+    if task.status != "completed":
+        raise HTTPException(status_code=400, detail="Task not completed")
+
+    # Check for insight Excel file - insights may not always have Excel files
+    # First check if there's a specific insight_excel_url attribute
+    if hasattr(task, "insight_excel_url") and task.insight_excel_url:
+        excel_url = task.insight_excel_url
+        if excel_url.startswith("/output/"):
+            excel_url = excel_url[8:]
+        file_path = os.path.join(OUTPUT_DIR, excel_url)
+    elif hasattr(task, "excel_path") and task.excel_path:
+        # Fallback to excel_path if available (for group insights that use Excel)
+        file_path = task.excel_path
+    else:
+        raise HTTPException(
+            status_code=404, detail="Excel insight not available for this task"
+        )
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Excel file not found")
+
+    # Validate file is actually an Excel file
+    if not file_path.lower().endswith((".xlsx", ".xls")):
+        raise HTTPException(status_code=400, detail="File is not an Excel file")
+
+    filename = os.path.basename(file_path)
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@app.get("/report/{task_id}/pdf")
+async def download_report_pdf(task_id: str):
+    """Download PDF report file from a completed task"""
+    if task_id not in task_storage:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = task_storage[task_id]
+    if task.status != "completed":
+        raise HTTPException(status_code=400, detail="Task not completed")
+
+    # Validate it's not an HTML insight task
+    if hasattr(task, "file_type") and task.file_type == "html":
+        raise HTTPException(
+            status_code=400, detail="Use /insight/{task_id} endpoints for insight files"
+        )
+
+    # Find PDF file
+    if hasattr(task, "file_path") and task.file_path:
+        file_path = task.file_path
+        # Validate it's a PDF
+        if not file_path.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code=400, detail="Task file is not a PDF. Use /report/{task_id}/excel for Excel files."
+            )
+    else:
+        # Search for PDF in task directory
+        task_dir = os.path.join(TEMP_DIR, task_id)
+        pdf_files = glob.glob(os.path.join(task_dir, "*.pdf"))
+        if not pdf_files:
+            raise HTTPException(status_code=404, detail="PDF file not found for this task")
+        file_path = pdf_files[0]
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="PDF file not found")
+
+    filename = os.path.basename(file_path)
+
+    # Determine content disposition
+    content_disposition = "inline"
+    if hasattr(task, "file_type") and task.file_type == "pdf_view":
+        content_disposition = "inline"
+    else:
+        content_disposition = "attachment"
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'{content_disposition}; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
+@app.get("/report/{task_id}/excel")
+async def download_report_excel(task_id: str):
+    """Download Excel report file from a completed task"""
+    if task_id not in task_storage:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task = task_storage[task_id]
+    if task.status != "completed":
+        raise HTTPException(status_code=400, detail="Task not completed")
+
+    # Validate it's not an HTML insight task
+    if hasattr(task, "file_type") and task.file_type == "html":
+        raise HTTPException(
+            status_code=400, detail="Use /insight/{task_id} endpoints for insight files"
+        )
+
+    # Find Excel file
+    if hasattr(task, "excel_path") and task.excel_path:
+        file_path = task.excel_path
+    else:
+        raise HTTPException(
+            status_code=404, detail="Excel file not found for this task"
+        )
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Excel file not found")
+
+    # Validate file is actually an Excel file
+    if not file_path.lower().endswith((".xlsx", ".xls")):
+        raise HTTPException(status_code=400, detail="File is not an Excel file")
+
+    filename = os.path.basename(file_path)
+
+    return FileResponse(
+        path=file_path,
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache",
+        },
+    )
+
+
 def wrap_html_with_header(
     content_html,
     report_title="MBTI Insight Report",
@@ -309,7 +579,7 @@ def wrap_html_with_header(
     header_html = ""
     if logo_html or title_html or subtitle_html:
         header_html = f"""
-    <div class="header">
+    <div class="inner-header">
         {logo_html}
         {title_html}
         {subtitle_html}
@@ -329,25 +599,25 @@ def wrap_html_with_header(
             margin: 0;
             padding: 0;
         }}
-        .header {{
+        .inner-header {{
             text-align: center;
             padding: 32px 0 12px 0;
             border-bottom: 2px solid #eee;
             margin-bottom: 24px;
             background: #f6f9ff;
         }}
-        .header img {{
+        .inner-header img {{
             height: 48px;
             vertical-align: middle;
             margin-bottom: 10px;
         }}
-        .header h1 {{
+        .inner-header h1 {{
             margin: 10px 0 0 0;
             font-size: 2.2rem;
             color: #254C7D;
             letter-spacing: 2px;
         }}
-        .header h2 {{
+        .inner-header h2 {{
             margin: 0;
             font-size: 1.3rem;
             color: #555;
@@ -446,12 +716,10 @@ async def group_insight_background(task_id: str, excel_path: str, req_data: dict
             print(f"PDF generation failed: {e}")
             insight_pdf_url = None
 
-        download_url = f"/output/insights/{insight_filename}"
-
         # Update task status
         task_storage[task_id].status = "completed"
         task_storage[task_id].message = "Group insight generated successfully"
-        task_storage[task_id].download_url = download_url
+        task_storage[task_id].file_path = insight_path
         task_storage[task_id].file_type = "html"
         if insight_pdf_url:
             task_storage[task_id].insight_pdf_url = insight_pdf_url
@@ -538,15 +806,9 @@ async def insight_background(
                 print(f"PDF generation from insight HTML failed: {e}")
                 insight_pdf_path = None
 
-            # Build download URLs
-            # Get the relative path from OUTPUT_DIR
-            rel_dir = os.path.relpath(os.path.dirname(pdf_path), OUTPUT_DIR)
-            download_url = f"/output/{rel_dir}/{insight_html_filename}".replace(
-                "\\", "/"
-            )
-
             insight_pdf_url = None
             if insight_pdf_path and os.path.exists(insight_pdf_path):
+                rel_dir = os.path.relpath(os.path.dirname(pdf_path), OUTPUT_DIR)
                 insight_pdf_url = f"/output/{rel_dir}/{insight_pdf_filename}".replace(
                     "\\", "/"
                 )
@@ -554,13 +816,13 @@ async def insight_background(
             # Update task status with completion
             task_storage[task_id].status = "completed"
             task_storage[task_id].message = "Insight generated successfully."
-            task_storage[task_id].download_url = download_url
+            task_storage[task_id].file_path = insight_html_path
             task_storage[task_id].file_type = "html"
             if insight_pdf_url:
                 task_storage[task_id].insight_pdf_url = insight_pdf_url
 
             print(
-                f"Insight generated successfully. HTML: {download_url}, PDF: {insight_pdf_url}"
+                f"Insight generated successfully. HTML: {insight_html_path}, PDF: {insight_pdf_url}"
             )
 
         else:
@@ -580,17 +842,22 @@ async def translate_pdf_background(task_id: str, pdf_path: str):
     try:
         update_task_status(task_id, "processing", "Translating PDF...")
 
-        # Create a directory for the PDF if it doesn't exist
-        person_name = sanitize_filename(os.path.basename(pdf_path).replace(".pdf", ""))
-        person_dir = os.path.join(OUTPUT_DIR, person_name)
-        os.makedirs(person_dir, exist_ok=True)
+        # Create task-specific directory in TEMP_DIR
+        task_dir = os.path.join(TEMP_DIR, task_id)
+        os.makedirs(task_dir, exist_ok=True)
 
         # Await the create_translated_pdf function
-        output_pdf_path = await create_translated_pdf(pdf_path, person_dir)
+        output_pdf_path = await create_translated_pdf(pdf_path, task_dir)
 
-        download_url = f"/output/{os.path.basename(output_pdf_path)}"
+        # Store file_path in task storage (existing /report/{task_id}/pdf endpoint will handle serving)
+        # Set file_type to enable Get Insight button
+        if task_id in task_storage:
+            task_storage[task_id].file_type = "pdf_view"
         update_task_status(
-            task_id, "completed", "Translation completed successfully", download_url
+            task_id,
+            "completed",
+            "Translation completed successfully",
+            output_pdf_path,
         )
 
     except Exception as e:
@@ -609,8 +876,8 @@ async def create_group_report_background(task_id: str, folder_path: str):
             task_id, "processing", "Creating group report (with fixes)..."
         )
 
-        folder_name = os.path.basename(os.path.normpath(folder_path))
-        output_filename = f"group_report_{folder_name}.xlsx"
+        # Use task_id for unique filename since folder_path is now "all_pdfs"
+        output_filename = f"group_report_{task_id}.xlsx"
         output_path = os.path.join(OUTPUT_DIR, output_filename)
 
         # Remove existing file if present
@@ -620,7 +887,7 @@ async def create_group_report_background(task_id: str, folder_path: str):
                 print(f"Removed existing: {output_path}")
             except PermissionError:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                output_filename = f"group_report_{folder_name}_{timestamp}.xlsx"
+                output_filename = f"group_report_{task_id}_{timestamp}.xlsx"
                 output_path = os.path.join(OUTPUT_DIR, output_filename)
 
         # Debug: List PDF files before processing
@@ -639,7 +906,6 @@ async def create_group_report_background(task_id: str, folder_path: str):
 
         # Verify the output file exists
         if os.path.exists(output_path):
-            download_url = f"/output/{output_filename}"
             print(f"✅ Excel file created successfully: {output_path}")
 
             # Update task status with excel_path stored properly
@@ -648,7 +914,6 @@ async def create_group_report_background(task_id: str, folder_path: str):
                     task_id=task_id,
                     status="completed",
                     message="Group report created successfully",
-                    download_url=download_url,
                     excel_path=output_path,  # Store the full path
                     created_at=task_storage[task_id].created_at,
                     file_type="xlsx",
@@ -672,8 +937,6 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
     """Background task for creating personal report"""
     try:
         update_task_status(task_id, "processing", "Extracting images from PDF...")
-
-        # Extract images using your extract_image.py - save to fixed output directory
         page_rectangles = {
             4: {"EIGraph": (0.1, 0.12, 0.9, 0.44)},
             5: {"SNgraph": (0.1, 0.12, 0.9, 0.44)},
@@ -684,36 +947,37 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
         for page_num in [4, 5, 6, 7]:
             rect_coords_dict = page_rectangles.get(page_num)
             extract_multiple_graphs_from_pdf(
-                pdf_path, OUTPUT_DIR_FACET_GRAPH, page_num, rect_coords_dict, zoom=2
+                pdf_path, MEDIA_DIR, page_num, rect_coords_dict, zoom=2
             )
 
         update_task_status(task_id, "processing", "Generating personal report...")
-        person_name = os.path.basename(pdf_path)
-        person_name = sanitize_filename(person_name.replace(".pdf", ""))
+        name_without_ext = Path(pdf_path).stem
+        person_name = sanitize_filename(name_without_ext)
 
-        # Create a directory for the PDF if it doesn't exist
-        person_dir = os.path.join(OUTPUT_DIR, person_name)
-        os.makedirs(person_dir, exist_ok=True)
+        task_dir = os.path.join(TEMP_DIR, task_id)
+        os.makedirs(task_dir, exist_ok=True)
 
-        # Generate personal report using your personal_report.py - save to the person's directory
         output_filename = f"{person_name}_personal_report_{task_id}.pdf"
-        print(person_name)
-        download_url = f"/output/{person_name}/{output_filename}"
+        full_output_path = os.path.join(task_dir, output_filename)
 
-        # Update task status with file_type set to "pdf_view" to indicate it should be opened in browser
+        generate_personal_report(pdf_path, task_dir, output_filename)
+
+        if not os.path.exists(full_output_path):
+            raise FileNotFoundError(f"Failed to generate PDF at {full_output_path}")
+
+        file_path = full_output_path
+
         if task_id in task_storage:
             task_storage[task_id].status = "completed"
             task_storage[task_id].message = "Personal report created successfully"
-            task_storage[task_id].download_url = download_url
-            task_storage[task_id].file_type = (
-                "pdf_view"  # Add this flag to indicate browser opening
-            )
+            task_storage[task_id].file_type = "pdf_view"
+            task_storage[task_id].file_path = file_path
         else:
             update_task_status(
                 task_id,
                 "completed",
                 "Personal report created successfully",
-                download_url,
+                file_path,
             )
 
     except Exception as e:
@@ -722,38 +986,36 @@ async def create_personal_report_background(task_id: str, pdf_path: str):
         )
 
 
-async def create_dual_report_background(task_id: str, pdf1_path: str, pdf2_path: str):
+async def create_dual_report_background(
+    task_id: str, pdf1_path: str, pdf2_path: str, output_path: str
+):
     """Background task for creating dual report (to be implemented)"""
     try:
         update_task_status(task_id, "processing", "Creating dual report...")
-
-        # Simulate some processing time
-        await asyncio.sleep(2)
-        first_name_part = sanitize_path_component(os.path.basename(pdf1_path)[:6])
-        second_name_part = sanitize_path_component(os.path.basename(pdf2_path)[:6])
-        identifier = f"{first_name_part}_{second_name_part}"
-        # For now, just create a placeholder message in fixed output directory
-        output_dir = os.path.join(OUTPUT_DIR, identifier)
+        print(output_path)
+        first_name = sanitize_path_component(pdf1_path)
+        second_name = sanitize_path_component(pdf2_path)
+        identifier = f"{first_name}_{second_name}"
+        output_dir = os.path.join(output_path, identifier)
         os.makedirs(output_dir, exist_ok=True)
-        output_filename = f"{identifier}_dual_report.pdf"
-        generate_dual_report(pdf1_path, pdf2_path, output_dir)
-        download_url = f"/output/{identifier}/{output_filename}"
+        _, final_path = generate_dual_report(pdf1_path, pdf2_path, output_dir)
+
+        if not os.path.exists(final_path):
+            raise FileNotFoundError(f"Generated dual report not found at {final_path}")
 
         if task_id in task_storage:
             task_storage[task_id].status = "completed"
             task_storage[task_id].message = (
                 "Dual comparison report created successfully"
             )
-            task_storage[task_id].download_url = download_url
-            task_storage[task_id].file_type = (
-                "pdf_view"  # Add this flag to indicate browser opening
-            )
+            task_storage[task_id].file_type = "pdf_view"
+            task_storage[task_id].file_path = final_path
         else:
             update_task_status(
                 task_id,
                 "completed",
                 "Dual comparison report created successfully",
-                download_url,
+                final_path,
             )
 
     except Exception as e:
@@ -825,9 +1087,8 @@ async def upload_zip_group_report(
         raise HTTPException(status_code=400, detail="Only ZIP files are supported")
 
     task_id = create_task_id()
-    # Use archive filename (without extension) as folder name
-    base_name = os.path.splitext(os.path.basename(file.filename))[0]
-    task_dir = os.path.join(INPUT_DIR, base_name)
+    # Use task_id as folder name in TEMP_DIR for proper cleanup
+    task_dir = os.path.join(TEMP_DIR, task_id)
 
     # Create clean folder (optional: clear if already exists)
     if os.path.exists(task_dir):
@@ -878,30 +1139,40 @@ async def upload_zip_group_report(
     )
 
 
-@app.post("/insight-by-download-url", response_model=TaskResponse)
-async def get_mbti_insight_by_download_url(
+@app.post("/insight/{task_id}", response_model=TaskResponse)
+async def get_mbti_insight_by_task_id(
     background_tasks: BackgroundTasks,
-    download_url: str = Form(...),
-    relationship_type: str = Form(None),
-    relationship_goals: str = Form(None),
+    task_id: str,
+    relationship_type: Optional[str] = None,
+    relationship_goals: Optional[str] = None,
 ):
-    """Generate MBTI insight from a downloaded report file"""
+    """Generate MBTI insight from a task ID"""
     try:
-        print(f"Received insight request for URL: {download_url}")
+        source_task_id = task_id
+        print(f"Received insight request for task_id: {source_task_id}")
         print(f"Relationship type: {relationship_type}")
         print(f"Relationship goals: {relationship_goals}")
 
-        # Parse the download URL to find the file
-        # Example: "/output/PersonName/filename.pdf"
-        parts = download_url.strip("/").split("/")
-        if len(parts) < 3:
-            raise HTTPException(status_code=400, detail="Invalid download_url format")
+        if source_task_id not in task_storage:
+            raise HTTPException(
+                status_code=404, detail=f"Task not found: {source_task_id}"
+            )
 
-        person_name = parts[-2]
-        filename = parts[-1]
-        file_path = os.path.join(OUTPUT_DIR, person_name, filename)
+        task = task_storage[source_task_id]
 
-        print(f"Looking for file at: {file_path}")
+        if hasattr(task, "file_path") and task.file_path:
+            file_path = task.file_path
+            print(f"Using file_path from task storage: {file_path}")
+        else:
+            task_dir = os.path.join(TEMP_DIR, source_task_id)
+            pdf_files = glob.glob(os.path.join(task_dir, "*.pdf"))
+            if not pdf_files:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"PDF file not found for task: {source_task_id}",
+                )
+            file_path = pdf_files[0]
+            print(f"Found PDF in task directory: {file_path}")
 
         if not os.path.exists(file_path):
             raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
@@ -924,6 +1195,8 @@ async def get_mbti_insight_by_download_url(
             relationship_goals,
         )
 
+        filename = os.path.basename(file_path)
+
         return TaskResponse(
             task_id=task_id,
             status="pending",
@@ -933,7 +1206,7 @@ async def get_mbti_insight_by_download_url(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error in get_mbti_insight_by_download_url: {str(e)}")
+        print(f"Error in get_mbti_insight_by_task_id: {str(e)}")
         traceback.print_exc()
         raise HTTPException(
             status_code=500, detail=f"Internal server error: {str(e)}"
@@ -1007,7 +1280,6 @@ async def create_personal_report(
 
     # Start background processing
     background_tasks.add_task(create_personal_report_background, task_id, file_path)
-
     return TaskResponse(
         task_id=task_id,
         status="pending",
@@ -1051,7 +1323,7 @@ async def create_dual_report(
 
     # Start background processing
     background_tasks.add_task(
-        create_dual_report_background, task_id, file1_path, file2_path
+        create_dual_report_background, task_id, file1_path, file2_path, task_dir
     )
 
     return TaskResponse(
@@ -1097,12 +1369,6 @@ async def group_insight(background_tasks: BackgroundTasks, req: GroupInsightRequ
         if hasattr(group_task, "excel_path") and group_task.excel_path:
             excel_path = group_task.excel_path
             print(f"Got excel_path from task attribute: {excel_path}")
-        # Fallback to constructing from download_url
-        elif group_task.download_url:
-            filename = group_task.download_url.split("/")[-1]
-            if filename.endswith(".xlsx"):
-                excel_path = os.path.join(OUTPUT_DIR, filename)
-                print(f"Constructed excel_path from download_url: {excel_path}")
 
         # Additional fallback - search for recent Excel files
         if not excel_path or not os.path.exists(excel_path):
@@ -1243,26 +1509,23 @@ async def translate_pdf(
     )
 
 
-@app.get("/status/{task_id}", response_model=TaskStatus)
+@app.get("/status/{task_id}", response_model=TaskStatusResponse)
 async def get_task_status(task_id: str):
-    """Get the status of a processing task, including insight PDF URL if present."""
+    """Get the status of a processing task."""
     if task_id not in task_storage:
         raise HTTPException(status_code=404, detail="Task not found")
     task = task_storage[task_id]
 
-    # --- Defensive: try to add insight_pdf_url if it's not present but can be inferred ---
-    # Only if the task is for an insight and completed:
-    if getattr(task, "file_type", None) == "html" and task.status == "completed":
-        # If insight_pdf_url is missing, but the HTML exists, try to guess the PDF path
-        if not getattr(task, "insight_pdf_url", None) and task.download_url:
-            base_url, html_name = os.path.split(task.download_url)
-            if html_name.startswith("insight_") and html_name.endswith(".html"):
-                pdf_name = html_name.replace(".html", ".pdf")
-                pdf_path = os.path.join(OUTPUT_DIR, base_url.strip("/"), pdf_name)
-                if os.path.exists(pdf_path):
-                    task.insight_pdf_url = f"{base_url}/{pdf_name}"
-
-    return task
+    return TaskStatusResponse(
+        task_id=task.task_id,
+        status=task.status,
+        message=task.message,
+        file_type=getattr(task, "file_type", None),
+        created_at=task.created_at,
+        excel_path=getattr(task, "excel_path", None),
+        insight_pdf_url=getattr(task, "insight_pdf_url", None),
+        file_path=getattr(task, "file_path", None),
+    )
 
 
 @app.post("/admin/cleanup-media")
@@ -1378,7 +1641,5 @@ if __name__ == "__main__":
         os.path.join(os.path.dirname(__file__), "..", "MBTInterpret")
     )
     sys.path.append(parent_dir)
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    os.makedirs(INPUT_DIR, exist_ok=True)
 
     uvicorn.run("server:app", host="127.0.0.1", port=3000, reload=True)

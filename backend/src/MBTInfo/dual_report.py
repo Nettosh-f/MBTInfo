@@ -4,10 +4,10 @@ from pathlib import Path
 
 from weasyprint import HTML
 
-from .consts import MEDIA_PATH, OUTPUT_PATH
+from .consts import MEDIA_PATH, OUTPUT_PATH, TEMP_DIR
 from .data_extractor import extract_and_save_text
 from .image_manipulation import create_all_graphs
-from .utils import get_all_info
+from .utils import get_all_info, sanitize_path_component
 
 
 def _first_or_none(iterable):
@@ -34,14 +34,12 @@ def _encode_or_placeholder(p):
         return create_placeholder_image_base64()
 
 
-def find_graph_by_suffix(
-    media_tmp_root: str, identifier: str, suffix: str
-) -> str | None:
+def find_graph_by_suffix(identifier: str, suffix: str) -> str | None:
     """
     Look for any file that ends with '_<suffix>' under .../tmp/<identifier>/.
     We first try the common 'final' subdir, then fall back to a recursive search.
     """
-    root = Path(media_tmp_root) / identifier
+    root = Path(os.path.join(TEMP_DIR, "media", identifier))
 
     # 1) Try the common final dir (fast path)
     final_dir = root / "final"
@@ -67,7 +65,7 @@ def sanitize_filename(filename):
     Sanitize filename by replacing spaces and other problematic characters with hyphens
     """
     # Remove file extension first
-    name, ext = os.path.splitext(filename)
+    name, ext = os.path.splitext(os.path.basename(filename))
     # Replace spaces and other problematic characters with hyphens
     sanitized = name.replace(" ", "-").replace("_", "-")
     # Remove multiple consecutive hyphens
@@ -76,13 +74,6 @@ def sanitize_filename(filename):
     # Remove leading/trailing hyphens
     sanitized = sanitized.strip("-")
     return sanitized + ext
-
-
-def sanitize_path_component(path_component):
-    """
-    Sanitize a path component (folder or file name) by replacing spaces with hyphens
-    """
-    return path_component.replace(" ", "-").replace("_", "-")
 
 
 def encode_image_base64(path):
@@ -151,7 +142,6 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
     text2 = os.path.join(text_folder, f"{sanitized_name2}_text.txt")
 
     # Debug: Check if files exist
-    print("DEBUG: Looking for text files:")
     print(f"  PDF1 text file: {text1} (exists: {os.path.exists(text1)})")
     print(f"  PDF2 text file: {text2} (exists: {os.path.exists(text2)})")
 
@@ -169,7 +159,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
     second_name_part = sanitize_path_component(os.path.basename(pdf2_path)[:6])
     identifier = f"{first_name_part}_{second_name_part}"
 
-    media_path = str(MEDIA_PATH / "tmp" / identifier)
+    media_path = os.path.join(TEMP_DIR, "media", identifier)
 
     try:
         create_all_graphs(pdf1_path, pdf2_path, media_path)
@@ -182,8 +172,6 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
     # Construct the output directory for the PDF
     output_dir = output_pdf_path
 
-    # Define all expected image paths
-    media_tmp_root = str(MEDIA_PATH / "tmp")
     graph_suffixes = [
         "first_graph_final.png",
         "EIGraph_final.png",
@@ -193,9 +181,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
         "dominant_final_final.png",
     ]
 
-    all_images_path = [
-        find_graph_by_suffix(media_tmp_root, identifier, suf) for suf in graph_suffixes
-    ]
+    all_images_path = [find_graph_by_suffix(identifier, suf) for suf in graph_suffixes]
     # Check which images actually exist
     print("DEBUG: Checking for generated images:")
     for i, p in enumerate(all_images_path):

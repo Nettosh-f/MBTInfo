@@ -2,6 +2,7 @@ import os
 import webbrowser
 
 from .consts import (
+    FACET_CHART_LIST,
     MEDIA_PATH,
     PERSONAL_REPORT_MEDIA,
     PROJECT_BASE_DIR,
@@ -136,7 +137,16 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
 
     try:
         # Try using WeasyPrint first (more reliable for complex layouts)
+        import logging
+
         from weasyprint import HTML
+
+        # Suppress verbose logs from weasyprint and fontTools
+        logging.getLogger("weasyprint").setLevel(logging.WARNING)
+        logging.getLogger("fontTools").setLevel(logging.WARNING)
+        logging.getLogger("fontTools.subset").setLevel(logging.WARNING)
+        logging.getLogger("fontTools.ttLib").setLevel(logging.WARNING)
+        logging.getLogger("fontTools.subset.timer").setLevel(logging.WARNING)
 
         HTML(string=html_content).write_pdf(output_path)
         print(f"PDF generated successfully using WeasyPrint: {output_path}")
@@ -178,7 +188,6 @@ def generate_html_report(
 
     # Helper function to map facet name to image path
     def get_facet_image_path(facet_name):
-        from consts import FACET_CHART_LIST
 
         project_root = PROJECT_BASE_DIR
         # Get the PDF file name from the input_pdf_path

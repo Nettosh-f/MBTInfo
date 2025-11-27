@@ -3,12 +3,13 @@ import os
 import numpy as np
 from PIL import Image
 
+from .consts import MEDIA_PATH
 from .extract_image import (
     extract_all_facet_graphs,
     extract_dominant_graph,
     extract_first_graph,
 )
-from .utils import sanitize_filename, sanitize_path_component
+from .utils import sanitize_path_component
 
 
 def remove_background_colors(img_path, target_colors, tolerance=60, output_path=None):
@@ -61,7 +62,6 @@ def remove_background_colors(img_path, target_colors, tolerance=60, output_path=
 
         # Save result
         output_img.save(output_path)
-        print(f"DEBUG: Background colors removed, saved to: {output_path}")
 
     except Exception as e:
         print(f"An error occurred in remove_background_colors: {e}")
@@ -96,7 +96,6 @@ def crop_image(img_path, crop_box, output_path=None):
 
         # Save the cropped image
         cropped_img.save(output_path)
-        print(f"DEBUG: Image cropped and saved to: {output_path}")
 
     except Exception as e:
         print(f"An error occurred in crop_image: {e}")
@@ -135,7 +134,6 @@ def convert_blue_to_red(image_path: str, output_path: str) -> None:
 
         # Save the result
         Image.fromarray(data).save(output_path)
-        print(f"DEBUG: Blue to red conversion completed, saved to: {output_path}")
 
     except Exception as e:
         print(f"An error occurred in convert_blue_to_red: {e}")
@@ -166,7 +164,6 @@ def convert_to_pure_blue(image_path: str, output_path: str) -> None:
 
         # Save the result
         Image.fromarray(data).save(output_path)
-        print(f"DEBUG: Pure blue conversion completed, saved to: {output_path}")
 
     except Exception as e:
         print(f"An error occurred in convert_to_pure_blue: {e}")
@@ -175,11 +172,6 @@ def convert_to_pure_blue(image_path: str, output_path: str) -> None:
 
 def create_red_graph(image_path: str, output_path: str, identifier: str) -> None:
     try:
-        print("DEBUG: Starting create_red_graph")
-        print(f"  Input image: {image_path}")
-        print(f"  Output path: {output_path}")
-        print(f"  Identifier: {identifier}")
-
         # Check if input image exists
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Input image not found: {image_path}")
@@ -192,8 +184,6 @@ def create_red_graph(image_path: str, output_path: str, identifier: str) -> None
         cropped_output_path = os.path.join(tmp_dir, f"{identifier}_red_cropped.png")
         crop_box = (231, 134, 748, 449)
 
-        print(f"DEBUG: About to crop image to: {cropped_output_path}")
-
         # Crop the image and save it to the cropped_output_path
         crop_image(image_path, crop_box, output_path=cropped_output_path)
 
@@ -202,8 +192,6 @@ def create_red_graph(image_path: str, output_path: str, identifier: str) -> None
             raise FileNotFoundError(
                 f"Cropped image was not created: {cropped_output_path}"
             )
-
-        print(f"DEBUG: Cropped image created successfully: {cropped_output_path}")
 
         background_colors = [
             (193, 206, 228),
@@ -219,28 +207,17 @@ def create_red_graph(image_path: str, output_path: str, identifier: str) -> None
             (122, 123, 118),
         ]
 
-        print("DEBUG: About to remove background colors")
         remove_background_colors(cropped_output_path, background_colors, tolerance=35)
 
-        print("DEBUG: About to convert blue to red")
         convert_blue_to_red(cropped_output_path, output_path=output_path)
-
-        print("DEBUG: create_red_graph completed successfully")
 
     except Exception as e:
         print(f"ERROR in create_red_graph: {e}")
-        print(f"  Input image: {image_path}")
-        print(f"  Output path: {output_path}")
-        print(f"  Identifier: {identifier}")
         raise
 
 
 def create_blue_graph(image_path: str, output_path: str, identifier: str) -> None:
     try:
-        print("DEBUG: Starting create_blue_graph")
-        print(f"  Input image: {image_path}")
-        print(f"  Output path: {output_path}")
-        print(f"  Identifier: {identifier}")
 
         # Check if input image exists
         if not os.path.exists(image_path):
@@ -254,7 +231,6 @@ def create_blue_graph(image_path: str, output_path: str, identifier: str) -> Non
             tmp_dir, f"{identifier}_cropped_image_blue.png"
         )
 
-        print(f"DEBUG: About to crop image to: {cropped_output_path}")
         crop_image(image_path, crop_box, output_path=cropped_output_path)
 
         # Verify the cropped file was created
@@ -280,13 +256,9 @@ def create_blue_graph(image_path: str, output_path: str, identifier: str) -> Non
             (122, 123, 118),
         ]
 
-        print("DEBUG: About to remove background colors")
         remove_background_colors(cropped_output_path, background_colors, tolerance=35)
 
-        print("DEBUG: About to convert to pure blue")
         convert_to_pure_blue(cropped_output_path, output_path=output_path)
-
-        print("DEBUG: create_blue_graph completed successfully")
 
     except Exception as e:
         print(f"ERROR in create_blue_graph: {e}")
@@ -310,7 +282,6 @@ def overlay_images(background_path, overlay_path, output_path, position=(0, 0)):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         background.save(output_path)
-        print(f"DEBUG: Images overlaid successfully, saved to: {output_path}")
 
     except Exception as e:
         print(f"ERROR in overlay_images: {e}")
@@ -321,7 +292,7 @@ def ensure_directory_exists(directory_path):
     """Ensure that a directory exists; if not, create it."""
     try:
         os.makedirs(directory_path, exist_ok=True)
-        print(f"DEBUG: Directory ensured: {directory_path}")
+
     except Exception as e:
         print(f"ERROR creating directory {directory_path}: {e}")
         raise
@@ -387,7 +358,6 @@ def resize_image(image_path, output_path, scale_factor=2, preserve_colors=False)
 
         # Save the result
         result_img.save(output_path)
-        print(f"DEBUG: Image resized successfully, saved to: {output_path}")
 
     except Exception as e:
         print(f"ERROR in resize_image: {e}")
@@ -407,40 +377,28 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
         dict: Dictionary with graph types as keys and paths to final images as values
     """
     try:
-        print("DEBUG: Starting create_dual_facet_graphs")
+
         print(f"  First PDF: {first_pdf_path}")
         print(f"  Second PDF: {second_pdf_path}")
         print(f"  Output dir: {output_dir}")
 
         # Extract the first 6 letters of each file name for identifier
-        first_name_part = sanitize_path_component(os.path.basename(first_pdf_path)[:6])
-        first_name = sanitize_filename(
-            os.path.basename(first_pdf_path).replace(".pdf", "")
-        )
-        second_name_part = sanitize_path_component(
-            os.path.basename(second_pdf_path)[:6]
-        )
-        second_name = sanitize_filename(
-            os.path.basename(second_pdf_path).replace(".pdf", "")
-        )
-        identifier = f"{first_name_part}_{second_name_part}"
-
-        print(f"DEBUG: Using identifier: {identifier}")
+        first_name = sanitize_path_component(first_pdf_path)
+        second_name = sanitize_path_component(second_pdf_path)
+        identifier = f"{first_name}_{second_name}"
 
         # Set up directories
         if output_dir is None:
-            output_dir = r"F:\projects\MBTInfo\backend\media\tmp"
+            output_dir = f"{MEDIA_PATH}/tmp"
 
         tmp_dir = output_dir
         final_dir = os.path.join(tmp_dir, "final")
         ensure_directory_exists(tmp_dir)
         ensure_directory_exists(final_dir)
 
-        print(f"DEBUG: Extracting graphs from {first_name_part}'s PDF...")
         first_pdf_output_dir = os.path.join(output_dir, first_name)
         extract_all_facet_graphs(first_pdf_path, output_dir)
 
-        print(f"DEBUG: Extracting graphs from {second_name_part}'s PDF...")
         second_pdf_output_dir = os.path.join(output_dir, second_name)
         extract_all_facet_graphs(second_pdf_path, output_dir)
 
@@ -452,10 +410,9 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
 
         # Process each graph type
         for graph_type in graph_types:
-            print(f"DEBUG: Processing {graph_type}...")
 
             # Define background image path based on graph type
-            background_path = rf"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\background{graph_type[:2]}.jpeg"
+            background_path = rf"{MEDIA_PATH}/Dual_Report_Media/backgrounds/background{graph_type[:2]}.jpeg"
 
             # Define paths for first and second PDFs' graphs
             page_num = (
@@ -473,14 +430,6 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
             )
             second_graph_path = os.path.join(
                 second_pdf_output_dir, "screenshots", f"page{page_num}_{graph_type}.png"
-            )
-
-            print("DEBUG: Looking for graph files:")
-            print(
-                f"  First: {first_graph_path} (exists: {os.path.exists(first_graph_path)})"
-            )
-            print(
-                f"  Second: {second_graph_path} (exists: {os.path.exists(second_graph_path)})"
             )
 
             # Check if the required graph files exist
@@ -536,9 +485,6 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
             # Store the output path
             output_paths[graph_type] = final_output_path
 
-            print(f"DEBUG: Completed {graph_type} graph")
-
-        print("DEBUG: All graphs created successfully!")
         return output_paths
 
     except Exception as e:
@@ -548,24 +494,23 @@ def create_dual_facet_graphs(first_pdf_path, second_pdf_path, output_dir=None):
 
 def create_first_graph(first_pdf_path, second_pdf_path, output_dir):
     try:
-        first_name_part = sanitize_path_component(os.path.basename(first_pdf_path)[:6])
-        second_name_part = sanitize_path_component(
-            os.path.basename(second_pdf_path)[:6]
+        first_name = sanitize_path_component(first_pdf_path)
+
+        second_name = sanitize_path_component(second_pdf_path)
+        identifier = f"{first_name}_{second_name}"
+        background_path = (
+            f"{MEDIA_PATH}/Dual_Report_Media/backgrounds/backgroundMBTI.jpeg"
         )
-        identifier = f"{first_name_part}_{second_name_part}"
-        background_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\backgroundMBTI.jpeg"
 
         # Set up directories
         if output_dir is None:
-            output_dir = r"F:\projects\MBTInfo\backend\media\tmp"
+            output_dir = f"{MEDIA_PATH}/tmp"
 
         tmp_dir = output_dir
         final_dir = os.path.join(tmp_dir, "final")
         ensure_directory_exists(tmp_dir)
         ensure_directory_exists(final_dir)
 
-        print(f"DEBUG: Extracting graph from {first_name_part}'s PDF...")
-        print(f"DEBUG: Extracting graph from {second_name_part}'s PDF...")
         target_colors = [
             (192, 208, 167),
             (206, 218, 187),
@@ -591,34 +536,34 @@ def create_first_graph(first_pdf_path, second_pdf_path, output_dir):
         remove_background_colors(first_graph_one_path, target_colors, tolerance=60)
         remove_background_colors(first_graph_two_path, target_colors, tolerance=60)
 
-        convert_blue_to_red(first_graph_one_path, rf"{tmp_dir}\first_graph_one_red.png")
+        convert_blue_to_red(first_graph_one_path, f"{tmp_dir}/first_graph_one_red.png")
         convert_to_pure_blue(
-            first_graph_two_path, rf"{tmp_dir}\first_graph_two_blue.png"
+            first_graph_two_path, f"{tmp_dir}/first_graph_two_blue.png"
         )
 
         resized_red_path = os.path.join(tmp_dir, f"{identifier}_one_red_resized.png")
         resized_blue_path = os.path.join(tmp_dir, f"{identifier}_two_blue_resized.png")
 
         resize_image(
-            rf"{tmp_dir}\first_graph_one_red.png", resized_red_path, scale_factor=1.4
+            f"{tmp_dir}/first_graph_one_red.png", resized_red_path, scale_factor=1.4
         )
         resize_image(
-            rf"{tmp_dir}\first_graph_two_blue.png", resized_blue_path, scale_factor=1.4
+            f"{tmp_dir}/first_graph_two_blue.png", resized_blue_path, scale_factor=1.4
         )
 
         overlay_images(
             resized_blue_path,
             resized_red_path,
-            rf"{tmp_dir}\first_graph_combined.png",
+            f"{tmp_dir}/first_graph_combined.png",
             position=(0, 12),
         )
         overlay_images(
             background_path,
-            rf"{tmp_dir}\first_graph_combined.png",
-            rf"{final_dir}\{identifier}_first_graph_final.png",
+            f"{tmp_dir}/first_graph_combined.png",
+            f"{final_dir}/{identifier}_first_graph_final.png",
             position=(328, 106),
         )
-        return rf"{final_dir}\{identifier}_first_graph_final.png"
+        return f"{final_dir}/{identifier}_first_graph_final.png"
 
     except Exception as e:
         print(f"ERROR in create_first_graph: {e}")
@@ -632,20 +577,20 @@ def create_dominant_graph(first_pdf_path, second_pdf_path, output_dir):
             os.path.basename(second_pdf_path)[:6]
         )
         identifier = f"{first_name_part}_{second_name_part}"
-        background_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\white_1180x480.png"
-        text_path = r"F:\projects\MBTInfo\backend\media\Dual_Report_Media\backgrounds\backgroundtext.png"
+        background_path = (
+            f"{MEDIA_PATH}/Dual_Report_Media/backgrounds/white_1180x480.png"
+        )
+        text_path = f"{MEDIA_PATH}/Dual_Report_Media/backgrounds/backgroundtext.png"
 
         # Set up directories
         if output_dir is None:
-            output_dir = r"F:\projects\MBTInfo\backend\media\tmp"
+            output_dir = f"{MEDIA_PATH}/tmp"
 
         tmp_dir = output_dir
         final_dir = os.path.join(tmp_dir, "final")
         ensure_directory_exists(tmp_dir)
         ensure_directory_exists(final_dir)
 
-        print(f"DEBUG: Extracting graph from {first_name_part}'s PDF...")
-        print(f"DEBUG: Extracting graph from {second_name_part}'s PDF...")
         dom_graph_one_path = extract_dominant_graph(first_pdf_path, tmp_dir)
         dom_graph_two_path = extract_dominant_graph(second_pdf_path, tmp_dir)
 
@@ -665,23 +610,23 @@ def create_dominant_graph(first_pdf_path, second_pdf_path, output_dir):
         overlay_images(
             background_path,
             dom_graph_one_path,
-            rf"{tmp_dir}\dominant_graph_combined.png",
+            f"{tmp_dir}/dominant_graph_combined.png",
             position=(90, 140),
         )
         overlay_images(
-            rf"{tmp_dir}\dominant_graph_combined.png",
+            f"{tmp_dir}/dominant_graph_combined.png",
             dom_graph_two_path,
-            rf"{final_dir}\{identifier}_dominant_graph_final.png",
+            f"{final_dir}/{identifier}_dominant_graph_final.png",
             position=(634, 140),
         )
         overlay_images(
-            rf"{final_dir}\{identifier}_dominant_graph_final.png",
+            f"{final_dir}/{identifier}_dominant_graph_final.png",
             text_path,
-            rf"{final_dir}\{identifier}_dominant_final_final.png",
+            f"{final_dir}/{identifier}_dominant_final_final.png",
             position=(84, 36),
         )
-        print(f"DEBUG: Creating final image for {identifier}'s dominant graph...")
-        return rf"{final_dir}\{identifier}_dominant_graph_final.png"
+
+        return rf"{final_dir}/{identifier}_dominant_graph_final.png"
 
     except Exception as e:
         print(f"ERROR in create_dominant_graph: {e}")
@@ -689,8 +634,9 @@ def create_dominant_graph(first_pdf_path, second_pdf_path, output_dir):
 
 
 def create_all_graphs(first_pdf_path, second_pdf_path, output_dir):
+    # TODO: add return values for the graphs
     try:
-        print("DEBUG: Starting create_all_graphs")
+
         facet_graphs = create_dual_facet_graphs(
             first_pdf_path, second_pdf_path, output_dir
         )
@@ -698,8 +644,10 @@ def create_all_graphs(first_pdf_path, second_pdf_path, output_dir):
         dominant_graph = create_dominant_graph(
             first_pdf_path, second_pdf_path, output_dir
         )
-        print(f"All graphs created successfully! at:\n{output_dir}\\final")
-        print(f"{facet_graphs}\n{first_graph}\n{dominant_graph}")
+        print(
+            f"All graphs created successfully! at: {os.path.join(output_dir, 'final')}"
+        )
+        print(f"{facet_graphs} {first_graph} {dominant_graph}")
         return
 
     except Exception as e:
@@ -721,7 +669,7 @@ if __name__ == "__main__":
     identifier = f"{first_name_part}_{second_name_part}"
 
     # Set unified output directory
-    output_dir = os.path.join(r"F:\projects\MBTInfo\backend\media\tmp", identifier)
+    output_dir = os.path.join(f"{MEDIA_PATH}/tmp", identifier)
 
     # Run full graph generation
     create_all_graphs(first_pdf_path, second_pdf_path, output_dir)

@@ -1048,7 +1048,7 @@ def get_facet_descriptor(filepath: str, facet: str) -> str:
 
 
 def sanitize_filename(filename: str) -> str:
-    name, ext = os.path.splitext(filename)
+    name, ext = os.path.splitext(os.path.basename(filename))
     sanitized = name.replace(" ", "-").replace("_", "-")
     while "--" in sanitized:
         sanitized = sanitized.replace("--", "-")
@@ -1060,7 +1060,8 @@ def sanitize_path_component(path_component):
     """
     Sanitize a path component (folder or file name) by replacing spaces with hyphens
     """
-    return path_component.replace(" ", "-").replace("_", "-")
+    name, _ = os.path.splitext(os.path.basename(path_component))
+    return name.replace(" ", "-").replace("_", "-")
 
 
 if __name__ == "__main__":

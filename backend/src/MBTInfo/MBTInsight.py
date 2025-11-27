@@ -182,7 +182,10 @@ def calculate_dichotomy_analysis(mbti_df, total_people):
 
 
 def convert_pdf_to_images(pdf_path):
-    return convert_from_path(pdf_path, dpi=PDF_IMAGE_DPI, poppler_path=POPPLER_PATH)
+    kwargs = {"dpi": PDF_IMAGE_DPI}
+    if POPPLER_PATH:
+        kwargs["poppler_path"] = str(POPPLER_PATH)
+    return convert_from_path(pdf_path, **kwargs)
 
 
 def convert_image_to_base64_url(image):
@@ -226,10 +229,10 @@ def ask_gpt_with_images(content_blocks, prompt, model=MODEL_GPT4O):
         {"role": "user", "content": content_blocks},
     ]
     response = openai.chat.completions.create(model=model, messages=messages)
-    print("AI Prompt Call:")
-    print("Model:", model)
-    print("Messages:", messages)
-    return response.choices[0].message.content.strip()
+    content = response.choices[0].message.content
+    if content is None:
+        return ""
+    return content.strip()
 
 
 def process_pdf_with_gpt(pdf_path, content_blocks):
@@ -272,13 +275,14 @@ def process_pdf_with_gpt(pdf_path, content_blocks):
 
     print("Validation:", validation_response)
 
-    if validation_response.upper().startswith("YES"):
-        print("Generating insight...")
+    if validation_response and validation_response.upper().startswith("YES"):
         insight_response = ask_gpt_with_images(all_blocks, PROMPT)
-        print(insight_response)
+        
+        if not insight_response:
+            return {"status": "error", "reason": "Failed to generate insight"}
+        
         insight_response = insight_response.replace("```html", "")
         insight_response = insight_response.replace("```", "")
-        print(insight_response)
         # Create the insight.html file
         pdf_stub = os.path.splitext(os.path.basename(pdf_path))[0][
             :INSIGHT_FILENAME_TRUNCATE_LENGTH
@@ -329,7 +333,10 @@ def upload_file_and_ask_question(
         ],
     )
 
-    return completion.choices[0].message.content.strip()
+    content = completion.choices[0].message.content
+    if content is None:
+        return ""
+    return content.strip()
 
 
 if __name__ == "__main__":

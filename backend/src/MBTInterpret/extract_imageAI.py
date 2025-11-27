@@ -6,6 +6,21 @@ from .constsAI import MEDIA_PATH
 from .utilsAI import get_mbti_type_from_pdf
 
 
+def get_pdf_identifier(pdf_path: str) -> str:
+    """
+    Extract the 6-character identifier from a PDF filename (without extension).
+    
+    Args:
+        pdf_path (str): Path to the PDF file
+        
+    Returns:
+        str: First 6 characters of the filename without extension
+    """
+    pdf_filename = os.path.basename(pdf_path)
+    pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
+    return pdf_name_without_ext
+
+
 def extract_graph_from_pdf(
     pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2
 ):
@@ -78,8 +93,7 @@ def extract_multiple_graphs_from_pdf(
     page_rect = page.rect
 
     # Create a specific output directory based on PDF filename
-    pdf_filename = os.path.basename(pdf_path)
-    pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
+    pdf_identifier = get_pdf_identifier(pdf_path)
     specific_output_dir = output_dir
     os.makedirs(specific_output_dir, exist_ok=True)
 
@@ -104,7 +118,7 @@ def extract_multiple_graphs_from_pdf(
         pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), clip=graph_rect)
 
         # Create output filename using the name indicator
-        base_filename = f"{pdf_name_without_ext[:6]}_{name_indicator}.png"
+        base_filename = f"{pdf_identifier}_{name_indicator}.png"
         output_image_path = os.path.join(specific_output_dir, base_filename)
 
         # Check if this filename has been used in this run
@@ -162,10 +176,9 @@ def extract_first_graph(pdf_path, output_dir):
         rect_coords = (0.1, 0.639, 0.9, 0.805)  # Example coordinates
 
     # Define the output image path
-    pdf_filename = os.path.basename(pdf_path)
-    pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
+    pdf_identifier = get_pdf_identifier(pdf_path)
     output_image_path = os.path.join(
-        output_dir, f"{pdf_name_without_ext[:6]}_first_graph.png"
+        output_dir, f"{pdf_identifier}_first_graph.png"
     )
 
     # Extract the graph from the PDF
@@ -193,10 +206,9 @@ def extract_dominant_graph(pdf_path, output_dir):
     rect_coords = (0.31, 0.28, 0.68, 0.455)  # Example coordinates
 
     # Define the output image path
-    pdf_filename = os.path.basename(pdf_path)
-    pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
+    pdf_identifier = get_pdf_identifier(pdf_path)
     output_image_path = os.path.join(
-        output_dir, f"{pdf_name_without_ext[:6]}_dominant_graph.png"
+        output_dir, f"{pdf_identifier}_dominant_graph.png"
     )
 
     # Extract the graph from the PDF
@@ -216,10 +228,9 @@ def extract_last_graph(pdf_path, output_dir):
     rect_coords = (0.200, 0.30, 0.810, 0.73)  # Example coordinates
 
     # Define the output image path
-    pdf_filename = os.path.basename(pdf_path)
-    pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
+    pdf_identifier = get_pdf_identifier(pdf_path)
     output_image_path = os.path.join(
-        output_dir, f"{pdf_name_without_ext[:6]}_step_II_results_graph.png"
+        output_dir, f"{pdf_identifier}_step_II_results_graph.png"
     )
 
     # Extract the graph from the PDF
@@ -233,7 +244,8 @@ def extract_last_graph(pdf_path, output_dir):
 
 
 def extract_all_graphs(pdf_path, output_dir):
-    identifier = os.path.basename(pdf_path)[:6]
+    """Extract all graphs from a PDF and return their paths."""
+    identifier = get_pdf_identifier(pdf_path)
     extract_all_facet_graphs(pdf_path, output_dir)
     all_graph_path = [
         extract_first_graph(pdf_path, output_dir),  # 0
@@ -249,6 +261,6 @@ def extract_all_graphs(pdf_path, output_dir):
 
 if __name__ == "__main__":
     path_to_pdf = r"F:\projects\MBTInfo\input\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a.pdf"
-    name = os.path.basename(path_to_pdf).replace(".pdf", "")[:6]
+    name = get_pdf_identifier(path_to_pdf)
     # Read and split text
     extract_all_graphs(path_to_pdf, MEDIA_PATH / "tmp" / name)

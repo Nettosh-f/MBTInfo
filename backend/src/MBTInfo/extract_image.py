@@ -1,7 +1,8 @@
 import os
 
-import fitz  # PyMuPDF
+import fitz
 
+from .consts import MEDIA_PATH  # PyMuPDF
 from .utils import get_mbti_type_from_pdf, sanitize_filename
 
 
@@ -216,7 +217,7 @@ def extract_dominant_graph(pdf_path, output_dir):
 if __name__ == "__main__":
     path_to_pdf = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
     name = os.path.basename(path_to_pdf).replace(".pdf", "")[:6]
-    path_to_output_dir = os.path.join(r"F:\projects\MBTInfo\backend\media\tmp", name)
+    path_to_output_dir = os.path.join(f"{MEDIA_PATH}/tmp", name)
 
     extract_first_graph(path_to_pdf, path_to_output_dir)
 

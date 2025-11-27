@@ -612,7 +612,7 @@ MEDIA_DIRECTORY_KEEP_ITEMS = {
     "full_logo.png",
 }
 
-TEMP_DIR = tempfile.mkdtemp()
+TEMP_DIR = "/tmp/tmp_pdf"
 OUTPUT_DIR = os.getenv("OUTPUT_DIR", str(PROJECT_BASE_DIR / "output"))
 INPUT_DIR = os.getenv("INPUT_DIR", str(PROJECT_BASE_DIR / "input"))
 OUTPUT_DIR_FACET_GRAPH = os.getenv(

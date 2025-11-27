@@ -1,18 +1,21 @@
 import os
+import tempfile
 from typing import Union
 
 import PyPDF2
 
+from .extract_imageAI import get_pdf_identifier
+
 
 def process_pdf_file(
-    file_path: str, lines_to_remove_config: dict[int, Union[str, list[int]]]
+    file_path: str,
+    lines_to_remove_config: dict[int, Union[str, list[int]]],
+    output_dir: str,
 ) -> str:
 
-    # Create the output directory in the project root
-    output_dir = r"F:\projects\MBTInfo\output\textfiles"
     os.makedirs(output_dir, exist_ok=True)
 
-    base_name = os.path.splitext(os.path.basename(file_path))[0][:6]
+    base_name = get_pdf_identifier(file_path)
     raw_output_path = os.path.join(output_dir, f"{base_name}_raw.txt")
     cleaned_output_path = os.path.join(output_dir, f"{base_name}_cleaned.txt")
 
@@ -65,7 +68,7 @@ def process_pdf_file(
 
 if __name__ == "__main__":
     filepath_test = r"F:\projects\MBTInfo\input\ADAM-POMERANTZ-267149-e4b6edb5-1a5f-ef11-bdfd-6045bd04b01a.pdf"
-    output_folder = r"F:\projects\MBTInfo\output\textfiles"
+    output_folder = tempfile.mkdtemp(prefix="mbti_extract_")
     lines_to_remove_by_page = {
         0: [0, 1, 2, 3, 4, 5, 6, 7],
         1: "ALL",  # Skip entire page
