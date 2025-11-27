@@ -1,4 +1,4 @@
-const BASE_URL = 'https://desktop-sm21qic.tail63492a.ts.net';
+const BASE_URL = window.ENV?.API_URL || '/api';
 const insightUrlMap = {};
 let currentGroupTaskId = null;
 let lastInsightPdfFilename = null;
@@ -156,37 +156,6 @@ function hideStatus(elementId) {
 }
 
 
-document.getElementById('translateForm').addEventListener('submit', async (e) => {
-e.preventDefault();
-const fileInput = document.getElementById('translateFile');
-
-if (!fileInput.files[0]) {
-    alert('Please select a PDF file');
-    return;
-}
-
-try {
-    showStatus('translateStatus', '<strong>PROCESSING:</strong> Processing translation request...', 'processing');
-
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-
-    const response = await fetch(`${BASE_URL}/translate`, {
-        method: 'POST',
-        body: formData
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-        pollTaskStatus(result.task_id, 'translateStatus');
-    } else {
-        showStatus('translateStatus', `<strong>ERROR:</strong> ${result.detail}`, 'error');
-    }
-} catch (error) {
-    showStatus('translateStatus', `<strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
-}
-});
 function updateProgress(elementId, percent) {
 const progressFill = document.querySelector(`#${elementId} .progress-fill`);
 if (progressFill) {
@@ -220,7 +189,7 @@ function addDownloadButton(elementId, taskId, filename, label = 'Download Report
     statusEl.appendChild(downloadBtn);
 }
 // Enable Get Insight button after PDF is generated
-function enableGetInsightButton(formId, downloadUrl, statusId) {
+function enableGetInsightButton(formId, taskId, statusId) {
     const form = document.getElementById(formId);
     if (form) {
         const btn = form.querySelector('button.get-insight-btn');
@@ -232,8 +201,7 @@ function enableGetInsightButton(formId, downloadUrl, statusId) {
             btn.onclick = null; // Remove any existing click handler!
             if (formId === 'dualForm') {
                 btn.addEventListener("click", function handler() {
-                    // Save downloadUrl for use after user selects
-                    window.__dualDownloadUrl = downloadUrl;
+                    window.__dualTaskId = taskId;
                     window.__dualStatusId = statusId;
                     window.__dualFormId = formId;
                     window.__dualBtnRef = btn;
@@ -250,13 +218,10 @@ function enableGetInsightButton(formId, downloadUrl, statusId) {
                     btn.style.background = "#a3a3a3";
                     btn.style.color = "#fff";
 
-                    const formData = new FormData();
-                    formData.append('download_url', downloadUrl);
 
                     try {
-                        const response = await fetch(`${BASE_URL}/insight-by-download-url`, {
+                        const response = await fetch(`${BASE_URL}/insight/${taskId}`, {
                             method: 'POST',
-                            body: formData
                         });
                         const result = await response.json();
 
@@ -270,7 +235,7 @@ function enableGetInsightButton(formId, downloadUrl, statusId) {
                         }
                     } catch (error) {
                         hideLoadingOverlay();
-                        showStatus(statusId, `<strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
+                        showStatus(statusId, `<strong>ERROR:</strong> ${error.message}`, 'error');
                         btn.disabled = false;
                         btn.textContent = "Get Insight";
                     }
@@ -334,6 +299,10 @@ function showDownloadButton(formId, downloadUrl, filename = null) {
         generateBtn = document.getElementById('dualGenerateBtn');
         downloadBtn = document.getElementById('dualDownloadBtn');
         filename = filename || 'dual_report.pdf';
+    } else if (formId === 'translateForm') {
+        generateBtn = document.getElementById('translateGenerateBtn');
+        downloadBtn = document.getElementById('translateDownloadBtn');
+        filename = filename || 'translated_report.pdf';
     }
 
     if (generateBtn && downloadBtn) {
@@ -348,20 +317,17 @@ function showDownloadButton(formId, downloadUrl, filename = null) {
         // Setup download functionality
         downloadBtn.onclick = async function(e) {
             e.preventDefault();
-
+            console.log(downloadUrl)
             try {
-                const fullDownloadUrl = downloadUrl.startsWith('http')
-                    ? downloadUrl
-                    : `${BASE_URL}${downloadUrl}`;
 
-                const response = await fetch(fullDownloadUrl);
+                const response = await fetch(downloadUrl);
                 if (!response.ok) {
                     throw new Error('Download failed');
                 }
 
                 // Extract filename from URL if not provided
                 if (!filename) {
-                    const urlParts = fullDownloadUrl.split('/');
+                    const urlParts = downloadUrl.split('/');
                     filename = urlParts[urlParts.length - 1] || 'report.pdf';
                 }
 
@@ -379,6 +345,9 @@ function resetFormState(formId) {
     if (formId === 'personalForm') {
         generateBtn = document.getElementById('personalGenerateBtn');
         downloadBtn = document.getElementById('personalDownloadBtn');
+    } else if (formId === 'translateForm') {
+        generateBtn = document.getElementById('translateGenerateBtn');
+        downloadBtn = document.getElementById('translateDownloadBtn');
     } else if (formId === 'groupZipForm') {
         generateBtn = document.getElementById('groupGenerateBtn');
         downloadBtn = document.getElementById('groupDownloadBtn');
@@ -433,17 +402,22 @@ async function pollTaskStatus(taskId, statusElementId, formId) {
                 hideLoadingOverlay();
 
                 // Handle download button for all form types
-                if (status.download_url && (formId === 'personalForm' || formId === 'groupZipForm' || formId === 'dualForm')) {
-                    // Extract filename from URL
-                    const urlParts = status.download_url.split('/');
-                    const filename = urlParts[urlParts.length - 1];
-
-                    showDownloadButton(formId, status.download_url, filename);
+                if (formId === 'personalForm' || formId === 'groupZipForm' || formId === 'dualForm' || formId === 'translateForm') {
+                    // Determine which endpoint to use based on available file types
+                    let downloadUrl;
+                    if (status.excel_path) {
+                        // Task has Excel file - use Excel endpoint
+                        downloadUrl = `${BASE_URL}/report/${taskId}/excel`;
+                    } else {
+                        // Task has PDF file - use PDF endpoint
+                        downloadUrl = `${BASE_URL}/report/${taskId}/pdf`;
+                    }
+                    showDownloadButton(formId, downloadUrl, null);
                 }
 
                 // Enable Get Insight button for PDF reports
-                if (status.download_url && status.download_url.endsWith('.pdf')) {
-                    enableGetInsightButton(formId, status.download_url, statusElementId);
+                if (status.file_type === 'pdf_view') {
+                    enableGetInsightButton(formId, taskId, statusElementId);
                 }
 
                 return;
@@ -498,7 +472,7 @@ document.getElementById('personalForm').addEventListener('submit', async (e) => 
         }
     } catch (error) {
         hideLoadingOverlay();
-        showStatus('personalStatus', ` <strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
+        showStatus('personalStatus', ` <strong>ERROR:</strong> ${error.message}`, 'error');
     }
 });
 
@@ -546,7 +520,7 @@ document.getElementById('dualForm').addEventListener('submit', async (e) => {
             showStatus('dualStatus', `<strong>ERROR:</strong> ${result.detail}`, 'error');
         }
     } catch (error) {
-        showStatus('dualStatus', `<strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
+        showStatus('dualStatus', `<strong>ERROR:</strong> ${error.message}`, 'error');
     }
 });
 
@@ -560,6 +534,12 @@ document.getElementById('translateForm').addEventListener('submit', async (e) =>
     }
 
     try {
+        const translateForm = document.getElementById('translateForm');
+        const insightBtn = translateForm ? translateForm.querySelector('button.get-insight-btn') : null;
+        if (insightBtn) {
+            insightBtn.disabled = true;
+        }
+
         showStatus('translateStatus', '<strong>PROCESSING:</strong> Processing translation request...', 'processing');
         showLoadingOverlay({text: "Creating your translated report...", tip: "Hang tight, this may take a moment."});
 
@@ -574,16 +554,14 @@ document.getElementById('translateForm').addEventListener('submit', async (e) =>
         const result = await response.json();
 
         if (response.ok) {
-            pollTaskStatus(result.task_id, 'translateStatus');
+            pollTaskStatus(result.task_id, 'translateStatus', 'translateForm');
         } else {
             showStatus('translateStatus', `<strong>ERROR:</strong> ${result.detail}`, 'error');
         }
     } catch (error) {
-        showStatus('translateStatus', `<strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
+        showStatus('translateStatus', `<strong>ERROR:</strong> ${error.message}`, 'error');
     }
 });
-
-// Check service health on page load
 
 // Add this function to ensure all modals are hidden on page load
 function hideAllModals() {
@@ -608,10 +586,8 @@ window.addEventListener('load', async () => {
 
     try {
         const response = await fetch(`${BASE_URL}/health`);
-        if (response.ok) {
-            console.log('MBTI Processing Service is running and healthy');
-        } else {
-            console.warn('Service health check failed');
+        if (!response.ok) {
+            console.error('MBTI Processing Service is not running');
         }
     } catch (error) {
         console.error('Cannot connect to MBTI Processing Service:', error.message);
@@ -729,13 +705,9 @@ function setupDualInsightHandlers() {
                 return;
             }
 
-            const formData = new FormData();
-            formData.append('download_url', window.__dualDownloadUrl);
-
             try {
-                const response = await fetch(`${BASE_URL}/insight-by-download-url`, {
-                    method: 'POST',
-                    body: formData
+                const response = await fetch(`${BASE_URL}/insight/${window.__dualTaskId}`, {
+                    method: 'POST'
                 });
                 const result = await response.json();
 
@@ -751,7 +723,7 @@ function setupDualInsightHandlers() {
             } catch (error) {
                 console.error('Generic insight request error:', error);
                 hideLoadingOverlay();
-                showStatus('dualStatus', `<strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
+                showStatus('dualStatus', `<strong>ERROR:</strong> ${error.message}`, 'error');
                 insightBtn.disabled = false;
                 insightBtn.textContent = "Get Insight";
             }
@@ -818,21 +790,20 @@ function setupDualInsightHandlers() {
                 relationshipType = document.getElementById('relationshipTypeOther').value;
             }
             const relationshipGoals = document.getElementById('relationshipGoals').value;
-            const downloadUrl = window.__dualDownloadUrl;
+            const taskId = window.__dualTaskId;
 
-            if (!downloadUrl) {
+            if (!taskId) {
                 alert('Missing report file. Please generate the report first.');
                 hideLoadingOverlay();
                 return;
             }
 
             const formData = new FormData();
-            formData.append('download_url', downloadUrl);
             formData.append('relationship_type', relationshipType);
             formData.append('relationship_goals', relationshipGoals);
 
             try {
-                const response = await fetch(`${BASE_URL}/insight-by-download-url`, {
+                const response = await fetch(`${BASE_URL}/insight/${taskId}`, {
                     method: 'POST',
                     body: formData
                 });
@@ -850,38 +821,17 @@ function setupDualInsightHandlers() {
             } catch (error) {
                 console.error('Specific insight request error:', error);
                 hideLoadingOverlay();
-                showStatus('dualStatus', `<strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
+                showStatus('dualStatus', `<strong>ERROR:</strong> ${error.message}`, 'error');
             }
         };
     }
 }
-function testDualButtons() {
-    console.log('Testing dual insight buttons...');
-    console.log('Generic button exists:', !!document.getElementById('btnDualGenericInsight'));
-    console.log('Specific button exists:', !!document.getElementById('btnDualSpecificInsight'));
-    console.log('Choice modal exists:', !!document.getElementById('dualInsightChoiceModal'));
-    console.log('Specific modal exists:', !!document.getElementById('dualSpecificInsightModal'));
 
-    const genericBtn = document.getElementById('btnDualGenericInsight');
-    if (genericBtn) {
-        console.log('Generic button onclick:', genericBtn.onclick);
-    }
 
-    const specificBtn = document.getElementById('btnDualSpecificInsight');
-    if (specificBtn) {
-        console.log('Specific button onclick:', specificBtn.onclick);
-    }
-}
-
-// Request insight generation
-async function getInsightByDownloadUrl(downloadUrl, statusId, formId, btn) {
-    const formData = new FormData();
-    formData.append('download_url', downloadUrl);
-
+async function getInsightByTaskId(taskId, statusId, formId, btn) {
     try {
-        const response = await fetch(`${BASE_URL}/insight-by-download-url`, {
+        const response = await fetch(`${BASE_URL}/insight/${taskId}`, {
             method: 'POST',
-            body: formData
         });
         const result = await response.json();
         if (response.ok) {
@@ -894,7 +844,7 @@ async function getInsightByDownloadUrl(downloadUrl, statusId, formId, btn) {
             }
         }
     } catch (error) {
-        showStatus(statusId, `CONNECTION ERROR: ${error.message}`, 'error');
+        showStatus(statusId, `ERROR: ${error.message}`, 'error');
         if (btn) {
             btn.disabled = false;
             btn.textContent = "Get Insight";
@@ -960,23 +910,16 @@ function pollInsightStatus(taskId, statusId, formId, btn) {
                 hideLoadingOverlay();
                 console.log('Task completed, processing insight...');
 
-                // Save HTML and PDF insight URLs if present
                 let insightHtmlUrl = null;
                 let insightPdfUrl = null;
 
-                if (status.download_url && status.download_url.endsWith('.html')) {
-                    insightHtmlUrl = `${BASE_URL}${status.download_url}`;
+                if (status.file_type === 'html') {
+                    insightHtmlUrl = `${BASE_URL}/insight/${taskId}/html`;
                     console.log(`Saved HTML insight URL: ${insightHtmlUrl}`);
                 }
 
-                if (status.insight_pdf_url || status.insight_pdf_filename) {
-                    insightPdfUrl = status.insight_pdf_url
-                        ? `${BASE_URL}${status.insight_pdf_url}`
-                        : status.insight_pdf_filename
-                        ? `${BASE_URL}/output/${status.insight_pdf_filename}`
-                        : null;
-                } else if (status.download_url && status.download_url.endsWith('.html')) {
-                    insightPdfUrl = `${BASE_URL}/output/${status.download_url.split('/').pop().replace('.html', '.pdf')}`;
+                if (status.insight_pdf_url) {
+                    insightPdfUrl = `${BASE_URL}/insight/${taskId}/pdf`;
                 }
 
                 // Save for later use
@@ -1130,7 +1073,7 @@ document.getElementById('groupZipForm').addEventListener('submit', async (e) => 
         }
     } catch (error) {
         hideLoadingOverlay();
-        showStatus('groupStatus', `<strong>CONNECTION ERROR:</strong> ${error.message}`, 'error');
+        showStatus('groupStatus', `<strong>ERROR:</strong> ${error.message}`, 'error');
     }
 });
 function hideAllModals() {
@@ -1140,13 +1083,10 @@ function hideAllModals() {
         'groupInsightModal'
     ];
 
-    console.log('Hiding all modals');
-
     modals.forEach(modalId => {
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.style.display = 'none';
-            console.log(`Hidden modal: ${modalId}`);
         }
     });
 }
@@ -1251,7 +1191,7 @@ document.getElementById('groupInsightForm').addEventListener('submit', async fun
     } catch (err) {
         hideLoadingOverlay();
         console.error('Network error:', err);
-        showStatus('groupStatus', `<strong>CONNECTION ERROR:</strong> ${err.message}`, 'error');
+        showStatus('groupStatus', `<strong>ERROR:</strong> ${err.message}`, 'error');
     }
 });
 
@@ -1274,8 +1214,8 @@ function pollGroupInsightStatus(taskId) {
                 hideLoadingOverlay();
                 console.log('Group insight completed');
 
-                if (status.download_url && status.download_url.endsWith('.html')) {
-                    const insightHtmlUrl = `${BASE_URL}${status.download_url}`;
+                if (status.file_type === 'html') {
+                    const insightHtmlUrl = `${BASE_URL}/insight/${taskId}/html`;
                     console.log(`Group insight HTML URL: ${insightHtmlUrl}`);
 
                     try {
@@ -1289,7 +1229,7 @@ function pollGroupInsightStatus(taskId) {
                         // Store insight data globally AND in tab cache
                         groupInsightData = {
                             html: bodyContent, // Use extracted body content
-                            pdfUrl: status.insight_pdf_url ? `${BASE_URL}${status.insight_pdf_url}` : null
+                            pdfUrl: status.insight_pdf_url ? `${BASE_URL}/insight/${taskId}/pdf` : null
                         };
 
                         // Mark insight as generated
@@ -1575,4 +1515,3 @@ function closeDualSpecificInsightModal() {
     document.getElementById('dualSpecificInsightForm').reset();
     document.getElementById('relationshipTypeOtherDiv').style.display = 'none';
 }
-setTimeout(testDualButtons, 1000);

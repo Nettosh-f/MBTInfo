@@ -2,9 +2,11 @@
 Quick test script for the MBTI FastAPI service
 Run this after starting the service with: python main.py
 """
-import requests
-import time
+
 import os
+import time
+
+import requests
 
 # Your specific file paths
 SINGLE_PDF = r"F:\projects\MBTInfo\input\nir-bensinai-MBTI.pdf"
@@ -25,15 +27,21 @@ def test_service_health():
             print(f"  - Timestamp: {health_data.get('timestamp')}")
             return True
         else:
-            print(f"✗ Service health check failed with status code: {response.status_code}")
+            print(
+                f"✗ Service health check failed with status code: {response.status_code}"
+            )
             print(f"  Response: {response.text}")
             return False
     except requests.exceptions.ConnectionError as e:
-        print("✗ Cannot connect to service. Make sure it's running on http://localhost:8000")
+        print(
+            "✗ Cannot connect to service. Make sure it's running on http://localhost:8000"
+        )
         print(f"  Error details: {str(e)}")
         return False
     except requests.exceptions.Timeout:
-        print("✗ Connection to service timed out. The server might be overloaded or not responding.")
+        print(
+            "✗ Connection to service timed out. The server might be overloaded or not responding."
+        )
         return False
     except Exception as e:
         print(f"✗ Unexpected error during health check: {str(e)}")
@@ -53,15 +61,15 @@ def test_personal_report():
     print(f"Using file: {SINGLE_PDF}")
 
     # Upload file and start processing
-    with open(SINGLE_PDF, 'rb') as f:
-        files = {'file': (os.path.basename(SINGLE_PDF), f, 'application/pdf')}
+    with open(SINGLE_PDF, "rb") as f:
+        files = {"file": (os.path.basename(SINGLE_PDF), f, "application/pdf")}
         response = requests.post(f"{BASE_URL}/create-personal-report", files=files)
 
     if response.status_code != 200:
         print(f"✗ Failed to start personal report: {response.text}")
         return
 
-    task_id = response.json()['task_id']
+    task_id = response.json()["task_id"]
     print(f"✓ Task started: {task_id}")
 
     # Wait for completion
@@ -74,13 +82,13 @@ def test_personal_report():
             status = status_response.json()
             print(f"Status: {status['status']} - {status['message']}")
 
-            if status['status'] == 'completed':
+            if status["status"] == "completed":
                 print("✓ Personal report completed successfully!")
-                download_url = status.get('download_url')
+                download_url = status.get("download_url")
                 if download_url:
                     print(f"Download URL: {BASE_URL}{download_url}")
                 break
-            elif status['status'] == 'failed':
+            elif status["status"] == "failed":
                 print(f"✗ Personal report failed: {status['message']}")
                 break
 
@@ -100,7 +108,7 @@ def test_group_report():
         return
 
     # Check if folder has PDF files
-    pdf_files = [f for f in os.listdir(FOLDER_PATH) if f.lower().endswith('.pdf')]
+    pdf_files = [f for f in os.listdir(FOLDER_PATH) if f.lower().endswith(".pdf")]
     if not pdf_files:
         print(f"✗ No PDF files found in: {FOLDER_PATH}")
         return
@@ -110,15 +118,14 @@ def test_group_report():
 
     # Start group processing
     response = requests.post(
-        f"{BASE_URL}/create-group-report",
-        data={'folder_path': FOLDER_PATH}
+        f"{BASE_URL}/create-group-report", data={"folder_path": FOLDER_PATH}
     )
 
     if response.status_code != 200:
         print(f"✗ Failed to start group report: {response.text}")
         return
 
-    task_id = response.json()['task_id']
+    task_id = response.json()["task_id"]
     print(f"✓ Task started: {task_id}")
 
     # Wait for completion
@@ -131,13 +138,13 @@ def test_group_report():
             status = status_response.json()
             print(f"Status: {status['status']} - {status['message']}")
 
-            if status['status'] == 'completed':
+            if status["status"] == "completed":
                 print("✓ Group report completed successfully!")
-                download_url = status.get('download_url')
+                download_url = status.get("download_url")
                 if download_url:
                     print(f"Download URL: {BASE_URL}{download_url}")
                 break
-            elif status['status'] == 'failed':
+            elif status["status"] == "failed":
                 print(f"✗ Group report failed: {status['message']}")
                 break
 
@@ -159,10 +166,10 @@ def test_dual_report():
     print(f"Using file twice for demo: {SINGLE_PDF}")
 
     # Upload both files (same file for demo)
-    with open(SINGLE_PDF, 'rb') as f1, open(SINGLE_PDF, 'rb') as f2:
+    with open(SINGLE_PDF, "rb") as f1, open(SINGLE_PDF, "rb") as f2:
         files = [
-            ('file1', (os.path.basename(SINGLE_PDF), f1, 'application/pdf')),
-            ('file2', (os.path.basename(SINGLE_PDF) + "_copy", f2, 'application/pdf'))
+            ("file1", (os.path.basename(SINGLE_PDF), f1, "application/pdf")),
+            ("file2", (os.path.basename(SINGLE_PDF) + "_copy", f2, "application/pdf")),
         ]
         response = requests.post(f"{BASE_URL}/create-dual-report", files=files)
 
@@ -170,7 +177,7 @@ def test_dual_report():
         print(f"✗ Failed to start dual report: {response.text}")
         return
 
-    task_id = response.json()['task_id']
+    task_id = response.json()["task_id"]
     print(f"✓ Task started: {task_id}")
 
     # Wait for completion (should be quick since it's just a placeholder)
@@ -179,7 +186,7 @@ def test_dual_report():
     if status_response.status_code == 200:
         status = status_response.json()
         print(f"Status: {status['status']} - {status['message']}")
-        if status['status'] == 'completed':
+        if status["status"] == "completed":
             print("✓ Dual report placeholder completed!")
 
 
@@ -196,15 +203,15 @@ def test_translate():
     print(f"Using file: {SINGLE_PDF}")
 
     # Upload file for translation
-    with open(SINGLE_PDF, 'rb') as f:
-        files = {'file': (os.path.basename(SINGLE_PDF), f, 'application/pdf')}
+    with open(SINGLE_PDF, "rb") as f:
+        files = {"file": (os.path.basename(SINGLE_PDF), f, "application/pdf")}
         response = requests.post(f"{BASE_URL}/translate", files=files)
 
     if response.status_code != 200:
         print(f"✗ Failed to start translation: {response.text}")
         return
 
-    task_id = response.json()['task_id']
+    task_id = response.json()["task_id"]
     print(f"✓ Task started: {task_id}")
 
     # Wait for completion (should be quick since it's just a placeholder)
@@ -213,7 +220,7 @@ def test_translate():
     if status_response.status_code == 200:
         status = status_response.json()
         print(f"Status: {status['status']} - {status['message']}")
-        if status['status'] == 'completed':
+        if status["status"] == "completed":
             print("✓ Translation placeholder completed!")
 
 
@@ -228,7 +235,7 @@ def main():
         print("python main.py")
         return
 
-    print(f"\nUsing test files:")
+    print("\nUsing test files:")
     print(f"Single PDF: {SINGLE_PDF}")
     print(f"Folder: {FOLDER_PATH}")
 

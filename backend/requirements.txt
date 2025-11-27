@@ -2,6 +2,7 @@ PyPDF2==3.0.1
 openpyxl==3.1.5
 pandas==2.2.3
 PyMuPDF~=1.25.1 # fitz
+rarfile>=4.0
 
 # HTML to PDF conversion
 weasyprint~=65.1
@@ -26,12 +27,21 @@ python-jose[cryptography]==3.3.0
 
 # Image processing
 Pillow==10.1.0
+matplotlib>=3.8.0
 
 # Date and time utilities
 python-dateutil==2.8.2
 
 # HTTP client for testing
 requests==2.31.0
+openai>=1.0.0
 
 # Optional: For production deployment
 gunicorn==21.2.0
+
+# Code quality and formatting
+ruff==0.1.15
+black==24.2.0
+
+chardet>=5.2.0
+pdf2image>=1.17.0

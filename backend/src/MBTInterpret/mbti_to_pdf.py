@@ -1,33 +1,43 @@
-import os
-import re
-import pathlib
-import webbrowser
 import base64
+import logging
+import os
+import pathlib
+import re
+
 from weasyprint import HTML
-from datetime import datetime
-from extract_imageAI import extract_all_graphs
-from constsAI import INPUT_PATH, OUTPUT_PATH, MEDIA_PATH
+
+# Suppress verbose logs from weasyprint and fontTools
+logging.getLogger("weasyprint").setLevel(logging.WARNING)
+logging.getLogger("fontTools").setLevel(logging.WARNING)
+logging.getLogger("fontTools.subset").setLevel(logging.WARNING)
+logging.getLogger("fontTools.ttLib").setLevel(logging.WARNING)
+logging.getLogger("fontTools.subset.timer").setLevel(logging.WARNING)
 
 
-def generate_mbti_report(input_file, output_html, output_pdf, logo_path, first_title, image_list):
+def generate_mbti_report(
+    input_file, output_html, output_pdf, logo_path, first_title, image_list
+):
     # File paths
-    base_name = os.path.splitext(os.path.basename(input_file))[0][:6]
-    media_dir = MEDIA_PATH / "tmp" / base_name
     header_image_url = pathlib.Path(logo_path).absolute().as_uri()
     # Read and split text
-    with open(input_file, 'r', encoding='utf-8') as f:
+    with open(input_file, encoding="utf-8") as f:
         text = f.read()
 
-    pages = [p.strip() for p in text.split('--- Page ') if p.strip() and not p.strip().isdigit()]
-    total_pages = len(pages)
+    pages = [
+        p.strip()
+        for p in text.split("--- Page ")
+        if p.strip() and not p.strip().isdigit()
+    ]
 
     # Footer static text
-    footer_static_text = 'All rights reserved. TEMBTI©.'
+    footer_static_text = "All rights reserved. TEMBTI©."
     # Build HTML
-    html_content = generate_html_content(header_image_url, pages, image_list, footer_static_text, first_title)
+    html_content = generate_html_content(
+        header_image_url, pages, image_list, footer_static_text, first_title
+    )
 
     # Save HTML
-    with open(output_html, 'w', encoding='utf-8') as f:
+    with open(output_html, "w", encoding="utf-8") as f:
         f.write(html_content)
 
     # Generate PDF
@@ -42,16 +52,16 @@ def generate_mbti_report(input_file, output_html, output_pdf, logo_path, first_t
 
 def apply_formatting(text):
     # Bold and underline formatting
-    text = re.sub(r'__\*\*(.*?)\*\*__', r'<b><u>\1</u></b>', text)
+    text = re.sub(r"__\*\*(.*?)\*\*__", r"<b><u>\1</u></b>", text)
 
     # Bold formatting
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+    text = re.sub(r"\*\*(.*?)\*\*", r"<b>\1</b>", text)
 
     # Underline formatting
-    text = re.sub(r'__(.*?)__', r'<u>\1</u>', text)
+    text = re.sub(r"__(.*?)__", r"<u>\1</u>", text)
 
     # Replace newlines with <br> tags
-    text = text.replace('\n', '<br>')
+    text = text.replace("\n", "<br>")
 
     return text
 
@@ -59,12 +69,13 @@ def apply_formatting(text):
 def encode_image_base64(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"Image file not found: {path}")
-    with open(path, 'rb') as img_file:
-        return base64.b64encode(img_file.read()).decode('utf-8')
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode("utf-8")
 
 
-def generate_html_content(header_image_url, pages, image_path_list, footer_static_text, first_page_title):
-    current_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+def generate_html_content(
+    header_image_url, pages, image_path_list, footer_static_text, first_page_title
+):
     html_head = f"""
     <!DOCTYPE html>
     <html lang="he" dir="rtl">
@@ -162,9 +173,9 @@ def generate_html_content(header_image_url, pages, image_path_list, footer_stati
     html_body = ""
     page_count = 1
     for index, page in enumerate(pages):
-        page_content = re.sub(r'^\d+\s+---\s*', '', page).replace('\n', '<br>')
+        page_content = re.sub(r"^\d+\s+---\s*", "", page).replace("\n", "<br>")
         page_content = apply_formatting(page_content)
-        
+
         # Skip empty pages
         if not page_content.strip():
             continue
@@ -266,10 +277,14 @@ def generate_html_content(header_image_url, pages, image_path_list, footer_stati
 
 
 if __name__ == "__main__":
-    input_file = r'F:\projects\MBTInteligence\MBTItranslated\asaf-solomon-MBTI-fixed.txt'
-    output_html = r'F:\projects\MBTInteligence\html files\mbti_report.html'
-    output_pdf = r'F:\projects\MBTInteligence\MBTIpdfs\mbti_report.pdf'
+    input_file = (
+        r"F:\projects\MBTInteligence\MBTItranslated\asaf-solomon-MBTI-fixed.txt"
+    )
+    output_html = r"F:\projects\MBTInteligence\html files\mbti_report.html"
+    output_pdf = r"F:\projects\MBTInteligence\MBTIpdfs\mbti_report.pdf"
     logo_path = r"F:\projects\Temp\full_logo.png"
     first_page_title = "דו'ח בתרגום לעברית עבור: "
 
-    generate_mbti_report(input_file, output_html, output_pdf, logo_path, first_page_title)
+    generate_mbti_report(
+        input_file, output_html, output_pdf, logo_path, first_page_title
+    )

@@ -1,11 +1,14 @@
-import fitz  # PyMuPDF
 import os
-import time
-import re
-from utils import get_mbti_type_from_pdf, sanitize_filename, sanitize_path_component
+
+import fitz
+
+from .consts import MEDIA_PATH  # PyMuPDF
+from .utils import get_mbti_type_from_pdf, sanitize_filename
 
 
-def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2):
+def extract_graph_from_pdf(
+    pdf_path, output_image_path, page_num=4, rect_coords=None, zoom=2
+):
     """
     Extract a graph or image from a PDF file.
 
@@ -52,7 +55,9 @@ def extract_graph_from_pdf(pdf_path, output_image_path, page_num=4, rect_coords=
     print(f"Graph extracted and saved to {output_image_path}")
 
 
-def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords_dict, zoom=2):
+def extract_multiple_graphs_from_pdf(
+    pdf_path, output_dir, page_num, rect_coords_dict, zoom=2
+):
     """
     Extract multiple graphs or images from a single PDF page.
 
@@ -80,7 +85,7 @@ def extract_multiple_graphs_from_pdf(pdf_path, output_dir, page_num, rect_coords
     os.makedirs(specific_output_dir, exist_ok=True)
 
     # Create a dictionary to track filenames used in this run
-    if not hasattr(extract_multiple_graphs_from_pdf, 'used_filenames'):
+    if not hasattr(extract_multiple_graphs_from_pdf, "used_filenames"):
         extract_multiple_graphs_from_pdf.used_filenames = set()
 
     # Extract each graph based on provided coordinates
@@ -128,17 +133,14 @@ def extract_all_facet_graphs(pdf_path, output_dir):
         4: {"EIGraph": (0.1, 0.12, 0.9, 0.44)},
         5: {"SNgraph": (0.1, 0.12, 0.9, 0.44)},
         6: {"TFgraph": (0.1, 0.12, 0.9, 0.44)},
-        7: {"JPgraph": (0.1, 0.12, 0.9, 0.44)}}
+        7: {"JPgraph": (0.1, 0.12, 0.9, 0.44)},
+    }
     pages_list = [4, 5, 6, 7]
     for page_num in pages_list:
         # print(f"Extracting graphs from page {page_num + 1}")
         rect_coords_dict = page_rectangles.get(page_num)
         extract_multiple_graphs_from_pdf(
-            pdf_path,
-            output_dir,
-            page_num,
-            rect_coords_dict,
-            zoom=2
+            pdf_path, output_dir, page_num, rect_coords_dict, zoom=2
         )
 
 
@@ -166,10 +168,14 @@ def extract_first_graph(pdf_path, output_dir):
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
     sanitized_pdf_name = sanitize_filename(pdf_name_without_ext)
-    output_image_path = os.path.join(output_dir, f"{sanitized_pdf_name[:6]}_first_graph.png")
+    output_image_path = os.path.join(
+        output_dir, f"{sanitized_pdf_name[:6]}_first_graph.png"
+    )
 
     # Extract the graph from the PDF
-    extract_graph_from_pdf(pdf_path, output_image_path, page_num=2, rect_coords=rect_coords, zoom=2)
+    extract_graph_from_pdf(
+        pdf_path, output_image_path, page_num=2, rect_coords=rect_coords, zoom=2
+    )
 
     # print(f"First graph extracted and saved to {output_image_path}")
 
@@ -194,10 +200,14 @@ def extract_dominant_graph(pdf_path, output_dir):
     pdf_filename = os.path.basename(pdf_path)
     pdf_name_without_ext = os.path.splitext(pdf_filename)[0]
     sanitized_pdf_name = sanitize_filename(pdf_name_without_ext)
-    output_image_path = os.path.join(output_dir, f"{sanitized_pdf_name[:6]}_first_graph.png")
+    output_image_path = os.path.join(
+        output_dir, f"{sanitized_pdf_name[:6]}_first_graph.png"
+    )
 
     # Extract the graph from the PDF
-    extract_graph_from_pdf(pdf_path, output_image_path, page_num=12, rect_coords=rect_coords, zoom=2)
+    extract_graph_from_pdf(
+        pdf_path, output_image_path, page_num=12, rect_coords=rect_coords, zoom=2
+    )
 
     # print(f"First graph extracted and saved to {output_image_path}")
 
@@ -206,8 +216,8 @@ def extract_dominant_graph(pdf_path, output_dir):
 
 if __name__ == "__main__":
     path_to_pdf = r"F:\projects\MBTInfo\input\Benjamin-Russu-267149-a214ea9d-d272-ef11-bdfd-000d3a58cdb7.pdf"
-    name = os.path.basename(path_to_pdf).replace('.pdf', '')[:6]
-    path_to_output_dir = os.path.join(r"F:\projects\MBTInfo\backend\media\tmp", name)
+    name = os.path.basename(path_to_pdf).replace(".pdf", "")[:6]
+    path_to_output_dir = os.path.join(f"{MEDIA_PATH}/tmp", name)
 
     extract_first_graph(path_to_pdf, path_to_output_dir)
 

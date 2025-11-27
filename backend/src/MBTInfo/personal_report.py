@@ -1,12 +1,22 @@
 import os
 import webbrowser
-import tempfile
-from PIL import Image as PILImage
-# local imports
-from data_extractor import extract_and_save_text
-from utils import get_all_info, find_and_parse_mbti_scores, convert_scores_to_mbti_dict, collect_qualities, get_dominant
-from utils import get_three_repeating_explanations, get_facet_explanations, get_facet_descriptor
-from consts import FACETS, dominant_functions, All_Facets, facet_chart_list, PROJECT_BASE_DIR, PERSONAL_REPORT_MEDIA, MEDIA_PATH
+
+from .consts import (
+    FACET_CHART_LIST,
+    MEDIA_PATH,
+    PERSONAL_REPORT_MEDIA,
+    PROJECT_BASE_DIR,
+)
+from .data_extractor import extract_and_save_text
+from .utils import (
+    collect_qualities,
+    convert_scores_to_mbti_dict,
+    find_and_parse_mbti_scores,
+    get_all_info,
+    get_dominant,
+    get_facet_descriptor,
+    get_three_repeating_explanations,
+)
 
 
 def generate_personal_report(input_pdf_path, output_dir, output_filename):
@@ -28,17 +38,17 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
         raise ValueError("Failed to extract text from PDF file")
 
     # Create textfiles directory if it doesn't exist
-    textfiles_dir = os.path.join(output_dir, 'textfiles')
+    textfiles_dir = os.path.join(output_dir, "textfiles")
     os.makedirs(textfiles_dir, exist_ok=True)
 
     # Read the extracted text content
     try:
-        with open(text_file_path, 'r', encoding='utf-8') as f:
+        with open(text_file_path, encoding="utf-8") as f:
             text_content = f.read()
         print(f"Successfully read {len(text_content)} characters from {text_file_path}")
     except Exception as e:
         print(f"Error reading text file: {str(e)}")
-        raise ValueError(f"Failed to read extracted text: {str(e)}")
+        raise ValueError(f"Failed to read extracted text: {str(e)}") from e
 
     # Save a copy to the textfiles directory
     base_name = os.path.splitext(os.path.basename(input_pdf_path))[0]
@@ -46,7 +56,7 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
 
     if text_file_path != textfiles_copy_path:  # Only copy if paths are different
         try:
-            with open(textfiles_copy_path, 'w', encoding='utf-8') as f:
+            with open(textfiles_copy_path, "w", encoding="utf-8") as f:
                 f.write(text_content)
             print(f"Text content copied to: {textfiles_copy_path}")
         except Exception as e:
@@ -57,17 +67,19 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
     info = get_all_info(text_file_path)
     print(f"MBTI Information: {info}")
     if not info:
-        info = {'name': 'Unknown', 'date': 'Unknown', 'type': 'Unknown'}
+        info = {"name": "Unknown", "date": "Unknown", "type": "Unknown"}
 
     # Get the dominant function based on the MBTI type
-    mbti_type = info.get('type')
+    mbti_type = info.get("type")
     if mbti_type:
         dominant_function = get_dominant(text_file_path)
         if dominant_function:
-            info['dominant'] = dominant_function
+            info["dominant"] = dominant_function
             print(f"Dominant function: {dominant_function}")
         else:
-            print(f"Warning: Could not determine dominant function for type {mbti_type}")
+            print(
+                f"Warning: Could not determine dominant function for type {mbti_type}"
+            )
 
     qualities = find_and_parse_mbti_scores(text_file_path)
     if not qualities:
@@ -76,7 +88,7 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
     mbti_dict = convert_scores_to_mbti_dict(qualities)
     if not mbti_dict:
         # Create a default dictionary with zeros
-        mbti_dict = {'E': 0, 'I': 0, 'S': 0, 'N': 0, 'T': 0, 'F': 0, 'J': 0, 'P': 0}
+        mbti_dict = {"E": 0, "I": 0, "S": 0, "N": 0, "T": 0, "F": 0, "J": 0, "P": 0}
 
     # Handle potential None values from collect_qualities
     try:
@@ -102,67 +114,105 @@ def generate_personal_report(input_pdf_path, output_dir, output_filename):
         print(f"Descriptor for {facet}: {descriptor}")
 
     # Generate HTML report
-    html_content = generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities, out_qualities,
-                                        repeating_explanations, facet_descriptors, input_pdf_path)
+    html_content = generate_html_report(
+        info,
+        mbti_dict,
+        preferred_qualities,
+        midzone_qualities,
+        out_qualities,
+        repeating_explanations,
+        facet_descriptors,
+        input_pdf_path,
+    )
 
     # Save HTML to a temporary file
-    temp_html_path = os.path.join(output_dir, f"{os.path.splitext(output_filename)[0]}.html")
-    with open(temp_html_path, 'w', encoding='utf-8') as f:
+    temp_html_path = os.path.join(
+        output_dir, f"{os.path.splitext(output_filename)[0]}.html"
+    )
+    with open(temp_html_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
     # Convert HTML to PDF using pdfkit or weasyprint
-    output_path = os.path.join(output_dir, output_filename.replace('.xlsx', '.pdf'))
+    output_path = os.path.join(output_dir, output_filename.replace(".xlsx", ".pdf"))
 
     try:
         # Try using WeasyPrint first (more reliable for complex layouts)
+        import logging
+
         from weasyprint import HTML
+
+        # Suppress verbose logs from weasyprint and fontTools
+        logging.getLogger("weasyprint").setLevel(logging.WARNING)
+        logging.getLogger("fontTools").setLevel(logging.WARNING)
+        logging.getLogger("fontTools.subset").setLevel(logging.WARNING)
+        logging.getLogger("fontTools.ttLib").setLevel(logging.WARNING)
+        logging.getLogger("fontTools.subset.timer").setLevel(logging.WARNING)
+
         HTML(string=html_content).write_pdf(output_path)
         print(f"PDF generated successfully using WeasyPrint: {output_path}")
     except ImportError:
         try:
             # Fall back to pdfkit if WeasyPrint is not available
             import pdfkit
+
             options = {
-                'page-size': 'Letter',
-                'encoding': 'UTF-8',
-                'enable-local-file-access': None,
-                'quiet': None
+                "page-size": "Letter",
+                "encoding": "UTF-8",
+                "enable-local-file-access": None,
+                "quiet": None,
             }
             pdfkit.from_string(html_content, output_path, options=options)
             print(f"PDF generated successfully using pdfkit: {output_path}")
         except ImportError:
             # If neither library is available, fall back to browser method
             print("PDF generation libraries not found. Falling back to browser method.")
-            print(f"Opening HTML report in browser. Please save as PDF to: {output_path}")
+            print(
+                f"Opening HTML report in browser. Please save as PDF to: {output_path}"
+            )
             webbrowser.open(f"file://{os.path.abspath(temp_html_path)}")
 
     return output_path
 
 
-def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities, out_qualities,
-                         three_repeating_explanations, facet_descriptors, input_pdf_path):
+def generate_html_report(
+    info,
+    mbti_dict,
+    preferred_qualities,
+    midzone_qualities,
+    out_qualities,
+    three_repeating_explanations,
+    facet_descriptors,
+    input_pdf_path,
+):
     """Generate HTML content for the MBTI report"""
 
     # Helper function to map facet name to image path
     def get_facet_image_path(facet_name):
-        from consts import facet_chart_list
+
         project_root = PROJECT_BASE_DIR
         # Get the PDF file name from the input_pdf_path
         pdf_base_name = os.path.splitext(os.path.basename(input_pdf_path))[0]
 
-        for filename, facets in facet_chart_list.items():
+        for filename, facets in FACET_CHART_LIST.items():
             if facet_name.lower() in [f.lower() for f in facets]:
                 # Use the PDF file name as part of the path
-                image_path = os.path.join(project_root, 'backend/media', pdf_base_name, 'screenshots', filename)
+                image_path = os.path.join(
+                    project_root,
+                    "backend/media",
+                    pdf_base_name,
+                    "screenshots",
+                    filename,
+                )
 
                 # Check if the file exists
                 if os.path.isfile(image_path):
                     # Convert to data URL for embedding in HTML
                     try:
-                        with open(image_path, 'rb') as img_file:
+                        with open(image_path, "rb") as img_file:
                             import base64
-                            img_data = base64.b64encode(img_file.read()).decode('utf-8')
-                            img_ext = os.path.splitext(image_path)[1].lstrip('.')
+
+                            img_data = base64.b64encode(img_file.read()).decode("utf-8")
+                            img_ext = os.path.splitext(image_path)[1].lstrip(".")
                             return f"data:image/{img_ext};base64,{img_data}"
                     except Exception as e:
                         print(f"Error converting facet image to data URL: {str(e)}")
@@ -173,57 +223,83 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         print(f"No matching facet chart found for: {facet_name}")
         return ""
 
-    mbti_type = info.get('type', '')
-    dominant_function = info.get('dominant', '')
-    project_root = PROJECT_BASE_DIR
+    mbti_type = info.get("type", "")
+    dominant_function = info.get("dominant", "")
 
     # Initialize image paths dictionary
     image_paths = {}
 
     # Only proceed if we have a valid MBTI type
     if mbti_type and mbti_type in [
-        'ESTJ', 'ENTJ', 'ESFJ', 'ENFJ', 'ISTJ', 'ISFJ', 'INTJ', 'INFJ',
-        'ESTP', 'ESFP', 'ENTP', 'ENFP', 'ISTP', 'ISFP', 'INTP', 'INFP'
+        "ESTJ",
+        "ENTJ",
+        "ESFJ",
+        "ENFJ",
+        "ISTJ",
+        "ISFJ",
+        "INTJ",
+        "INFJ",
+        "ESTP",
+        "ESFP",
+        "ENTP",
+        "ENFP",
+        "ISTP",
+        "ISFP",
+        "INTP",
+        "INFP",
     ]:
         # General image based on MBTI type
-        general_path = PERSONAL_REPORT_MEDIA / f'General_Pics/{mbti_type}_General.png'
+        general_path = PERSONAL_REPORT_MEDIA / f"General_Pics/{mbti_type}_General.png"
         if os.path.isfile(general_path):
-            image_paths['general'] = general_path
+            image_paths["general"] = general_path
         else:
-            print(f"Warning: General image not found for type {mbti_type}: {general_path}")
+            print(
+                f"Warning: General image not found for type {mbti_type}: {general_path}"
+            )
 
         # Dominant function image based on MBTI type
         if dominant_function:
-            filename = f'{mbti_type}_Dominant.png'
-            dominant_path = PERSONAL_REPORT_MEDIA / 'Dominant_Pics' / filename
+            filename = f"{mbti_type}_Dominant.png"
+            dominant_path = PERSONAL_REPORT_MEDIA / "Dominant_Pics" / filename
             if os.path.isfile(dominant_path):
-                image_paths['dominant'] = dominant_path
+                image_paths["dominant"] = dominant_path
             else:
-                print(f"Warning: Dominant function image not found for type {mbti_type}: {dominant_path}")
+                print(
+                    f"Warning: Dominant function image not found for type {mbti_type}: {dominant_path}"
+                )
 
         # External function image based on MBTI type
-        external_path = PERSONAL_REPORT_MEDIA / f'External_Pics/{mbti_type}_External.png'
+        external_path = (
+            PERSONAL_REPORT_MEDIA / f"External_Pics/{mbti_type}_External.png"
+        )
         if os.path.isfile(external_path):
-            image_paths['external'] = external_path
+            image_paths["external"] = external_path
         else:
-            print(f"Warning: External function image not found for type {mbti_type}: {external_path}")
+            print(
+                f"Warning: External function image not found for type {mbti_type}: {external_path}"
+            )
 
         # Internal function image based on MBTI type
-        internal_path = PERSONAL_REPORT_MEDIA / f'Internal_Pics/{mbti_type}_Internal.png'
+        internal_path = (
+            PERSONAL_REPORT_MEDIA / f"Internal_Pics/{mbti_type}_Internal.png"
+        )
         if os.path.isfile(internal_path):
-            image_paths['internal'] = internal_path
+            image_paths["internal"] = internal_path
         else:
-            print(f"Warning: Internal function image not found for type {mbti_type}: {internal_path}")
+            print(
+                f"Warning: Internal function image not found for type {mbti_type}: {internal_path}"
+            )
 
     # Convert images to base64
     image_data_urls = {}
     for key, path in image_paths.items():
         if os.path.isfile(path):
             try:
-                with open(path, 'rb') as img_file:
+                with open(path, "rb") as img_file:
                     import base64
-                    img_data = base64.b64encode(img_file.read()).decode('utf-8')
-                    img_ext = os.path.splitext(path)[1].lstrip('.')
+
+                    img_data = base64.b64encode(img_file.read()).decode("utf-8")
+                    img_ext = os.path.splitext(path)[1].lstrip(".")
                     image_data_urls[key] = f"data:image/{img_ext};base64,{img_data}"
             except Exception as e:
                 print(f"Error converting image to data URL: {str(e)}")
@@ -231,15 +307,16 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         else:
             print(f"Warning: Image file not found: {path}")
             image_data_urls[key] = ""
-    
+
     # Load the logo image
-    logo_path = MEDIA_PATH / 'full_logo.png'
+    logo_path = MEDIA_PATH / "full_logo.png"
     logo_data_url = ""
     if os.path.isfile(logo_path):
         try:
-            with open(logo_path, 'rb') as img_file:
+            with open(logo_path, "rb") as img_file:
                 import base64
-                img_data = base64.b64encode(img_file.read()).decode('utf-8')
+
+                img_data = base64.b64encode(img_file.read()).decode("utf-8")
                 logo_data_url = f"data:image/png;base64,{img_data}"
         except Exception as e:
             print(f"Error converting logo to data URL: {str(e)}")
@@ -256,7 +333,7 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         <div class="content-wrapper page-content">
             <h2>Personal Focus Areas</h2>
             <div class="section">
-                <p>No facets were identified as appearing consistently across all three contexts 
+                <p>No facets were identified as appearing consistently across all three contexts
                 (communication, managing change, and managing conflict).</p>
                 <p>This suggests that you may use different approaches depending on the context.</p>
             </div>
@@ -264,14 +341,20 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
         """
     else:
         for facet in three_repeating_facets:
-            descriptor = facet_descriptors.get(facet, f"No descriptor available for {facet}.")
+            descriptor = facet_descriptors.get(
+                facet, f"No descriptor available for {facet}."
+            )
             explanations = three_repeating_explanations.get(facet, [])
             while len(explanations) < 3:
                 explanations.append(f"No explanation available for {facet}.")
 
             display_facet = facet.capitalize()
             facet_image_path = get_facet_image_path(facet)
-            facet_image_tag = f'<div class="facet-image-container"><img src="{facet_image_path}" alt="{display_facet} Chart"></div>' if facet_image_path else ""
+            facet_image_tag = (
+                f'<div class="facet-image-container"><img src="{facet_image_path}" alt="{display_facet} Chart"></div>'
+                if facet_image_path
+                else ""
+            )
 
             facet_sections_html += f"""
             <div class="page-break"></div>
@@ -384,35 +467,35 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 text-align: center;
             }}
             h1 {{ font-size: 20pt; margin-bottom: 5px; }}
-            h2 {{ 
+            h2 {{
                 text-decoration: underline;
-                font-size: 16pt; 
-                padding-bottom: 5px; 
+                font-size: 16pt;
+                padding-bottom: 5px;
                 margin-top: 5px;
                 margin-bottom: 0px; /* Reduce bottom margin */
-                display: inline-block; 
-                padding: 0 5px 5px; 
+                display: inline-block;
+                padding: 0 5px 5px;
                 }}
             h3 {{ font-size: 12pt; margin-top: 5px; margin-bottom: 5px; }}
             p {{ text-align: justify; margin: 5px auto 10px; max-width: 100%; }}
             .info-box p {{ text-align: center;}}
             .type-header {{ font-size: 20pt; font-weight: bold; text-align: center; margin: 5px 0; }}
             .image-container {{text-align: center; margin: 5px auto; max-width: 65%; max-height: 40% }}
-            .image-container img {{ 
-                max-width: 100%; 
-                height: auto; 
-                display: block; 
-                margin: 0 auto; 
+            .image-container img {{
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 0 auto;
                 box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Right-bottom drop shadow */
             }}
             .dominant-image img {{ max-width: 90%; max-height: 50%; }}
             .facet-image-container {{ text-align: center; margin: 5px auto; width: 100%; }}
-            .facet-image-container img {{ 
-                width: 75%; 
-                height: auto; 
-                display: block; 
-                margin: 0 auto; 
-                margin-bottom: 10px; 
+            .facet-image-container img {{
+                width: 75%;
+                height: auto;
+                display: block;
+                margin: 0 auto;
+                margin-bottom: 10px;
                 box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Right-bottom drop shadow */
             }}
             table {{ width: 80%; border-collapse: collapse; margin: 5px auto; }}
@@ -422,8 +505,8 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
             th {{ background-color: #f2f2f2; }}
             .chart-container {{ margin: 5px auto; height: 300px; width: 80%; }}
             .section {{
-                margin: 5px auto; 
-                max-width: 90%; 
+                margin: 5px auto;
+                max-width: 90%;
             }}
             .section p {{
                 text-align: left !important;
@@ -433,14 +516,14 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
             .content-wrapper {{
                 text-align: center;
             }}
-            .first-page {{ 
-                min-height: 90vh; 
+            .first-page {{
+                min-height: 90vh;
                 text-align: center;
             }}
-            .first-page .image-container {{ 
-                max-width: 33%; 
-                max-height: 33%; 
-                padding-bottom: 30px; 
+            .first-page .image-container {{
+                max-width: 33%;
+                max-height: 33%;
+                padding-bottom: 30px;
             }}
             /* Add a frame to all images */
             img {{
@@ -452,11 +535,11 @@ def generate_html_report(info, mbti_dict, preferred_qualities, midzone_qualities
                 padding:0;
                 margin:0;
             }}
-            .IntExtimg img {{ 
-                max-width: 80%; 
+            .IntExtimg img {{
+                max-width: 80%;
                 max-height: 50%;
-                display: block; 
-                margin: 10px auto 20px auto; 
+                display: block;
+                margin: 10px auto 20px auto;
                 box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Right-bottom drop shadow */
             }}
             .functionality-description {{
@@ -540,7 +623,9 @@ if __name__ == "__main__":
     output_filename = "Shiri-Ben Sinai_Personal_MBTI_Report_Test.pdf"
 
     if os.path.exists(input_pdf_path):
-        output_path = generate_personal_report(input_pdf_path, output_dir, output_filename)
+        output_path = generate_personal_report(
+            input_pdf_path, output_dir, output_filename
+        )
         print(f"Personal MBTI report generated at: {output_path}")
     else:
         print(f"Input file not found: {input_pdf_path}")

@@ -1,65 +1,87 @@
-import os
-import sys
-import time
 import base64
-import openai
+import os
 import tempfile
+
+import openai
 import pandas as pd
-from weasyprint import HTML
-from pdf2image import convert_from_path
-from dotenv import load_dotenv
-from pathlib import Path
 import PyPDF2
-from consts import INSIGHT_SYSTEM_PROMPT, VALIDATION_SYSTEM_PROMPT, INSIGHT_COUPLE_SYSTEM_PROMPT, POPPLER_PATH, \
-    MEDIA_PATH
-from consts import GROUP_INSIGHT_SYSTEM_PROMPT
+from dotenv import load_dotenv
+from pdf2image import convert_from_path
+from weasyprint import HTML
+
+from .consts import (
+    ALL_MBTI_TYPES,
+    COL_DOMINANT,
+    COL_MBTI_TYPE,
+    COL_NAME,
+    COL_TYPE,
+    COUNT_KEY,
+    DATE_FORMAT_REPORT,
+    DICHOTOMY_NAMES,
+    DOMINANT_FUNCTIONS,
+    DOMINANT_FUNCTIONS_LIST,
+    FILE_SUFFIX_PNG,
+    GROUP_INSIGHT_SYSTEM_PROMPT,
+    IMAGE_FORMAT_PNG,
+    INSIGHT_COUPLE_SYSTEM_PROMPT,
+    INSIGHT_FILENAME_TRUNCATE_LENGTH,
+    INSIGHT_PREFIX,
+    INSIGHT_SYSTEM_PROMPT,
+    MBTI_TYPES_KEY,
+    MEDIA_PATH,
+    MODEL_GPT4_TURBO,
+    MODEL_GPT4O,
+    MODEL_GPT4O_MINI,
+    OPENAI_FILE_PURPOSE_USER_DATA,
+    PDF_IMAGE_DPI,
+    PERCENTAGE_KEY,
+    POPPLER_PATH,
+    REPORT_DATA_PDF,
+    REPORT_DUAL_PDF,
+    SHEET_NAME_DATA,
+    SHEET_NAME_MBTI_RESULTS,
+    UNKNOWN_VALUE,
+    VALIDATION_SYSTEM_PROMPT,
+)
+from .html_templates import get_html_report_template
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai.OpenAI()
 
 
-def extract_data_from_excel_fixed(excel_path, sheet_name="Data", output_dir=r"F:\projects\MBTInfo\backend\media\tmp"):
-    """FIXED: The issue was that the Data sheet has formulas referencing Table1 which doesn't exist.
-    Solution: Read the MBTI Results sheet instead, or force Excel to calculate formulas properly."""
-    import os
-    import pandas as pd
-    from weasyprint import HTML
-    import openpyxl
+def extract_data_from_excel_fixed(
+    excel_path, sheet_name=SHEET_NAME_DATA, output_dir=None
+):
 
-    # Create output directory if it doesn't exist
+    if output_dir is None:
+        output_dir = str(MEDIA_PATH / "tmp")
+
     os.makedirs(output_dir, exist_ok=True)
 
-    # SOLUTION 1: Read the actual data from MBTI Results sheet and create our own summary
     print("Reading MBTI Results sheet (the actual data)...")
-    mbti_df = pd.read_excel(excel_path, sheet_name="MBTI Results")
+    mbti_df = pd.read_excel(excel_path, sheet_name=SHEET_NAME_MBTI_RESULTS)
 
     print(f"MBTI Results shape: {mbti_df.shape}")
     print("Sample data:")
     print(mbti_df.head())
 
     # Create the summary that the Data sheet was supposed to show
-    type_counts = mbti_df['Type'].value_counts()
-    print(f"\nMBTI Type Counts:")
+    type_counts = mbti_df[COL_TYPE].value_counts()
+    print("\nMBTI Type Counts:")
     print(type_counts)
 
     # Create a proper data structure for the PDF
-    summary_data = {
-        'MBTI Type': [],
-        'Count': [],
-        'Percentage': []
-    }
+    summary_data = {MBTI_TYPES_KEY: [], COUNT_KEY: [], PERCENTAGE_KEY: []}
 
     total_people = len(mbti_df)
-    all_types = ['ISTJ', 'ISFJ', 'INFJ', 'INTJ', 'ISTP', 'ISFP', 'INFP', 'INTP',
-                 'ESTP', 'ESFP', 'ENFP', 'ENTP', 'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ']
 
-    for mbti_type in all_types:
+    for mbti_type in ALL_MBTI_TYPES:
         count = type_counts.get(mbti_type, 0)
         percentage = (count / total_people * 100) if total_people > 0 else 0
-        summary_data['MBTI Type'].append(mbti_type)
-        summary_data['Count'].append(count)
-        summary_data['Percentage'].append(f"{percentage:.1f}%")
+        summary_data[MBTI_TYPES_KEY].append(mbti_type)
+        summary_data[COUNT_KEY].append(count)
+        summary_data[PERCENTAGE_KEY].append(f"{percentage:.1f}%")
 
     summary_df = pd.DataFrame(summary_data)
 
@@ -67,151 +89,129 @@ def extract_data_from_excel_fixed(excel_path, sheet_name="Data", output_dir=r"F:
     def get_dominant_function(mbti_type):
         """Determine dominant cognitive function based on MBTI type"""
         if not mbti_type or len(mbti_type) != 4:
-            return "Unknown"
+            return UNKNOWN_VALUE
 
-        dominant_functions = {
-            'ISTJ': 'Si', 'ISFJ': 'Si', 'INFJ': 'Ni', 'INTJ': 'Ni',
-            'ISTP': 'Ti', 'ISFP': 'Fi', 'INFP': 'Fi', 'INTP': 'Ti',
-            'ESTP': 'Se', 'ESFP': 'Se', 'ENFP': 'Ne', 'ENTP': 'Ne',
-            'ESTJ': 'Te', 'ESFJ': 'Fe', 'ENFJ': 'Fe', 'ENTJ': 'Te'
-        }
-        return dominant_functions.get(mbti_type, "Unknown")
+        return DOMINANT_FUNCTIONS.get(mbti_type, UNKNOWN_VALUE)
 
-    # Create individual results table with dominant function
     individual_results = []
     for _, row in mbti_df.iterrows():
-        name = row.get('Name', 'Unknown')
-        mbti_type = row.get('Type', 'Unknown')
+        name = row.get(COL_NAME, UNKNOWN_VALUE)
+        mbti_type = row.get(COL_TYPE, UNKNOWN_VALUE)
         dominant = get_dominant_function(mbti_type)
-        individual_results.append({
-            'Name': name,
-            'MBTI Type': mbti_type,
-            'Dominant': dominant
-        })
+        individual_results.append(
+            {COL_NAME: name, COL_MBTI_TYPE: mbti_type, COL_DOMINANT: dominant}
+        )
 
     individual_df = pd.DataFrame(individual_results)
 
-    # Also add dichotomy analysis
-    dichotomy_data = {}
-    if total_people > 0:
-        # E/I analysis
-        e_count = len([t for t in mbti_df['Type'] if t and t[0] == 'E'])
-        i_count = len([t for t in mbti_df['Type'] if t and t[0] == 'I'])
-
-        # S/N analysis
-        s_count = len([t for t in mbti_df['Type'] if t and t[1] == 'S'])
-        n_count = len([t for t in mbti_df['Type'] if t and t[1] == 'N'])
-
-        # T/F analysis
-        t_count = len([t for t in mbti_df['Type'] if t and t[2] == 'T'])
-        f_count = len([t for t in mbti_df['Type'] if t and t[2] == 'F'])
-
-        # J/P analysis
-        j_count = len([t for t in mbti_df['Type'] if t and t[3] == 'J'])
-        p_count = len([t for t in mbti_df['Type'] if t and t[3] == 'P'])
-
-        dichotomy_data = {
-            'Dichotomy': ['Extroversion', 'Introversion', 'Sensing', 'Intuition',
-                          'Thinking', 'Feeling', 'Judging', 'Perceiving'],
-            'Count': [e_count, i_count, s_count, n_count, t_count, f_count, j_count, p_count],
-            'Percentage': [f"{c / total_people * 100:.1f}%" for c in
-                           [e_count, i_count, s_count, n_count, t_count, f_count, j_count, p_count]]
-        }
-
+    dichotomy_data = calculate_dichotomy_analysis(mbti_df, total_people)
     dichotomy_df = pd.DataFrame(dichotomy_data)
 
     # Add dominant function analysis
-    dominant_counts = individual_df['Dominant'].value_counts()
+    dominant_counts = individual_df[COL_DOMINANT].value_counts()
     dominant_analysis = []
-    for func in ['Te', 'Ti', 'Fe', 'Fi', 'Se', 'Si', 'Ne', 'Ni']:
+    for func in DOMINANT_FUNCTIONS_LIST:
         count = dominant_counts.get(func, 0)
         percentage = (count / total_people * 100) if total_people > 0 else 0
-        dominant_analysis.append({
-            'Dominant Function': func,
-            'Count': count,
-            'Percentage': f"{percentage:.1f}%"
-        })
+        dominant_analysis.append(
+            {
+                "Dominant Function": func,
+                "Count": count,
+                "Percentage": f"{percentage:.1f}%",
+            }
+        )
 
     dominant_df = pd.DataFrame(dominant_analysis)
 
-    # Create comprehensive HTML
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 20px; }}
-            table {{ border-collapse: collapse; width: 100%; margin: 20px 0; }}
-            th, td {{ border: 1px solid #ddd; padding: 12px; text-align: left; }}
-            th {{ background-color: #f2f2f2; font-weight: bold; }}
-            .section {{ margin: 30px 0; }}
-            h2 {{ color: #333; border-bottom: 2px solid #4CAF50; padding-bottom: 10px; }}
-            .summary {{ background-color: #f9f9f9; padding: 15px; border-radius: 5px; }}
-        </style>
-    </head>
-    <body>
-        <h1>MBTI Analysis Report</h1>
+    # Create comprehensive HTML using template
+    analysis_date = pd.Timestamp.now().strftime(DATE_FORMAT_REPORT)
+    html_content = get_html_report_template(
+        total_people=total_people,
+        analysis_date=analysis_date,
+        summary_table_html=summary_df.to_html(index=False, escape=False),
+        dichotomy_table_html=dichotomy_df.to_html(index=False, escape=False),
+        dominant_table_html=dominant_df.to_html(index=False, escape=False),
+        individual_table_html=individual_df.to_html(index=False, escape=False),
+    )
 
-        <div class="summary">
-            <h2>Summary</h2>
-            <p><strong>Total Participants:</strong> {total_people}</p>
-            <p><strong>Analysis Date:</strong> {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}</p>
-        </div>
-
-        <div class="section">
-            <h2>MBTI Type Distribution</h2>
-            {summary_df.to_html(index=False, escape=False)}
-        </div>
-
-        <div class="section">
-            <h2>Dichotomy Analysis</h2>
-            {dichotomy_df.to_html(index=False, escape=False)}
-        </div>
-
-        <div class="section">
-            <h2>Dominant Function Analysis</h2>
-            {dominant_df.to_html(index=False, escape=False)}
-        </div>
-
-        <div class="section">
-            <h2>Individual Results</h2>
-            {individual_df.to_html(index=False, escape=False)}
-        </div>
-    </body>
-    </html>
-    """
-
-    output_path = os.path.join(output_dir, "data.pdf")
+    output_path = os.path.join(output_dir, REPORT_DATA_PDF)
     HTML(string=html_content).write_pdf(output_path)
     print(f"Enhanced data report saved to: {output_path}")
     return output_path
 
 
+def calculate_dichotomy_analysis(mbti_df, total_people):
+    dichotomy_data = {}
+    if total_people > 0:
+        e_count = len([t for t in mbti_df[COL_TYPE] if t and t[0] == "E"])
+        i_count = len([t for t in mbti_df[COL_TYPE] if t and t[0] == "I"])
+        s_count = len([t for t in mbti_df[COL_TYPE] if t and t[1] == "S"])
+        n_count = len([t for t in mbti_df[COL_TYPE] if t and t[1] == "N"])
+        t_count = len([t for t in mbti_df[COL_TYPE] if t and t[2] == "T"])
+        f_count = len([t for t in mbti_df[COL_TYPE] if t and t[2] == "F"])
+        j_count = len([t for t in mbti_df[COL_TYPE] if t and t[3] == "J"])
+        p_count = len([t for t in mbti_df[COL_TYPE] if t and t[3] == "P"])
+
+        dichotomy_data = {
+            "Dichotomy": DICHOTOMY_NAMES,
+            "Count": [
+                e_count,
+                i_count,
+                s_count,
+                n_count,
+                t_count,
+                f_count,
+                j_count,
+                p_count,
+            ],
+            "Percentage": [
+                f"{c / total_people * 100:.1f}%"
+                for c in [
+                    e_count,
+                    i_count,
+                    s_count,
+                    n_count,
+                    t_count,
+                    f_count,
+                    j_count,
+                    p_count,
+                ]
+            ],
+        }
+    return dichotomy_data
+
+
 def convert_pdf_to_images(pdf_path):
-    return convert_from_path(pdf_path, dpi=200, poppler_path=POPPLER_PATH)
+    kwargs = {"dpi": PDF_IMAGE_DPI}
+    if POPPLER_PATH:
+        kwargs["poppler_path"] = str(POPPLER_PATH)
+    return convert_from_path(pdf_path, **kwargs)
 
 
 def convert_image_to_base64_url(image):
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
+    with tempfile.NamedTemporaryFile(suffix=FILE_SUFFIX_PNG, delete=False) as tmp_file:
         image_path = tmp_file.name
-        image.save(image_path, format="PNG")
+        image.save(image_path, format=IMAGE_FORMAT_PNG)
 
     try:
         with open(image_path, "rb") as f:
             encoded = base64.b64encode(f.read()).decode("utf-8")
         return {
             "type": "image_url",
-            "image_url": {
-                "url": f"data:image/png;base64,{encoded}"
-            }
+            "image_url": {"url": f"data:image/png;base64,{encoded}"},
         }
     finally:
         os.remove(image_path)
 
 
-def group_user_prompt(group_name, industry, team_type, number_of_members, duration_together, analysis_goal, roles=None,
-                      existing_challenges=None, communication_style=None, upcoming_context=None):
+def group_user_prompt(
+    group_name,
+    industry,
+    team_type,
+    analysis_goal,
+    roles=None,
+    existing_challenges=None,
+):
     GROUP_USER_PROMPT = f"""
         our group name is: {group_name}. we work in the {industry} industry. we are a team of {team_type}.
          we are looking for analysis in {analysis_goal}.
@@ -223,26 +223,23 @@ def group_user_prompt(group_name, industry, team_type, number_of_members, durati
     return GROUP_USER_PROMPT.strip()
 
 
-def ask_gpt_with_images(content_blocks, prompt, model="gpt-4o"):
+def ask_gpt_with_images(content_blocks, prompt, model=MODEL_GPT4O):
     messages = [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": content_blocks}
+        {"role": "user", "content": content_blocks},
     ]
-    response = openai.chat.completions.create(
-        model=model,
-        messages=messages
-    )
-    print("AI Prompt Call:")
-    print("Model:", model)
-    print("Messages:", messages)
-    return response.choices[0].message.content.strip()
+    response = openai.chat.completions.create(model=model, messages=messages)
+    content = response.choices[0].message.content
+    if content is None:
+        return ""
+    return content.strip()
 
 
 def process_pdf_with_gpt(pdf_path, content_blocks):
     print("Converting PDF to images...")
-    validation_text = ''
+    validation_text = ""
     try:
-        with open(pdf_path, 'rb') as file:
+        with open(pdf_path, "rb") as file:
             pdf_reader = PyPDF2.PdfReader(file)
             num_page = 0
             page = pdf_reader.pages[num_page]
@@ -252,7 +249,7 @@ def process_pdf_with_gpt(pdf_path, content_blocks):
     image_blocks = []
     try:
         images = convert_pdf_to_images(pdf_path)
-        for i, img in enumerate(images):
+        for img in images:
             image_block = convert_image_to_base64_url(img)
             image_blocks.append(image_block)
     except Exception as e:
@@ -263,54 +260,61 @@ def process_pdf_with_gpt(pdf_path, content_blocks):
     if content_blocks:
         all_blocks.extend(content_blocks)
 
-    if pdf_path.endswith("dual_report.pdf"):
+    if pdf_path.endswith(REPORT_DUAL_PDF):
         PROMPT = INSIGHT_COUPLE_SYSTEM_PROMPT
-    elif pdf_path.endswith("data.pdf"):
+    elif pdf_path.endswith(REPORT_DATA_PDF):
         PROMPT = GROUP_INSIGHT_SYSTEM_PROMPT
     else:
         PROMPT = INSIGHT_SYSTEM_PROMPT
 
     print("prompt is:", PROMPT, "\n", "")
     print("Validating MBTI relevance...")
-    validation_response = ask_gpt_with_images(validation_text, VALIDATION_SYSTEM_PROMPT, "gpt-4o-mini")
+    validation_response = ask_gpt_with_images(
+        validation_text, VALIDATION_SYSTEM_PROMPT, MODEL_GPT4O_MINI
+    )
 
     print("Validation:", validation_response)
 
-    if validation_response.upper().startswith("YES"):
-        print("Generating insight...")
+    if validation_response and validation_response.upper().startswith("YES"):
         insight_response = ask_gpt_with_images(all_blocks, PROMPT)
-        print(insight_response)
+        
+        if not insight_response:
+            return {"status": "error", "reason": "Failed to generate insight"}
+        
         insight_response = insight_response.replace("```html", "")
         insight_response = insight_response.replace("```", "")
-        print(insight_response)
         # Create the insight.html file
-        pdf_stub = os.path.splitext(os.path.basename(pdf_path))[0][:6]
-        insight_html_filename = f"insight_{pdf_stub}.html"
+        pdf_stub = os.path.splitext(os.path.basename(pdf_path))[0][
+            :INSIGHT_FILENAME_TRUNCATE_LENGTH
+        ]
+        insight_html_filename = f"{INSIGHT_PREFIX}{pdf_stub}.html"
         output_path = os.path.join(os.path.dirname(pdf_path), insight_html_filename)
         with open(output_path, "w", encoding="utf-8") as html_file:
             html_file.write(insight_response)
 
-        return {"status": "ok", "insight": insight_response, "insight_path": output_path}
+        return {
+            "status": "ok",
+            "insight": insight_response,
+            "insight_path": output_path,
+        }
     else:
         return {"status": "not_mbti", "reason": validation_response}
 
 
-def upload_file_and_ask_question(file_path, question, system_prompt, model="gpt-4.1-2025-04-14"):
+def upload_file_and_ask_question(
+    file_path, question, system_prompt, model=MODEL_GPT4_TURBO
+):
     # Upload the file to OpenAI
     with open(file_path, "rb") as file:
         uploaded_file = client.files.create(
-            file=file,
-            purpose="user_data"
+            file=file, purpose=OPENAI_FILE_PURPOSE_USER_DATA
         )
 
     # Create a chat completion with the uploaded file
     completion = client.chat.completions.create(
         model=model,
         messages=[
-            {
-                "role": "system",
-                "content": system_prompt
-            },
+            {"role": "system", "content": system_prompt},
             {
                 "role": "user",
                 "content": [
@@ -318,21 +322,25 @@ def upload_file_and_ask_question(file_path, question, system_prompt, model="gpt-
                         "type": "file",
                         "file": {
                             "file_id": uploaded_file.id,
-                        }
+                        },
                     },
                     {
                         "type": "text",
                         "text": question,
                     },
-                ]
-            }
-        ]
+                ],
+            },
+        ],
     )
 
-    return completion.choices[0].message.content.strip()
+    content = completion.choices[0].message.content
+    if content is None:
+        return ""
+    return content.strip()
 
 
 if __name__ == "__main__":
     # path_to_pdf = r"F:\projects\MBTInfo\output\MBTI_translate_nir-be.pdf"
-    extract_data_from_excel_fixed(r"F:\projects\MBTInfo\output\group_report_all_pdfs(4).xlsx")
-    # process_pdf_with_gpt(r"F:\projects\MBTInfo\output\data.pdf")
+    extract_data_from_excel_fixed(
+        r"F:\projects\MBTInfo\output\group_report_all_pdfs(4).xlsx"
+    )

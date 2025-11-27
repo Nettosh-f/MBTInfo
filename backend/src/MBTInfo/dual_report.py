@@ -1,11 +1,13 @@
-import os
 import base64
-from weasyprint import HTML
-from image_manipulation import create_all_graphs
+import os
 from pathlib import Path
-from data_extractor import extract_and_save_text
 
-from utils import get_all_info
+from weasyprint import HTML
+
+from .consts import MEDIA_PATH, OUTPUT_PATH, TEMP_DIR
+from .data_extractor import extract_and_save_text
+from .image_manipulation import create_all_graphs
+from .utils import get_all_info, sanitize_path_component
 
 
 def _first_or_none(iterable):
@@ -23,17 +25,21 @@ def path_exists(p) -> bool:
 
 def _encode_or_placeholder(p):
     try:
-        return encode_image_base64(p) if path_exists(p) else create_placeholder_image_base64()
+        return (
+            encode_image_base64(p)
+            if path_exists(p)
+            else create_placeholder_image_base64()
+        )
     except Exception:
         return create_placeholder_image_base64()
 
 
-def find_graph_by_suffix(media_tmp_root: str, identifier: str, suffix: str) -> str | None:
+def find_graph_by_suffix(identifier: str, suffix: str) -> str | None:
     """
     Look for any file that ends with '_<suffix>' under .../tmp/<identifier>/.
     We first try the common 'final' subdir, then fall back to a recursive search.
     """
-    root = Path(media_tmp_root) / identifier
+    root = Path(os.path.join(TEMP_DIR, "media", identifier))
 
     # 1) Try the common final dir (fast path)
     final_dir = root / "final"
@@ -59,7 +65,7 @@ def sanitize_filename(filename):
     Sanitize filename by replacing spaces and other problematic characters with hyphens
     """
     # Remove file extension first
-    name, ext = os.path.splitext(filename)
+    name, ext = os.path.splitext(os.path.basename(filename))
     # Replace spaces and other problematic characters with hyphens
     sanitized = name.replace(" ", "-").replace("_", "-")
     # Remove multiple consecutive hyphens
@@ -70,29 +76,23 @@ def sanitize_filename(filename):
     return sanitized + ext
 
 
-def sanitize_path_component(path_component):
-    """
-    Sanitize a path component (folder or file name) by replacing spaces with hyphens
-    """
-    return path_component.replace(" ", "-").replace("_", "-")
-
-
 def encode_image_base64(path):
     if not os.path.exists(path):
         raise FileNotFoundError(f"Image file not found: {path}")
-    with open(path, 'rb') as img_file:
-        return base64.b64encode(img_file.read()).decode('utf-8')
+    with open(path, "rb") as img_file:
+        return base64.b64encode(img_file.read()).decode("utf-8")
 
 
 def create_placeholder_image_base64():
     """
     Creates a simple placeholder image as base64 when actual graph is missing
     """
-    from PIL import Image, ImageDraw, ImageFont
     import io
 
+    from PIL import Image, ImageDraw, ImageFont
+
     # Create a simple placeholder image
-    img = Image.new('RGB', (800, 400), color='lightgray')
+    img = Image.new("RGB", (800, 400), color="lightgray")
     draw = ImageDraw.Draw(img)
 
     # Add text
@@ -100,7 +100,7 @@ def create_placeholder_image_base64():
     try:
         # Try to use a better font if available
         font = ImageFont.truetype("arial.ttf", 36)
-    except:
+    except Exception:
         font = ImageFont.load_default()
 
     # Get text bounding box
@@ -112,17 +112,17 @@ def create_placeholder_image_base64():
     x = (800 - text_width) // 2
     y = (400 - text_height) // 2
 
-    draw.text((x, y), text, fill='black', font=font)
+    draw.text((x, y), text, fill="black", font=font)
 
     # Convert to base64
     buffer = io.BytesIO()
-    img.save(buffer, format='PNG')
+    img.save(buffer, format="PNG")
     buffer.seek(0)
-    return base64.b64encode(buffer.getvalue()).decode('utf-8')
+    return base64.b64encode(buffer.getvalue()).decode("utf-8")
 
 
 def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
-    text_folder = fr"F:\projects\MBTInfo\output\textfiles"
+    text_folder = str(OUTPUT_PATH / "textfiles")
     os.makedirs(text_folder, exist_ok=True)
 
     # Extract and save text files (this will create files with sanitized names)
@@ -142,7 +142,6 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
     text2 = os.path.join(text_folder, f"{sanitized_name2}_text.txt")
 
     # Debug: Check if files exist
-    print(f"DEBUG: Looking for text files:")
     print(f"  PDF1 text file: {text1} (exists: {os.path.exists(text1)})")
     print(f"  PDF2 text file: {text2} (exists: {os.path.exists(text2)})")
 
@@ -160,7 +159,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
     second_name_part = sanitize_path_component(os.path.basename(pdf2_path)[:6])
     identifier = f"{first_name_part}_{second_name_part}"
 
-    media_path = os.path.join(r"F:\projects\MBTInfo\backend\media\tmp", identifier)
+    media_path = os.path.join(TEMP_DIR, "media", identifier)
 
     try:
         create_all_graphs(pdf1_path, pdf2_path, media_path)
@@ -168,14 +167,11 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
         print(f"WARNING: Graph creation failed: {e}")
         print("Continuing with available graphs...")
 
-    logo_path = r'F:\projects\MBTInfo\backend\media\full_logo.png'
+    logo_path = str(MEDIA_PATH / "full_logo.png")
 
     # Construct the output directory for the PDF
     output_dir = output_pdf_path
-    final_images_path = rf"F:\projects\MBTInfo\backend\media\tmp\{identifier}\final"
 
-    # Define all expected image paths
-    media_tmp_root = r"F:\projects\MBTInfo\backend\media\tmp"
     graph_suffixes = [
         "first_graph_final.png",
         "EIGraph_final.png",
@@ -185,9 +181,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
         "dominant_final_final.png",
     ]
 
-    all_images_path = [
-        find_graph_by_suffix(media_tmp_root, identifier, suf) for suf in graph_suffixes
-    ]
+    all_images_path = [find_graph_by_suffix(identifier, suf) for suf in graph_suffixes]
     # Check which images actually exist
     print("DEBUG: Checking for generated images:")
     for i, p in enumerate(all_images_path):
@@ -206,9 +200,10 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
     logo_data_url = ""
     if os.path.isfile(logo_path):
         try:
-            with open(logo_path, 'rb') as img_file:
+            with open(logo_path, "rb") as img_file:
                 import base64
-                img_data = base64.b64encode(img_file.read()).decode('utf-8')
+
+                img_data = base64.b64encode(img_file.read()).decode("utf-8")
                 logo_data_url = f"data:image/png;base64,{img_data}"
         except Exception as e:
             print(f"Error converting logo to data URL: {str(e)}")
@@ -217,49 +212,69 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
 
     # Encode graphs to base64 with fallback for missing images
     try:
-        first_graph_base64 = encode_image_base64(all_images_path[0]) if os.path.exists(
-            all_images_path[0]) else create_placeholder_image_base64()
+        first_graph_base64 = (
+            encode_image_base64(all_images_path[0])
+            if os.path.exists(all_images_path[0])
+            else create_placeholder_image_base64()
+        )
     except Exception as e:
         print(f"Error encoding first graph: {e}")
         first_graph_base64 = create_placeholder_image_base64()
 
     try:
-        ei_graph_base64 = encode_image_base64(all_images_path[1]) if os.path.exists(
-            all_images_path[1]) else create_placeholder_image_base64()
+        ei_graph_base64 = (
+            encode_image_base64(all_images_path[1])
+            if os.path.exists(all_images_path[1])
+            else create_placeholder_image_base64()
+        )
     except Exception as e:
         print(f"Error encoding EI graph: {e}")
         ei_graph_base64 = create_placeholder_image_base64()
 
     try:
-        sn_graph_base64 = encode_image_base64(all_images_path[4]) if os.path.exists(
-            all_images_path[4]) else create_placeholder_image_base64()
+        sn_graph_base64 = (
+            encode_image_base64(all_images_path[4])
+            if os.path.exists(all_images_path[4])
+            else create_placeholder_image_base64()
+        )
     except Exception as e:
         print(f"Error encoding SN graph: {e}")
         sn_graph_base64 = create_placeholder_image_base64()
 
     try:
-        tf_graph_base64 = encode_image_base64(all_images_path[2]) if os.path.exists(
-            all_images_path[2]) else create_placeholder_image_base64()
+        tf_graph_base64 = (
+            encode_image_base64(all_images_path[2])
+            if os.path.exists(all_images_path[2])
+            else create_placeholder_image_base64()
+        )
     except Exception as e:
         print(f"Error encoding TF graph: {e}")
         tf_graph_base64 = create_placeholder_image_base64()
 
     try:
-        jp_graph_base64 = encode_image_base64(all_images_path[3]) if os.path.exists(
-            all_images_path[3]) else create_placeholder_image_base64()
+        jp_graph_base64 = (
+            encode_image_base64(all_images_path[3])
+            if os.path.exists(all_images_path[3])
+            else create_placeholder_image_base64()
+        )
     except Exception as e:
         print(f"Error encoding JP graph: {e}")
         jp_graph_base64 = create_placeholder_image_base64()
 
     try:
-        dominant_graph_base64 = encode_image_base64(all_images_path[5]) if os.path.exists(
-            all_images_path[5]) else create_placeholder_image_base64()
+        dominant_graph_base64 = (
+            encode_image_base64(all_images_path[5])
+            if os.path.exists(all_images_path[5])
+            else create_placeholder_image_base64()
+        )
     except Exception as e:
         print(f"Error encoding dominant graph: {e}")
         dominant_graph_base64 = create_placeholder_image_base64()
 
     try:
-        full_logo_base64 = encode_image_base64(logo_path) if os.path.exists(logo_path) else ""
+        full_logo_base64 = (
+            encode_image_base64(logo_path) if os.path.exists(logo_path) else ""
+        )
     except Exception as e:
         print(f"Error encoding logo: {e}")
         full_logo_base64 = ""
@@ -353,7 +368,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
             }}
             .page-break {{
                 page-break-before: always;
-            }}   
+            }}
             .logo {{
                 position: fixed;
                 top: -40px;  /* Changed from -20px to make it visible */
@@ -366,7 +381,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
                 width: 100px;  /* Set a fixed width instead of percentage */
                 height: auto;
                 padding: 0;  /* Override the general img padding */
-            }}  
+            }}
         </style>
     </head>
     <body>
@@ -401,12 +416,12 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
             <div class="graph">
                 <img src="data:image/png;base64,{first_graph_base64}" alt="first Graph">
             </div>
-        </div> 
+        </div>
         <div class="section">
             <div class="graph">
                 <img src="data:image/png;base64,{dominant_graph_base64}" alt="Dominant Graph">
             </div>
-        </div>        
+        </div>
             <div class="page-break"></div>
         <div class="section">
             <h2>Extraversion vs. Introversion</h2>
@@ -478,7 +493,7 @@ def generate_dual_report(pdf1_path, pdf2_path, output_pdf_path):
         print(f"ERROR creating PDF: {e}")
         # Save HTML as fallback
         html_path = os.path.join(output_dir, f"{identifier}_dual_report.html")
-        with open(html_path, 'w', encoding='utf-8') as f:
+        with open(html_path, "w", encoding="utf-8") as f:
             f.write(html_template)
         print(f"✅ HTML report created as fallback at: {html_path}")
         return identifier, html_path
@@ -489,6 +504,6 @@ if __name__ == "__main__":
     pdf1 = r"F:\projects\MBTInfo\input\eran-turko-267149-e33d49cd-c629-f011-8b3d-000d3a381fe7.pdf"
     pdf2 = r"F:\projects\MBTInfo\input\Tomer-Shimon-Haiman-267149-7381d4d8-6235-f011-8b3d-000d3a381fe7.pdf"
 
-    output_pdf = fr"F:\projects\MBTInfo\output"
+    output_pdf = r"F:\projects\MBTInfo\output"
 
     generate_dual_report(pdf1, pdf2, output_pdf)
